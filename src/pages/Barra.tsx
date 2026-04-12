@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useSupabaseStore } from '../store-supabase'
 
 export default function Barra() {
-  const { products, balance, addSale, addProduct } = useSupabaseStore()
+  const { products, balance, addSale, addProduct, deleteProduct, sales } = useSupabaseStore()
   const [loading, setLoading] = useState(true)
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null)
   const [quantity, setQuantity] = useState(1)
@@ -155,12 +155,12 @@ export default function Barra() {
             </p>
           </div>
           <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-4">
-            <p className="text-sm text-gray-400">Ventas Hoy</p>
-            <p className="text-2xl font-bold mt-1 text-white">12</p>
+            <p className="text-sm text-gray-400">Ventas</p>
+            <p className="text-2xl font-bold mt-1 text-white">{sales.length}</p>
           </div>
           <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-4">
             <p className="text-sm text-gray-400">Ingresos</p>
-            <p className="text-2xl font-bold mt-1 text-emerald-400">{formatCurrency(45000)}</p>
+            <p className="text-2xl font-bold mt-1 text-emerald-400">{formatCurrency(sales.reduce((sum, s) => sum + s.total, 0))}</p>
           </div>
         </div>
 
@@ -299,13 +299,28 @@ export default function Barra() {
                           {formatCurrency(product.price)}
                         </p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm text-gray-400">Stock</p>
-                        <p className={`text-lg font-bold ${
-                          product.stock < 10 ? 'text-amber-400' : 'text-emerald-400'
-                        }`}>
-                          {product.stock}
-                        </p>
+                      <div className="flex items-start gap-3">
+                        <div className="text-right">
+                          <p className="text-sm text-gray-400">Stock</p>
+                          <p className={`text-lg font-bold ${
+                            product.stock < 10 ? 'text-amber-400' : 'text-emerald-400'
+                          }`}>
+                            {product.stock}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            if (confirm(`¿Eliminar "${product.name}"?`)) {
+                              deleteProduct(product.id).catch(e => alert('Error: ' + (e as Error).message))
+                            }
+                          }}
+                          className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-colors"
+                          aria-label={`Eliminar ${product.name}`}
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
                       </div>
                     </div>
 
@@ -363,42 +378,24 @@ export default function Barra() {
         <section className="bg-gray-800/50 border border-gray-700 rounded-3xl p-6 sm:p-8">
           <h2 className="text-xl font-semibold mb-6 text-white">Ventas Recientes</h2>
           <div className="space-y-3">
-            <div className="flex items-center justify-between p-4 bg-gray-700/50 rounded-2xl border border-gray-600">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 flex items-center justify-center bg-emerald-900/30 text-emerald-400 rounded-full">
-                  <span className="text-lg">🍺</span>
+            {sales.length === 0 ? (
+              <p className="text-center text-gray-500 py-4">Sin ventas registradas</p>
+            ) : (
+              sales.slice(0, 10).map((sale) => (
+                <div key={sale.id} className="flex items-center justify-between p-4 bg-gray-700/50 rounded-2xl border border-gray-600">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 flex items-center justify-center bg-emerald-900/30 text-emerald-400 rounded-full">
+                      <span className="text-lg">🍺</span>
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-white">{sale.product_name} ×{sale.quantity}</h3>
+                      <p className="text-sm text-gray-400">{new Date(sale.created_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}</p>
+                    </div>
+                  </div>
+                  <span className="text-lg font-bold text-emerald-400">{formatCurrency(sale.total)}</span>
                 </div>
-                <div>
-                  <h3 className="font-medium text-white">Cerveza ×2</h3>
-                  <p className="text-sm text-gray-400">Hace 5 minutos</p>
-                </div>
-              </div>
-              <span className="text-lg font-bold text-emerald-400">{formatCurrency(1600)}</span>
-            </div>
-            <div className="flex items-center justify-between p-4 bg-gray-700/50 rounded-2xl border border-gray-600">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 flex items-center justify-center bg-emerald-900/30 text-emerald-400 rounded-full">
-                  <span className="text-lg">🥃</span>
-                </div>
-                <div>
-                  <h3 className="font-medium text-white">Fernet ×1</h3>
-                  <p className="text-sm text-gray-400">Hace 12 minutos</p>
-                </div>
-              </div>
-              <span className="text-lg font-bold text-emerald-400">{formatCurrency(2500)}</span>
-            </div>
-            <div className="flex items-center justify-between p-4 bg-gray-700/50 rounded-2xl border border-gray-600">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 flex items-center justify-center bg-emerald-900/30 text-emerald-400 rounded-full">
-                  <span className="text-lg">🍕</span>
-                </div>
-                <div>
-                  <h3 className="font-medium text-white">Pizza ×1</h3>
-                  <p className="text-sm text-gray-400">Hace 25 minutos</p>
-                </div>
-              </div>
-              <span className="text-lg font-bold text-emerald-400">{formatCurrency(1200)}</span>
-            </div>
+              ))
+            )}
           </div>
         </section>
       </main>

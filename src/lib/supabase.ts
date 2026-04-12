@@ -59,6 +59,7 @@ export interface Database {
           id: string
           name: string
           type: 'invitado' | 'regular'
+          event_id?: string
           created_at: string
           updated_at: string
         }
@@ -66,6 +67,7 @@ export interface Database {
           id?: string
           name: string
           type: 'invitado' | 'regular'
+          event_id?: string
           created_at?: string
           updated_at?: string
         }
@@ -73,6 +75,7 @@ export interface Database {
           id?: string
           name?: string
           type?: 'invitado' | 'regular'
+          event_id?: string
           created_at?: string
           updated_at?: string
         }
@@ -148,6 +151,7 @@ export interface Database {
           is_active: boolean
           start_date?: string
           end_date?: string
+          closed_at?: string
           created_at: string
           updated_at: string
         }
@@ -160,6 +164,7 @@ export interface Database {
           is_active?: boolean
           start_date?: string
           end_date?: string
+          closed_at?: string
           created_at?: string
           updated_at?: string
         }
@@ -172,6 +177,7 @@ export interface Database {
           is_active?: boolean
           start_date?: string
           end_date?: string
+          closed_at?: string
           created_at?: string
           updated_at?: string
         }

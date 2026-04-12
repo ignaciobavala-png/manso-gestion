@@ -167,7 +167,7 @@ export function useSupabaseStore() {
     try {
       const { data, error } = await supabase
         .from('guests')
-        .insert(guest)
+        .insert({ ...guest, event_id: guest.event_id ?? activeEvent?.id })
         .select()
         .single()
 
@@ -185,7 +185,7 @@ export function useSupabaseStore() {
     try {
       const { data, error } = await supabase
         .from('sales')
-        .insert(sale)
+        .insert({ ...sale, event_id: sale.event_id ?? activeEvent?.id })
         .select()
         .single()
 
@@ -217,7 +217,7 @@ export function useSupabaseStore() {
     try {
       const { data, error } = await supabase
         .from('ticket_sales')
-        .insert(ticketSale)
+        .insert({ ...ticketSale, event_id: ticketSale.event_id ?? activeEvent?.id })
         .select()
         .single()
 
@@ -280,6 +280,41 @@ export function useSupabaseStore() {
     }
   }
 
+  // Close event (arqueo de caja)
+  const closeEvent = async (eventId: string) => {
+    try {
+      // 1. Marcar evento como cerrado
+      const { error: closeError } = await supabase
+        .from('events')
+        .update({ is_active: false, closed_at: new Date().toISOString() })
+        .eq('id', eventId)
+
+      if (closeError) throw closeError
+
+      // 2. Resetear stock de todos los productos a 0
+      const { error: stockError } = await supabase
+        .from('products')
+        .update({ stock: 0 })
+        .neq('id', '00000000-0000-0000-0000-000000000000')
+
+      if (stockError) throw stockError
+
+      // 3. Actualizar estado local
+      setEvents(prev => prev.map(e =>
+        e.id === eventId ? { ...e, is_active: false, closed_at: new Date().toISOString() } : e
+      ))
+      setActiveEvent(null)
+      setProducts(prev => prev.map(p => ({ ...p, stock: 0 })))
+      setSales([])
+      setTicketSales([])
+      setGuests([])
+      setBalance(0)
+    } catch (error) {
+      console.error('Error closing event:', error)
+      throw error
+    }
+  }
+
   // Get sales by payment method
   const getSalesByPaymentMethod = async (eventId?: string) => {
     try {
@@ -333,6 +368,7 @@ export function useSupabaseStore() {
     // Event operations
     addEvent,
     setActiveEventStatus,
+    closeEvent,
     
     // Utility functions
     getSalesByPaymentMethod,

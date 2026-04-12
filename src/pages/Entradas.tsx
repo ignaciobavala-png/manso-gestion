@@ -19,6 +19,17 @@ export default function Entradas() {
     setTimeout(() => setLoading(false), 1000)
   }, [])
 
+  // Cleanup on unmount — debe estar antes del early return
+  useEffect(() => {
+    return () => {
+      if (qrScannerRef.current) {
+        qrScannerRef.current.stop()
+        qrScannerRef.current.destroy()
+        qrScannerRef.current = null
+      }
+    }
+  }, [])
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-950 text-gray-200 font-montserrat flex items-center justify-center">
@@ -95,13 +106,6 @@ export default function Entradas() {
     }
     setIsScanning(false)
   }
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      stopScanning()
-    }
-  }, [])
 
   const handleAddInvitado = async () => {
     if (!invitadoName.trim()) {

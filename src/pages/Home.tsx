@@ -4,11 +4,13 @@ import Ingresos from '../components/Ingresos'
 import EventCreator from '../components/EventCreator'
 
 export default function Home() {
-  const { products, balance, updateProduct } = useSupabaseStore()
+  const { products, balance, updateProduct, activeEvent, closeEvent, sales, ticketSales } = useSupabaseStore()
   const [loading, setLoading] = useState(true)
   const [isStockExpanded, setIsStockExpanded] = useState(false)
   const [showEventCreator, setShowEventCreator] = useState(false)
   const [stockValues, setStockValues] = useState<Record<string, number>>({})
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false)
+  const [closing, setClosing] = useState(false)
 
   useEffect(() => {
     console.log('🏠 Componente Home montado')
@@ -30,6 +32,19 @@ export default function Home() {
         </div>
       </div>
     )
+  }
+
+  const handleCloseEvent = async () => {
+    if (!activeEvent) return
+    setClosing(true)
+    try {
+      await closeEvent(activeEvent.id)
+      setShowCloseConfirm(false)
+    } catch (error) {
+      alert('Error al cerrar el evento: ' + (error as Error).message)
+    } finally {
+      setClosing(false)
+    }
   }
 
   const handleStockChange = async (productId: string, value: number) => {
@@ -177,6 +192,73 @@ export default function Home() {
 
         {/* Ingresos Section */}
         <Ingresos />
+
+        {/* Arqueo de Caja */}
+        {activeEvent && (
+          <section className="bg-gray-800/50 border border-red-900/50 rounded-3xl p-6 sm:p-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+              <div>
+                <h2 className="text-xl font-semibold text-white">Arqueo de Caja</h2>
+                <p className="text-sm text-gray-400 mt-1">Evento activo: <span className="text-emerald-400">{activeEvent.name}</span></p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+              <div className="bg-gray-700/50 rounded-2xl p-3 text-center">
+                <p className="text-xs text-gray-400">Balance</p>
+                <p className="text-lg font-bold text-emerald-400">{formatCurrency(balance)}</p>
+              </div>
+              <div className="bg-gray-700/50 rounded-2xl p-3 text-center">
+                <p className="text-xs text-gray-400">Ventas barra</p>
+                <p className="text-lg font-bold text-white">{sales.length}</p>
+              </div>
+              <div className="bg-gray-700/50 rounded-2xl p-3 text-center">
+                <p className="text-xs text-gray-400">Entradas</p>
+                <p className="text-lg font-bold text-white">{ticketSales.length}</p>
+              </div>
+              <div className="bg-gray-700/50 rounded-2xl p-3 text-center">
+                <p className="text-xs text-gray-400">Recaudado</p>
+                <p className="text-lg font-bold text-emerald-400">
+                  {formatCurrency(
+                    sales.reduce((s, v) => s + v.total, 0) +
+                    ticketSales.reduce((s, t) => s + t.price, 0)
+                  )}
+                </p>
+              </div>
+            </div>
+
+            {!showCloseConfirm ? (
+              <button
+                onClick={() => setShowCloseConfirm(true)}
+                className="w-full py-3 bg-red-700 hover:bg-red-600 text-white font-semibold rounded-xl transition-colors"
+              >
+                Cerrar evento y hacer arqueo
+              </button>
+            ) : (
+              <div className="bg-red-950/50 border border-red-700 rounded-2xl p-4 space-y-3">
+                <p className="text-sm text-red-300 text-center">
+                  Esto cerrará el evento, reseteará el stock a 0 y limpiará la vista. Los datos quedan guardados en el historial.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowCloseConfirm(false)}
+                    disabled={closing}
+                    className="flex-1 py-2 bg-gray-600 hover:bg-gray-500 disabled:opacity-50 text-white font-medium rounded-xl transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleCloseEvent}
+                    disabled={closing}
+                    className="flex-1 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-semibold rounded-xl transition-colors"
+                  >
+                    {closing ? 'Cerrando...' : 'Confirmar cierre'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </section>
+        )}
 
         {/* Quick Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
