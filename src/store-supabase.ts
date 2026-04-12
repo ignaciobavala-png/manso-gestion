@@ -83,8 +83,8 @@ export function useSupabaseStore() {
 
       console.log('✅ Datos cargados exitosamente')
 
-      // Calculate balance
-      await calculateBalance()
+      // Calculate balance scoped to the active event
+      await calculateBalance(activeEventResult.data?.id)
 
     } catch (error) {
       console.error('❌ Error fetching data:', error)
@@ -94,9 +94,13 @@ export function useSupabaseStore() {
     }
   }
 
-  const calculateBalance = async () => {
+  const calculateBalance = async (eventId?: string | null) => {
     try {
-      const { data, error } = await supabase.rpc('get_current_balance')
+      if (!eventId) {
+        setBalance(0)
+        return
+      }
+      const { data, error } = await supabase.rpc('get_current_balance', { p_event_id: eventId })
       if (error) throw error
       setBalance(data || 0)
     } catch (error) {
@@ -208,7 +212,7 @@ export function useSupabaseStore() {
 
   // Call after all sales in a batch are done
   const flushBalance = async () => {
-    await calculateBalance()
+    await calculateBalance(activeEvent?.id)
   }
 
   // Ticket sale operations
