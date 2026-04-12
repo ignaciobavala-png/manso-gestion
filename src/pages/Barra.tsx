@@ -9,6 +9,7 @@ export default function Barra() {
   const [paymentMethod, setPaymentMethod] = useState<'efectivo' | 'tarjeta' | 'transferencia'>('efectivo')
   const [confirming, setConfirming] = useState(false)
   const [purchaseSuccess, setPurchaseSuccess] = useState(false)
+  const [purchaseError, setPurchaseError] = useState<string | null>(null)
   const [showAddItem, setShowAddItem] = useState(false)
   const [newItem, setNewItem] = useState({
     name: '',
@@ -60,11 +61,16 @@ export default function Barra() {
 
   const cartTotal = cartItems.reduce((sum, { product, qty }) => sum + product.price * qty, 0)
 
+  const showError = (msg: string) => {
+    setPurchaseError(msg)
+    setTimeout(() => setPurchaseError(null), 3000)
+  }
+
   const handleConfirmPurchase = async () => {
     if (cartItems.length === 0) return
     for (const { product, qty } of cartItems) {
       if (product.stock < qty) {
-        alert(`Stock insuficiente para "${product.name}". Disponible: ${product.stock}`)
+        showError(`Stock insuficiente para "${product.name}". Disponible: ${product.stock}`)
         return
       }
     }
@@ -84,7 +90,7 @@ export default function Barra() {
       setPurchaseSuccess(true)
       setTimeout(() => setPurchaseSuccess(false), 2500)
     } catch (error) {
-      alert('Error al confirmar la compra: ' + (error as Error).message)
+      showError('Error al confirmar la compra: ' + (error as Error).message)
     } finally {
       setConfirming(false)
     }
@@ -381,6 +387,10 @@ export default function Barra() {
           {purchaseSuccess ? (
             <div className="w-full py-4 bg-emerald-700/40 border border-emerald-600 text-emerald-300 font-bold text-lg rounded-xl text-center">
               Venta registrada
+            </div>
+          ) : purchaseError ? (
+            <div className="w-full py-4 bg-red-900/40 border border-red-700 text-red-300 font-medium text-sm rounded-xl text-center px-4">
+              {purchaseError}
             </div>
           ) : (
             <button
