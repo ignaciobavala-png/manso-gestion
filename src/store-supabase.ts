@@ -191,25 +191,24 @@ export function useSupabaseStore() {
 
       if (error) throw error
       setSales(prev => [data, ...prev])
-      
-      // Update product stock
+
+      // Update product stock locally (no extra DB call)
       if (sale.product_id) {
-        const product = products.find(p => p.id === sale.product_id)
-        if (product) {
-          await updateProduct(sale.product_id, {
-            stock: product.stock - sale.quantity
-          })
-        }
+        setProducts(prev => prev.map(p =>
+          p.id === sale.product_id ? { ...p, stock: p.stock - sale.quantity } : p
+        ))
       }
-      
-      // Recalculate balance
-      await calculateBalance()
-      
+
       return data
     } catch (error) {
       console.error('Error adding sale:', error)
       throw error
     }
+  }
+
+  // Call after all sales in a batch are done
+  const flushBalance = async () => {
+    await calculateBalance()
   }
 
   // Ticket sale operations
@@ -363,6 +362,7 @@ export function useSupabaseStore() {
     
     // Sale operations
     addSale,
+    flushBalance,
     addTicketSale,
     
     // Event operations

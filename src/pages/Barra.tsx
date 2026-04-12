@@ -3,11 +3,12 @@ import { useSupabaseStore } from '../store-supabase'
 import SinEventoActivo from '../components/SinEventoActivo'
 
 export default function Barra() {
-  const { products, balance, addSale, addProduct, deleteProduct, sales, activeEvent } = useSupabaseStore()
+  const { products, balance, addSale, flushBalance, addProduct, deleteProduct, sales, activeEvent } = useSupabaseStore()
   const [loading, setLoading] = useState(true)
   const [cart, setCart] = useState<Record<string, number>>({})
   const [paymentMethod, setPaymentMethod] = useState<'efectivo' | 'tarjeta' | 'transferencia'>('efectivo')
   const [confirming, setConfirming] = useState(false)
+  const [purchaseSuccess, setPurchaseSuccess] = useState(false)
   const [showAddItem, setShowAddItem] = useState(false)
   const [newItem, setNewItem] = useState({
     name: '',
@@ -78,7 +79,10 @@ export default function Barra() {
           payment_method: paymentMethod
         })
       ))
+      await flushBalance()
       setCart({})
+      setPurchaseSuccess(true)
+      setTimeout(() => setPurchaseSuccess(false), 2500)
     } catch (error) {
       alert('Error al confirmar la compra: ' + (error as Error).message)
     } finally {
@@ -331,41 +335,66 @@ export default function Barra() {
           <div>
             <h2 className="text-lg font-semibold text-white mb-3">Método de Pago</h2>
             <div className="grid grid-cols-3 gap-3">
-              {([
-                { key: 'efectivo', label: 'Efectivo', icon: '💵', color: 'emerald' },
-                { key: 'tarjeta', label: 'Tarjeta', icon: '💳', color: 'blue' },
-                { key: 'transferencia', label: 'Transferencia', icon: '📱', color: 'purple' },
-              ] as const).map(({ key, label, icon, color }) => (
-                <button
-                  key={key}
-                  onClick={() => setPaymentMethod(key)}
-                  className={`p-4 rounded-xl border-2 transition-all ${
-                    paymentMethod === key
-                      ? `bg-${color}-600/20 border-${color}-500 text-${color}-400`
-                      : 'bg-gray-700/50 border-gray-600 text-gray-300 hover:border-gray-500'
-                  }`}
-                >
-                  <div className="flex flex-col items-center gap-1">
-                    <span className="text-2xl">{icon}</span>
-                    <span className="text-sm font-medium">{label}</span>
-                  </div>
-                </button>
-              ))}
+              <button
+                onClick={() => setPaymentMethod('efectivo')}
+                className={`p-4 rounded-xl border-2 transition-all ${
+                  paymentMethod === 'efectivo'
+                    ? 'bg-emerald-600/20 border-emerald-500 text-emerald-400'
+                    : 'bg-gray-700/50 border-gray-600 text-gray-300 hover:border-gray-500'
+                }`}
+              >
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-2xl">💵</span>
+                  <span className="text-sm font-medium">Efectivo</span>
+                </div>
+              </button>
+              <button
+                onClick={() => setPaymentMethod('tarjeta')}
+                className={`p-4 rounded-xl border-2 transition-all ${
+                  paymentMethod === 'tarjeta'
+                    ? 'bg-blue-600/20 border-blue-500 text-blue-400'
+                    : 'bg-gray-700/50 border-gray-600 text-gray-300 hover:border-gray-500'
+                }`}
+              >
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-2xl">💳</span>
+                  <span className="text-sm font-medium">Tarjeta</span>
+                </div>
+              </button>
+              <button
+                onClick={() => setPaymentMethod('transferencia')}
+                className={`p-4 rounded-xl border-2 transition-all ${
+                  paymentMethod === 'transferencia'
+                    ? 'bg-purple-600/20 border-purple-500 text-purple-400'
+                    : 'bg-gray-700/50 border-gray-600 text-gray-300 hover:border-gray-500'
+                }`}
+              >
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-2xl">📱</span>
+                  <span className="text-sm font-medium">Transferencia</span>
+                </div>
+              </button>
             </div>
           </div>
 
           {/* Confirmar compra */}
-          <button
-            onClick={handleConfirmPurchase}
-            disabled={cartItems.length === 0 || confirming}
-            className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed text-white font-bold text-lg rounded-xl transition-colors"
-          >
-            {confirming
-              ? 'Confirmando...'
-              : cartItems.length === 0
-                ? 'Seleccioná items para confirmar'
-                : `Confirmar compra · ${formatCurrency(cartTotal)}`}
-          </button>
+          {purchaseSuccess ? (
+            <div className="w-full py-4 bg-emerald-700/40 border border-emerald-600 text-emerald-300 font-bold text-lg rounded-xl text-center">
+              Venta registrada
+            </div>
+          ) : (
+            <button
+              onClick={handleConfirmPurchase}
+              disabled={cartItems.length === 0 || confirming}
+              className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed text-white font-bold text-lg rounded-xl transition-colors"
+            >
+              {confirming
+                ? 'Confirmando...'
+                : cartItems.length === 0
+                  ? 'Seleccioná items para confirmar'
+                  : `Confirmar compra · ${formatCurrency(cartTotal)}`}
+            </button>
+          )}
         </section>
 
         {/* Recent Sales */}
