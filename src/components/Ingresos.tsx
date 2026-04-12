@@ -141,17 +141,16 @@ export default function Ingresos() {
                     tarjeta: '💳',
                     transferencia: '📱'
                   }
-                  const paymentColors = {
-                    efectivo: 'emerald',
-                    tarjeta: 'blue',
-                    transferencia: 'purple'
+                  const paymentBubble = {
+                    efectivo: 'bg-emerald-900/30',
+                    tarjeta: 'bg-blue-900/30',
+                    transferencia: 'bg-purple-900/30'
                   }
-                  const color = paymentColors[sale.payment_method]
-                  
+
                   return (
                     <div key={sale.id} className="flex items-center justify-between p-3 bg-gray-700/30 rounded-xl">
                       <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 bg-${color}-900/30 rounded-full flex items-center justify-center`}>
+                        <div className={`w-8 h-8 ${paymentBubble[sale.payment_method]} rounded-full flex items-center justify-center`}>
                           <span className="text-sm">🍺</span>
                         </div>
                         <div>

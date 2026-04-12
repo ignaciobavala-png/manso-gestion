@@ -295,18 +295,18 @@ export default function Barra() {
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => setCartQty(product.id, (cart[product.id] || 0) - 1)}
-                            className="w-8 h-8 flex items-center justify-center bg-gray-600 hover:bg-gray-500 rounded-lg transition-colors"
+                            className="w-11 h-11 flex items-center justify-center bg-gray-600 hover:bg-gray-500 active:bg-gray-400 rounded-lg transition-colors"
                           >
-                            <span className="text-lg">-</span>
+                            <span className="text-xl leading-none">−</span>
                           </button>
                           <span className={`text-xl font-bold w-10 text-center ${cart[product.id] ? 'text-emerald-400' : 'text-gray-500'}`}>
                             {cart[product.id] || 0}
                           </span>
                           <button
                             onClick={() => setCartQty(product.id, (cart[product.id] || 0) + 1)}
-                            className="w-8 h-8 flex items-center justify-center bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors"
+                            className="w-11 h-11 flex items-center justify-center bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-500 rounded-lg transition-colors"
                           >
-                            <span className="text-lg">+</span>
+                            <span className="text-xl leading-none">+</span>
                           </button>
                         </div>
                       </div>

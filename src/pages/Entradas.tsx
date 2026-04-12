@@ -271,9 +271,9 @@ export default function Entradas() {
           {/* Estado: scanner / idle */}
           {!showSuccess && !pendingQr && (
             <div className="flex flex-col items-center space-y-6">
-              <div className="w-64 h-64 bg-gray-700/50 border-2 border-dashed border-gray-600 rounded-2xl overflow-hidden">
+              <div className="w-full aspect-square max-w-xs bg-gray-700/50 border-2 border-dashed border-gray-600 rounded-2xl overflow-hidden">
                 {isScanning ? (
-                  <video ref={videoRef} className="w-full h-full object-cover" playsInline />
+                  <video ref={videoRef} className="w-full h-full object-cover" playsInline muted />
                 ) : cameraError ? (
                   <div className="flex flex-col items-center justify-center h-full p-4 text-center">
                     <svg className="w-10 h-10 text-red-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
