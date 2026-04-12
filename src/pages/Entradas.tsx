@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import QrScanner from 'qr-scanner'
 import { useSupabaseStore } from '../store-supabase'
+import SinEventoActivo from '../components/SinEventoActivo'
 
 export default function Entradas() {
-  const { guests, addGuest, addTicketSale, getTicketPrices } = useSupabaseStore()
+  const { guests, addGuest, addTicketSale, getTicketPrices, activeEvent } = useSupabaseStore()
   const ticketPrices = getTicketPrices()
   const [loading, setLoading] = useState(true)
   const [isScanning, setIsScanning] = useState(false)
@@ -43,6 +44,8 @@ export default function Entradas() {
       </div>
     )
   }
+
+  if (!activeEvent) return <SinEventoActivo />
 
   // Intenta extraer un nombre legible del contenido crudo del QR
   const extractName = (raw: string): string => {

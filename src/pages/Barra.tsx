@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useSupabaseStore } from '../store-supabase'
+import SinEventoActivo from '../components/SinEventoActivo'
 
 export default function Barra() {
-  const { products, balance, addSale, addProduct, deleteProduct, sales } = useSupabaseStore()
+  const { products, balance, addSale, addProduct, deleteProduct, sales, activeEvent } = useSupabaseStore()
   const [loading, setLoading] = useState(true)
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null)
   const [quantity, setQuantity] = useState(1)
@@ -29,6 +30,8 @@ export default function Barra() {
       </div>
     )
   }
+
+  if (!activeEvent) return <SinEventoActivo />
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-AR', {
