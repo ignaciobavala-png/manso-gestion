@@ -1,8 +1,9 @@
-import { useState } from 'react'
-import { useStore } from '../store'
+import { useState, useEffect } from 'react'
+import { useSupabaseStore } from '../store-supabase'
 
 export default function Barra() {
-  const { products, balance, sellProduct, addSale, addProduct } = useStore
+  const { products, balance, addSale, addProduct } = useSupabaseStore()
+  const [loading, setLoading] = useState(true)
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null)
   const [quantity, setQuantity] = useState(1)
   const [paymentMethod, setPaymentMethod] = useState<'efectivo' | 'tarjeta' | 'transferencia'>('efectivo')
@@ -13,6 +14,22 @@ export default function Barra() {
     category: 'bebida' as 'bebida' | 'comida' | 'otro'
   })
 
+  useEffect(() => {
+    console.log('🍺 Componente Barra montado')
+    setTimeout(() => setLoading(false), 1000)
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-950 text-gray-200 font-montserrat flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div>
+          <p>Cargando...</p>
+        </div>
+      </div>
+    )
+  }
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-AR', {
       style: 'currency',
@@ -22,7 +39,7 @@ export default function Barra() {
     }).format(amount)
   }
 
-  const handleSell = (productId: string) => {
+  const handleSell = async (productId: string) => {
     const product = products.find(p => p.id === productId)
     if (!product) return
 
@@ -32,35 +49,41 @@ export default function Barra() {
     }
 
     const total = product.price * quantity
-    sellProduct(productId, quantity)
-    addSale({
-      productId,
-      productName: product.name,
-      quantity,
-      total,
-      paymentMethod
-    })
-    
-    setSelectedProduct(null)
-    setQuantity(1)
+    try {
+      await addSale({
+        product_id: productId,
+        product_name: product.name,
+        quantity,
+        total,
+        payment_method: paymentMethod
+      })
+      
+      setSelectedProduct(null)
+      setQuantity(1)
+    } catch (error) {
+      alert('Error al realizar la venta: ' + (error as Error).message)
+    }
   }
 
-  const quickSell = (productId: string, qty: number) => {
+  const quickSell = async (productId: string, qty: number) => {
     const product = products.find(p => p.id === productId)
     if (!product || product.stock < qty) return
 
     const total = product.price * qty
-    sellProduct(productId, qty)
-    addSale({
-      productId,
-      productName: product.name,
-      quantity: qty,
-      total,
-      paymentMethod
-    })
+    try {
+      await addSale({
+        product_id: productId,
+        product_name: product.name,
+        quantity: qty,
+        total,
+        payment_method: paymentMethod
+      })
+    } catch (error) {
+      alert('Error al realizar la venta: ' + (error as Error).message)
+    }
   }
 
-  const handleAddItem = () => {
+  const handleAddItem = async () => {
     if (!newItem.name || !newItem.price) {
       alert('Por favor completa todos los campos')
       return
@@ -72,15 +95,19 @@ export default function Barra() {
       return
     }
 
-    addProduct({
-      name: newItem.name,
-      price: price,
-      category: newItem.category,
-      stock: 0
-    })
+    try {
+      await addProduct({
+        name: newItem.name,
+        price: price,
+        category: newItem.category,
+        stock: 0
+      })
 
-    setNewItem({ name: '', price: '', category: 'bebida' })
-    setShowAddItem(false)
+      setNewItem({ name: '', price: '', category: 'bebida' })
+      setShowAddItem(false)
+    } catch (error) {
+      alert('Error al agregar producto: ' + (error as Error).message)
+    }
   }
 
   const categories = Array.from(new Set(products.map(p => p.category)))

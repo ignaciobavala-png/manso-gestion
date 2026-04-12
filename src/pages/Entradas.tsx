@@ -1,16 +1,34 @@
 import { useState, useEffect, useRef } from 'react'
-import { useStore } from '../store'
 import QrScanner from 'qr-scanner'
+import { useSupabaseStore } from '../store-supabase'
 
 export default function Entradas() {
-  const { guests, addGuest, ticketPrices, addTicketSale } = useStore
+  const { guests, addGuest, addTicketSale, getTicketPrices } = useSupabaseStore()
+  const ticketPrices = getTicketPrices()
+  const [loading, setLoading] = useState(true)
   const [qrScanned, setQrScanned] = useState(false)
   const [showInvitadoInput, setShowInvitadoInput] = useState(false)
   const [invitadoName, setInvitadoName] = useState('')
   const [isScanning, setIsScanning] = useState(false)
   const [cameraError, setCameraError] = useState<string | null>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
-  const qrScannerRef = useRef<any | null>(null)
+  const qrScannerRef = useRef<QrScanner | null>(null)
+
+  useEffect(() => {
+    console.log('🎫 Componente Entradas montado')
+    setTimeout(() => setLoading(false), 1000)
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-950 text-gray-200 font-montserrat flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div>
+          <p>Cargando...</p>
+        </div>
+      </div>
+    )
+  }
 
   const handleScanQR = async () => {
     if (!videoRef.current) return
@@ -33,12 +51,18 @@ export default function Entradas() {
             : `QR Invitado ${guests.length + 1}`
           
           // Add guest and ticket sale
-          addGuest({ name: guestName, type: 'regular' })
-          addTicketSale({ 
-            guestName: guestName, 
-            type: 'regular', 
-            price: ticketPrices.regular 
-          })
+          ;(async () => {
+            try {
+              await addGuest({ name: guestName, type: 'regular' })
+              await addTicketSale({ 
+                guest_name: guestName, 
+                type: 'regular', 
+                price: ticketPrices.regular 
+              })
+            } catch (error) {
+              alert('Error al procesar QR: ' + (error as Error).message)
+            }
+          })()
           
           // Stop scanning
           stopScanning()
@@ -79,21 +103,25 @@ export default function Entradas() {
     }
   }, [])
 
-  const handleAddInvitado = () => {
+  const handleAddInvitado = async () => {
     if (!invitadoName.trim()) {
       alert('Por favor ingresa el nombre del invitado')
       return
     }
     
-    addGuest({ name: invitadoName.trim(), type: 'invitado' })
-    addTicketSale({ 
-      guestName: invitadoName.trim(), 
-      type: 'invitado', 
-      price: ticketPrices.invitado 
-    })
-    
-    setInvitadoName('')
-    setShowInvitadoInput(false)
+    try {
+      await addGuest({ name: invitadoName.trim(), type: 'invitado' })
+      await addTicketSale({ 
+        guest_name: invitadoName.trim(), 
+        type: 'invitado', 
+        price: ticketPrices.invitado 
+      })
+      
+      setInvitadoName('')
+      setShowInvitadoInput(false)
+    } catch (error) {
+      alert('Error al agregar invitado: ' + (error as Error).message)
+    }
   }
 
   return (
@@ -251,7 +279,7 @@ export default function Entradas() {
                   </div>
                   <div>
                     <h3 className="font-medium text-white">{guest.name}</h3>
-                    <p className="text-sm text-gray-400">{guest.timestamp}</p>
+                    <p className="text-sm text-gray-400">{new Date(guest.created_at).toLocaleString()}</p>
                   </div>
                 </div>
                 <span className={`px-3 py-1 text-sm font-medium rounded-full ${

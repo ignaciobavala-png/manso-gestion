@@ -1,19 +1,44 @@
-import { useState } from 'react'
-import { useStore } from '../store'
+import { useState, useEffect } from 'react'
+import { useSupabaseStore } from '../store-supabase'
 import Ingresos from '../components/Ingresos'
 import EventCreator from '../components/EventCreator'
 
 export default function Home() {
-  const { balance, products, setStockInicial } = useStore
-  const [stockValues, setStockValues] = useState<Record<string, number>>(
-    products.reduce((acc, product) => ({ ...acc, [product.id]: product.stock }), {})
-  )
+  const { products, balance, updateProduct } = useSupabaseStore()
+  const [loading, setLoading] = useState(true)
   const [isStockExpanded, setIsStockExpanded] = useState(false)
   const [showEventCreator, setShowEventCreator] = useState(false)
+  const [stockValues, setStockValues] = useState<Record<string, number>>({})
 
-  const handleStockChange = (productId: string, value: number) => {
+  useEffect(() => {
+    console.log('🏠 Componente Home montado')
+    setTimeout(() => setLoading(false), 1000)
+  }, [])
+
+  useEffect(() => {
+    const initial: Record<string, number> = {}
+    products.forEach(p => { initial[p.id] = p.stock })
+    setStockValues(initial)
+  }, [products])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-950 text-gray-200 font-montserrat flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div>
+          <p>Cargando...</p>
+        </div>
+      </div>
+    )
+  }
+
+  const handleStockChange = async (productId: string, value: number) => {
     setStockValues(prev => ({ ...prev, [productId]: value }))
-    setStockInicial(productId, value)
+    try {
+      await updateProduct(productId, { stock: value })
+    } catch (error) {
+      alert('Error al actualizar stock: ' + (error as Error).message)
+    }
   }
 
   const formatCurrency = (amount: number) => {

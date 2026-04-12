@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { supabase, Database } from './lib/supabase'
+import { supabase } from './lib/supabase'
+import type { Database } from './lib/supabase'
 
 // Types matching the database schema
 export type Product = Database['public']['Tables']['products']['Row']
@@ -25,15 +26,22 @@ export function useSupabaseStore() {
   const [activeEvent, setActiveEvent] = useState<Event | null>(null)
   const [balance, setBalance] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   // Fetch initial data
   useEffect(() => {
-    fetchData()
+    fetchData().catch(err => {
+      console.error('Error crítico en inicialización:', err)
+      setError('Error al cargar datos de Supabase')
+      setLoading(false)
+    })
   }, [])
 
   const fetchData = async () => {
     setLoading(true)
     try {
+      console.log('🔄 Iniciando fetch de datos desde Supabase...')
+      
       // Fetch all data in parallel
       const [
         productsResult,
@@ -51,6 +59,14 @@ export function useSupabaseStore() {
         supabase.from('active_event').select('*').single()
       ])
 
+      console.log('📊 Resultados de fetch:', {
+        products: productsResult.data?.length || 0,
+        productsError: productsResult.error?.message,
+        guests: guestsResult.data?.length || 0,
+        sales: salesResult.data?.length || 0,
+        tickets: ticketSalesResult.data?.length || 0
+      })
+
       if (productsResult.error) throw productsResult.error
       if (guestsResult.error) throw guestsResult.error
       if (salesResult.error) throw salesResult.error
@@ -65,11 +81,14 @@ export function useSupabaseStore() {
       setEvents(eventsResult.data || [])
       setActiveEvent(activeEventResult.data)
 
+      console.log('✅ Datos cargados exitosamente')
+
       // Calculate balance
       await calculateBalance()
 
     } catch (error) {
-      console.error('Error fetching data:', error)
+      console.error('❌ Error fetching data:', error)
+      setError('Error al cargar datos: ' + (error as Error).message)
     } finally {
       setLoading(false)
     }
@@ -88,17 +107,24 @@ export function useSupabaseStore() {
   // Product operations
   const addProduct = async (product: ProductInsert) => {
     try {
+      console.log('🔄 Intentando agregar producto:', product)
+      
       const { data, error } = await supabase
         .from('products')
         .insert(product)
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('❌ Error de Supabase al agregar producto:', error)
+        throw error
+      }
+      
+      console.log('✅ Producto agregado exitosamente:', data)
       setProducts(prev => [...prev, data])
       return data
     } catch (error) {
-      console.error('Error adding product:', error)
+      console.error('❌ Error adding product:', error)
       throw error
     }
   }
@@ -290,6 +316,7 @@ export function useSupabaseStore() {
     activeEvent,
     balance,
     loading,
+    error,
     
     // Product operations
     addProduct,

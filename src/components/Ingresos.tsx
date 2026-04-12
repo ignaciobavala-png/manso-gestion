@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { useStore } from '../store'
+import { useSupabaseStore } from '../store-supabase'
 
 export default function Ingresos() {
-  const { sales, ticketSales, ticketPrices } = useStore
+  const { sales, ticketSales, getTicketPrices } = useSupabaseStore()
+  const ticketPrices = getTicketPrices()
   const [isExpanded, setIsExpanded] = useState(false)
 
   const formatCurrency = (amount: number) => {
@@ -16,9 +17,9 @@ export default function Ingresos() {
 
   // Calculate totals by payment method
   const barRevenueByPayment = {
-    efectivo: sales.filter(s => s.paymentMethod === 'efectivo').reduce((sum, sale) => sum + sale.total, 0),
-    tarjeta: sales.filter(s => s.paymentMethod === 'tarjeta').reduce((sum, sale) => sum + sale.total, 0),
-    transferencia: sales.filter(s => s.paymentMethod === 'transferencia').reduce((sum, sale) => sum + sale.total, 0)
+    efectivo: sales.filter(s => s.payment_method === 'efectivo').reduce((sum, sale) => sum + sale.total, 0),
+    tarjeta: sales.filter(s => s.payment_method === 'tarjeta').reduce((sum, sale) => sum + sale.total, 0),
+    transferencia: sales.filter(s => s.payment_method === 'transferencia').reduce((sum, sale) => sum + sale.total, 0)
   }
   
   const barRevenue = sales.reduce((sum, sale) => sum + sale.total, 0)
@@ -145,7 +146,7 @@ export default function Ingresos() {
                     tarjeta: 'blue',
                     transferencia: 'purple'
                   }
-                  const color = paymentColors[sale.paymentMethod]
+                  const color = paymentColors[sale.payment_method]
                   
                   return (
                     <div key={sale.id} className="flex items-center justify-between p-3 bg-gray-700/30 rounded-xl">
@@ -154,10 +155,10 @@ export default function Ingresos() {
                           <span className="text-sm">🍺</span>
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-white">{sale.productName} ×{sale.quantity}</p>
+                          <p className="text-sm font-medium text-white">{sale.product_name} ×{sale.quantity}</p>
                           <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-400">{sale.timestamp}</span>
-                            <span className="text-xs">{paymentIcons[sale.paymentMethod]}</span>
+                            <span className="text-xs text-gray-400">{new Date(sale.created_at).toLocaleString()}</span>
+                            <span className="text-xs">{paymentIcons[sale.payment_method]}</span>
                           </div>
                         </div>
                       </div>
@@ -180,8 +181,8 @@ export default function Ingresos() {
                         <span className="text-sm">🎫</span>
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-white">{ticket.guestName}</p>
-                        <p className="text-xs text-gray-400">{ticket.type} • {ticket.timestamp}</p>
+                        <p className="text-sm font-medium text-white">{ticket.guest_name}</p>
+                        <p className="text-xs text-gray-400">{ticket.type} • {new Date(ticket.created_at).toLocaleString()}</p>
                       </div>
                     </div>
                     <span className="text-sm font-bold text-emerald-400">{formatCurrency(ticket.price)}</span>

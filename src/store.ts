@@ -39,10 +39,10 @@ export const useStore = {
     regular: 0,
     invitado: 0
   },
-  products: [],
-  guests: [],
-  sales: [],
-  ticketSales: [],
+  products: [] as Product[],
+  guests: [] as Guest[],
+  sales: [] as Sale[],
+  ticketSales: [] as TicketSale[],
   setStockInicial: (productId: string, stock: number) => {
     console.log(`Setting stock for product ${productId} to ${stock}`)
   },

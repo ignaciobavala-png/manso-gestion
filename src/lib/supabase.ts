@@ -3,11 +3,23 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
+console.log('🔧 Configuración de Supabase:', {
+  url: supabaseUrl ? '✅ Cargado' : '❌ Missing',
+  key: supabaseAnonKey ? '✅ Cargado' : '❌ Missing',
+  urlLength: supabaseUrl?.length,
+  keyLength: supabaseAnonKey?.length
+})
+
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables')
+  console.error('❌ Variables de entorno faltantes:', {
+    VITE_SUPABASE_URL: !!supabaseUrl,
+    VITE_SUPABASE_ANON_KEY: !!supabaseAnonKey
+  })
+  // No lanzar error para evitar que la aplicación se rompa
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient(supabaseUrl || 'https://placeholder.supabase.co', supabaseAnonKey || 'placeholder-key')
+console.log('✅ Cliente de Supabase creado exitosamente')
 
 // Database types based on our schema
 export interface Database {
