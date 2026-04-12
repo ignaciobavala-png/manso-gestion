@@ -5,9 +5,9 @@ import SinEventoActivo from '../components/SinEventoActivo'
 export default function Barra() {
   const { products, balance, addSale, addProduct, deleteProduct, sales, activeEvent } = useSupabaseStore()
   const [loading, setLoading] = useState(true)
-  const [selectedProduct, setSelectedProduct] = useState<string | null>(null)
-  const [quantity, setQuantity] = useState(1)
+  const [cart, setCart] = useState<Record<string, number>>({})
   const [paymentMethod, setPaymentMethod] = useState<'efectivo' | 'tarjeta' | 'transferencia'>('efectivo')
+  const [confirming, setConfirming] = useState(false)
   const [showAddItem, setShowAddItem] = useState(false)
   const [newItem, setNewItem] = useState({
     name: '',
@@ -42,47 +42,47 @@ export default function Barra() {
     }).format(amount)
   }
 
-  const handleSell = async (productId: string) => {
-    const product = products.find(p => p.id === productId)
-    if (!product) return
-
-    if (product.stock < quantity) {
-      alert(`Stock insuficiente. Disponible: ${product.stock}`)
-      return
-    }
-
-    const total = product.price * quantity
-    try {
-      await addSale({
-        product_id: productId,
-        product_name: product.name,
-        quantity,
-        total,
-        payment_method: paymentMethod
-      })
-      
-      setSelectedProduct(null)
-      setQuantity(1)
-    } catch (error) {
-      alert('Error al realizar la venta: ' + (error as Error).message)
-    }
+  const setCartQty = (productId: string, qty: number) => {
+    setCart(prev => {
+      if (qty <= 0) {
+        const next = { ...prev }
+        delete next[productId]
+        return next
+      }
+      return { ...prev, [productId]: qty }
+    })
   }
 
-  const quickSell = async (productId: string, qty: number) => {
-    const product = products.find(p => p.id === productId)
-    if (!product || product.stock < qty) return
+  const cartItems = Object.entries(cart)
+    .map(([id, qty]) => ({ product: products.find(p => p.id === id)!, qty }))
+    .filter(item => item.product)
 
-    const total = product.price * qty
+  const cartTotal = cartItems.reduce((sum, { product, qty }) => sum + product.price * qty, 0)
+
+  const handleConfirmPurchase = async () => {
+    if (cartItems.length === 0) return
+    for (const { product, qty } of cartItems) {
+      if (product.stock < qty) {
+        alert(`Stock insuficiente para "${product.name}". Disponible: ${product.stock}`)
+        return
+      }
+    }
+    setConfirming(true)
     try {
-      await addSale({
-        product_id: productId,
-        product_name: product.name,
-        quantity: qty,
-        total,
-        payment_method: paymentMethod
-      })
+      await Promise.all(cartItems.map(({ product, qty }) =>
+        addSale({
+          product_id: product.id,
+          product_name: product.name,
+          quantity: qty,
+          total: product.price * qty,
+          payment_method: paymentMethod
+        })
+      ))
+      setCart({})
     } catch (error) {
-      alert('Error al realizar la venta: ' + (error as Error).message)
+      alert('Error al confirmar la compra: ' + (error as Error).message)
+    } finally {
+      setConfirming(false)
     }
   }
 
@@ -235,54 +235,6 @@ export default function Barra() {
           )}
         </section>
 
-        {/* Payment Method Selection */}
-        <section className="bg-gray-800/50 border border-gray-700 rounded-3xl p-6 sm:p-8">
-          <h2 className="text-xl font-semibold mb-6 text-white">Método de Pago</h2>
-          <div className="grid grid-cols-3 gap-4">
-            <button
-              onClick={() => setPaymentMethod('efectivo')}
-              className={`p-4 rounded-xl border-2 transition-all ${
-                paymentMethod === 'efectivo'
-                  ? 'bg-emerald-600/20 border-emerald-500 text-emerald-400'
-                  : 'bg-gray-700/50 border-gray-600 text-gray-300 hover:border-gray-500'
-              }`}
-            >
-              <div className="flex flex-col items-center gap-2">
-                <span className="text-2xl">💵</span>
-                <span className="font-medium">Efectivo</span>
-              </div>
-            </button>
-            
-            <button
-              onClick={() => setPaymentMethod('tarjeta')}
-              className={`p-4 rounded-xl border-2 transition-all ${
-                paymentMethod === 'tarjeta'
-                  ? 'bg-blue-600/20 border-blue-500 text-blue-400'
-                  : 'bg-gray-700/50 border-gray-600 text-gray-300 hover:border-gray-500'
-              }`}
-            >
-              <div className="flex flex-col items-center gap-2">
-                <span className="text-2xl">💳</span>
-                <span className="font-medium">Tarjeta</span>
-              </div>
-            </button>
-            
-            <button
-              onClick={() => setPaymentMethod('transferencia')}
-              className={`p-4 rounded-xl border-2 transition-all ${
-                paymentMethod === 'transferencia'
-                  ? 'bg-purple-600/20 border-purple-500 text-purple-400'
-                  : 'bg-gray-700/50 border-gray-600 text-gray-300 hover:border-gray-500'
-              }`}
-            >
-              <div className="flex flex-col items-center gap-2">
-                <span className="text-2xl">📱</span>
-                <span className="font-medium">Transferencia</span>
-              </div>
-            </button>
-          </div>
-        </section>
-
         {/* Product Grid */}
         {categories.map(category => (
           <section key={category} className="bg-gray-800/50 border border-gray-700 rounded-3xl p-6 sm:p-8">
@@ -329,53 +281,92 @@ export default function Barra() {
 
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-400">Cantidad:</span>
+                        <span className="text-sm text-gray-400">Cantidad</span>
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => {
-                              const newQuantity = Math.max(1, (selectedProduct === product.id ? quantity : 1) - 1)
-                              setSelectedProduct(product.id)
-                              setQuantity(newQuantity)
-                            }}
+                            onClick={() => setCartQty(product.id, (cart[product.id] || 0) - 1)}
                             className="w-8 h-8 flex items-center justify-center bg-gray-600 hover:bg-gray-500 rounded-lg transition-colors"
                           >
                             <span className="text-lg">-</span>
                           </button>
-                          <span className="text-xl font-bold w-12 text-center text-white">
-                            {selectedProduct === product.id ? quantity : 1}
+                          <span className={`text-xl font-bold w-10 text-center ${cart[product.id] ? 'text-emerald-400' : 'text-gray-500'}`}>
+                            {cart[product.id] || 0}
                           </span>
                           <button
-                            onClick={() => {
-                              const currentQty = selectedProduct === product.id ? quantity : 1
-                              setSelectedProduct(product.id)
-                              setQuantity(currentQty + 1)
-                            }}
+                            onClick={() => setCartQty(product.id, (cart[product.id] || 0) + 1)}
                             className="w-8 h-8 flex items-center justify-center bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors"
                           >
                             <span className="text-lg">+</span>
                           </button>
                         </div>
                       </div>
-
-                      <button
-                        onClick={() => {
-                          const currentQty = selectedProduct === product.id ? quantity : 1
-                          if (currentQty === 1) {
-                            quickSell(product.id, 1)
-                          } else {
-                            handleSell(product.id)
-                          }
-                        }}
-                        className="w-full min-h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition-colors"
-                      >
-                        Añadir
-                      </button>
                     </div>
                   </div>
                 ))}
             </div>
           </section>
         ))}
+
+        {/* Carrito + Método de pago + Confirmar */}
+        <section className="bg-gray-800/50 border border-gray-700 rounded-3xl p-6 sm:p-8 space-y-6">
+
+          {/* Resumen del carrito */}
+          {cartItems.length > 0 && (
+            <div className="space-y-2">
+              <h2 className="text-lg font-semibold text-white">Pedido</h2>
+              {cartItems.map(({ product, qty }) => (
+                <div key={product.id} className="flex items-center justify-between text-sm">
+                  <span className="text-gray-300">{product.name} <span className="text-gray-500">×{qty}</span></span>
+                  <span className="text-emerald-400 font-medium">{formatCurrency(product.price * qty)}</span>
+                </div>
+              ))}
+              <div className="flex items-center justify-between pt-2 border-t border-gray-700">
+                <span className="font-semibold text-white">Total</span>
+                <span className="text-xl font-bold text-emerald-400">{formatCurrency(cartTotal)}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Método de pago */}
+          <div>
+            <h2 className="text-lg font-semibold text-white mb-3">Método de Pago</h2>
+            <div className="grid grid-cols-3 gap-3">
+              {([
+                { key: 'efectivo', label: 'Efectivo', icon: '💵', color: 'emerald' },
+                { key: 'tarjeta', label: 'Tarjeta', icon: '💳', color: 'blue' },
+                { key: 'transferencia', label: 'Transferencia', icon: '📱', color: 'purple' },
+              ] as const).map(({ key, label, icon, color }) => (
+                <button
+                  key={key}
+                  onClick={() => setPaymentMethod(key)}
+                  className={`p-4 rounded-xl border-2 transition-all ${
+                    paymentMethod === key
+                      ? `bg-${color}-600/20 border-${color}-500 text-${color}-400`
+                      : 'bg-gray-700/50 border-gray-600 text-gray-300 hover:border-gray-500'
+                  }`}
+                >
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="text-2xl">{icon}</span>
+                    <span className="text-sm font-medium">{label}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Confirmar compra */}
+          <button
+            onClick={handleConfirmPurchase}
+            disabled={cartItems.length === 0 || confirming}
+            className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed text-white font-bold text-lg rounded-xl transition-colors"
+          >
+            {confirming
+              ? 'Confirmando...'
+              : cartItems.length === 0
+                ? 'Seleccioná items para confirmar'
+                : `Confirmar compra · ${formatCurrency(cartTotal)}`}
+          </button>
+        </section>
 
         {/* Recent Sales */}
         <section className="bg-gray-800/50 border border-gray-700 rounded-3xl p-6 sm:p-8">
