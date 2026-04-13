@@ -10,7 +10,7 @@ export default function Main({ setCurrentPage }: MainProps): React.JSX.Element {
   }
 
   return (
-    <Background>
+    <Background backgroundImage="/fondo.png">
       <main className="w-full max-w-md px-4 flex flex-col items-center justify-center min-h-screen">
         <div className="flex justify-center items-center mb-12 gap-4">
           <img 
