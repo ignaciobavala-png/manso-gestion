@@ -104,6 +104,11 @@ export default function Entradas(): React.JSX.Element {
   // Detecta si el QR es del sistema Manso
   const isMansQr = (raw: string) => raw.startsWith('manso|')
   const getMansEventName = (raw: string) => raw.split('|')[2] || ''
+  // Verifica que el QR pertenezca al evento activo
+  const isMansQrFromActiveEvent = (raw: string) => {
+    const parts = raw.split('|')
+    return parts[1] === activeEvent?.id
+  }
 
   const handleScanQR = async () => {
     if (!videoRef.current) return
@@ -117,6 +122,17 @@ export default function Entradas(): React.JSX.Element {
           const rawData = result.data
           console.log('QR detectado:', rawData)
           stopScanning()
+
+          // Si es QR de Manso pero de otro evento → rechazar
+          if (isMansQr(rawData) && !isMansQrFromActiveEvent(rawData)) {
+            setAlertModal({
+              isOpen: true,
+              message: `Este QR pertenece a otro evento ("${getMansEventName(rawData)}") y no es válido para el evento actual.`,
+              type: 'error'
+            })
+            return
+          }
+
           // Mostrar pantalla de confirmación con nombre editable
           setPendingQr({ rawData, name: extractName(rawData) })
           setPendingType('regular')
