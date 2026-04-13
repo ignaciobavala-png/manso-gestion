@@ -3,6 +3,7 @@ import { useAppStore } from '../store/useAppStore'
 import SinEventoActivo from '../components/SinEventoActivo'
 import AlertModal from '../components/AlertModal'
 import ConfirmModal from '../components/ConfirmModal'
+import Background from '../components/Background'
 
 export default function Barra() {
   const { 
@@ -50,12 +51,13 @@ export default function Barra() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-950 text-gray-200 font-montserrat flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div>
-          <p>Cargando...</p>
+      <Background>
+        <div className="max-w-6xl mx-auto px-4 py-8">
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
+          </div>
         </div>
-      </div>
+      </Background>
     )
   }
 
@@ -176,9 +178,10 @@ export default function Barra() {
   const categories = Array.from(new Set(products.map(p => p.category)))
 
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-200 font-montserrat pb-20">
+    <Background>
+      <div className="min-h-screen bg-gray-950 text-gray-200 font-montserrat pb-20">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-gray-800/95 backdrop-blur-sm border-b border-gray-700">
+      <header className="sticky top-0 z-50 bg-gray-800 bg-opacity-95 backdrop-blur-sm border-b border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -207,21 +210,21 @@ export default function Barra() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
         {/* Quick Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-4">
+          <div className="bg-gray-800 bg-opacity-50 border border-gray-700 rounded-2xl p-4">
             <p className="text-sm text-gray-400">Productos</p>
             <p className="text-2xl font-bold mt-1 text-white">{products.length}</p>
           </div>
-          <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-4">
+          <div className="bg-gray-800 bg-opacity-50 border border-gray-700 rounded-2xl p-4">
             <p className="text-sm text-gray-400">Stock Total</p>
             <p className="text-2xl font-bold mt-1 text-white">
               {products.reduce((sum, product) => sum + product.stock, 0)}
             </p>
           </div>
-          <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-4">
+          <div className="bg-gray-800 bg-opacity-50 border border-gray-700 rounded-2xl p-4">
             <p className="text-sm text-gray-400">Ventas</p>
             <p className="text-2xl font-bold mt-1 text-white">{sales.length}</p>
           </div>
-          <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-4">
+          <div className="bg-gray-800 bg-opacity-50 border border-gray-700 rounded-2xl p-4">
             <p className="text-sm text-gray-400">Ingresos</p>
             <p className="text-2xl font-bold mt-1 text-emerald-400">{formatCurrency(sales.reduce((sum, s) => sum + s.total, 0))}</p>
           </div>
@@ -305,7 +308,7 @@ export default function Barra() {
                 .map((product) => (
                   <div
                     key={product.id}
-                    className="bg-gray-700/50 border border-gray-600 rounded-2xl p-4"
+                    className="bg-gray-700 bg-opacity-50 border border-gray-600 rounded-2xl p-4"
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div>
@@ -332,7 +335,7 @@ export default function Barra() {
                               productName: product.name
                             })
                           }}
-                          className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-colors"
+                          className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-red-400 hover:bg-red-900 hover:bg-opacity-20 rounded-lg transition-colors"
                           aria-label={`Eliminar ${product.name}`}
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -438,11 +441,11 @@ export default function Barra() {
 
           {/* Confirmar compra */}
           {purchaseSuccess ? (
-            <div className="w-full py-4 bg-emerald-700/40 border border-emerald-600 text-emerald-300 font-bold text-lg rounded-xl text-center">
+            <div className="w-full py-4 bg-emerald-700 bg-opacity-40 border border-emerald-600 text-emerald-300 font-bold text-lg rounded-xl text-center">
               Venta registrada
             </div>
           ) : purchaseError ? (
-            <div className="w-full py-4 bg-red-900/40 border border-red-700 text-red-300 font-medium text-sm rounded-xl text-center px-4">
+            <div className="w-full py-4 bg-red-900 bg-opacity-40 border border-red-700 text-red-300 font-medium text-sm rounded-xl text-center px-4">
               {purchaseError}
             </div>
           ) : (
@@ -470,7 +473,7 @@ export default function Barra() {
               sales.slice(0, 10).map((sale) => (
                 <div key={sale.id} className="flex items-center justify-between p-4 bg-gray-700/50 rounded-2xl border border-gray-600">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 flex items-center justify-center bg-emerald-900/30 text-emerald-400 rounded-full">
+                    <div className="w-10 h-10 flex items-center justify-center bg-emerald-900 bg-opacity-30 text-emerald-400 rounded-full">
                       <span className="text-lg">🍺</span>
                     </div>
                     <div>
@@ -501,5 +504,6 @@ export default function Barra() {
         type="danger"
       />
     </div>
+  </Background>
   )
 }

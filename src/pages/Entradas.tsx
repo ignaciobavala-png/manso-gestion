@@ -3,8 +3,9 @@ import QrScanner from 'qr-scanner'
 import { useAppStore } from '../store/useAppStore'
 import SinEventoActivo from '../components/SinEventoActivo'
 import AlertModal from '../components/AlertModal'
+import Background from '../components/Background'
 
-export default function Entradas() {
+export default function Entradas(): React.JSX.Element {
   const { 
     guests, 
     addGuest, 
@@ -52,12 +53,13 @@ export default function Entradas() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-950 text-gray-200 font-montserrat flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div>
-          <p>Cargando...</p>
+      <Background>
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
+          </div>
         </div>
-      </div>
+      </Background>
     )
   }
 
@@ -187,7 +189,8 @@ export default function Entradas() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-200 font-montserrat pb-20">
+    <Background>
+      <div className="min-h-screen bg-gray-950 text-gray-200 font-montserrat pb-20">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-gray-800/95 backdrop-blur-sm border-b border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -456,5 +459,6 @@ export default function Entradas() {
         type={alertModal.type}
       />
     </div>
+  </Background>
   )
 }

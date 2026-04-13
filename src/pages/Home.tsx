@@ -3,6 +3,7 @@ import { useAppStore } from '../store/useAppStore'
 import Ingresos from '../components/Ingresos'
 import EventCreator from '../components/EventCreator'
 import AlertModal from '../components/AlertModal'
+import Background from '../components/Background'
 
 export default function Home() {
   const { 
@@ -43,12 +44,13 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-950 text-gray-200 font-montserrat flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div>
-          <p>Cargando...</p>
+      <Background>
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
+          </div>
         </div>
-      </div>
+      </Background>
     )
   }
 
@@ -92,9 +94,10 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-200 font-montserrat pb-20">
+    <Background>
+      <div className="min-h-screen bg-gray-950 text-gray-200 font-montserrat pb-20">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-gray-800/95 backdrop-blur-sm border-b border-gray-700">
+      <header className="sticky top-0 z-50 bg-gray-800 bg-opacity-95 backdrop-blur-sm border-b border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -117,7 +120,7 @@ export default function Home() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
         {/* Balance Card */}
-        <section className="bg-gray-800/50 border border-gray-700 rounded-3xl p-6 sm:p-8">
+        <section className="bg-gray-800 bg-opacity-50 border border-gray-700 rounded-3xl p-6 sm:p-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h2 className="text-lg sm:text-xl font-medium text-gray-400">Balance Total</h2>
@@ -135,7 +138,7 @@ export default function Home() {
         <section className="bg-gray-800/50 border border-gray-700 rounded-3xl overflow-hidden">
           <button
             onClick={() => setShowEventCreator(!showEventCreator)}
-            className="w-full p-6 sm:p-8 flex items-center justify-between text-left hover:bg-gray-700/30 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
+            className="w-full p-6 sm:p-8 flex items-center justify-between text-left hover:bg-gray-700 hover:bg-opacity-30 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
           >
             <h2 className="text-xl font-semibold text-white">Crear Evento</h2>
             <svg
@@ -159,7 +162,7 @@ export default function Home() {
         <section className="bg-gray-800/50 border border-gray-700 rounded-3xl overflow-hidden">
           <button
             onClick={() => setIsStockExpanded(!isStockExpanded)}
-            className="w-full p-6 sm:p-8 flex items-center justify-between text-left hover:bg-gray-700/30 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
+            className="w-full p-6 sm:p-8 flex items-center justify-between text-left hover:bg-gray-700 hover:bg-opacity-30 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
           >
             <h2 className="text-xl font-semibold text-white">Stock Inicial</h2>
             <svg
@@ -178,7 +181,7 @@ export default function Home() {
                 {products.map((product) => (
                   <div
                     key={product.id}
-                    className="flex items-center justify-between p-4 bg-gray-700/50 rounded-2xl border border-gray-600"
+                    className="flex items-center justify-between p-4 bg-gray-700 bg-opacity-50 rounded-2xl border border-gray-600"
                   >
                     <div>
                       <h3 className="font-medium text-white">{product.name}</h3>
@@ -307,12 +310,13 @@ export default function Home() {
          </div>
        </main>
 
-       <AlertModal
-         isOpen={alertModal.isOpen}
-         onClose={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
-         message={alertModal.message}
-         type={alertModal.type}
-       />
-     </div>
-   )
- }
+        <AlertModal
+          isOpen={alertModal.isOpen}
+          onClose={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
+          message={alertModal.message}
+          type={alertModal.type}
+        />
+      </div>
+    </Background>
+  )
+}
