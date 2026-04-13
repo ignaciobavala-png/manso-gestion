@@ -7,12 +7,16 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "keep-alive": "node scripts/keep-alive-cron.js",
+    "keep-alive:continuous": "node scripts/keep-alive-cron.js --continuous",
+    "keep-alive:interval": "node scripts/keep-alive-cron.js --continuous --interval=5"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.103.0",
     "@tailwindcss/vite": "^4.2.2",
     "@types/qrcode": "^1.5.6",
+    "dotenv": "^16.6.1",
     "qr-scanner": "^1.4.2",
     "qrcode": "^1.5.4",
     "react": "^19.2.4",

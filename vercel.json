@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "pnpm run build",
+  "outputDirectory": "dist",
+  "devCommand": "pnpm run dev",
+  "installCommand": "pnpm install",
+  "framework": "vite",
+  "crons": [
+    {
+      "path": "/api/keep-alive",
+      "schedule": "*/10 * * * *"
+    }
+  ]
+}

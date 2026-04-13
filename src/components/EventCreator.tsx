@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import QRCode from 'qrcode'
 import { useSupabaseStore } from '../store-supabase'
+import AlertModal from '../components/AlertModal'
 
 export default function EventCreator() {
   const { addEvent, setActiveEventStatus } = useSupabaseStore()
@@ -9,10 +10,19 @@ export default function EventCreator() {
   const [qrCodeUrl, setQrCodeUrl] = useState('')
   const [createdEventName, setCreatedEventName] = useState('')
   const [saving, setSaving] = useState(false)
+  const [alertModal, setAlertModal] = useState({
+    isOpen: false,
+    message: '',
+    type: 'info' as 'info' | 'error' | 'warning' | 'success'
+  })
 
   const handleCreate = async () => {
     if (!form.name.trim()) {
-      alert('El nombre del evento es obligatorio')
+      setAlertModal({
+        isOpen: true,
+        message: 'El nombre del evento es obligatorio',
+        type: 'warning'
+      })
       return
     }
 
@@ -37,7 +47,11 @@ export default function EventCreator() {
       setCreatedEventName(form.name.trim())
       setForm({ name: '', description: '' })
     } catch (error) {
-      alert('Error al iniciar el evento: ' + (error as Error).message)
+      setAlertModal({
+        isOpen: true,
+        message: 'Error al iniciar el evento: ' + (error as Error).message,
+        type: 'error'
+      })
     } finally {
       setSaving(false)
     }
@@ -105,6 +119,13 @@ export default function EventCreator() {
       >
         {saving ? 'Iniciando...' : 'Iniciar evento'}
       </button>
+
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
     </div>
   )
 }

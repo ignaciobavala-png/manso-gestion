@@ -36,6 +36,7 @@ Sistema de gestión para eventos: barra, entradas y control financiero en tiempo
 - Botones +/− de 44px para uso táctil cómodo
 - Agregar y eliminar productos desde la misma pantalla
 - Ventas recientes al pie
+- **Modales personalizados** para alertas y confirmaciones (reemplazo de `alert()`/`confirm()`)
 
 ### Entradas (`Entradas.tsx`)
 - Scanner QR por cámara con limpieza correcta al desmontar
@@ -43,15 +44,18 @@ Sistema de gestión para eventos: barra, entradas y control financiero en tiempo
 - Soporte multi-formato: QR de Manso, Luma (lu.ma), URL con query params, JSON, texto libre
 - Entrada manual de invitados sin QR
 - Cámara adaptada al ancho del teléfono (`w-full aspect-square`)
+- **Modales personalizados** para errores y validaciones
 
 ---
 
 ## Pendiente — próxima sesión
 
 ### Alta prioridad
-- **Reemplazar `alert()` / `confirm()` nativos restantes**
+- **✅ Reemplazar `alert()` / `confirm()` nativos restantes** - COMPLETADO
   - Barra: validación de "Agregar Item" y confirmación de "Eliminar producto"
   - Entradas: errores de invitado manual y error de registro de entrada
+  - EventCreator: validación de nombre y errores
+  - Home: errores al cerrar evento y actualizar stock
 - **Store global compartido** (Zustand o Context)
   - Hoy cada tab hace fetch completo al montar (6 queries en paralelo)
   - En venue con conectividad pobre genera lag en cada cambio de pestaña
@@ -70,6 +74,22 @@ Sistema de gestión para eventos: barra, entradas y control financiero en tiempo
 - Eliminar `test-supabase.js` del root (archivo de prueba temporal)
 - Eliminar `console.log` de debug que quedaron en el store y componentes
 - Documentar si `active_event` en Supabase es una vista o una tabla real
+
+## 🆕 Nuevas funcionalidades implementadas
+
+### Componentes de UI
+- **`AlertModal.tsx`** - Modal personalizado para mensajes de alerta/info/error/success
+- **`ConfirmModal.tsx`** - Modal personalizado para confirmaciones con opciones de peligro/advertencia/info
+
+### Sistema Keep-Alive para Supabase
+- **Scripts Node.js** para desarrollo local (`scripts/keep-alive-cron.js`)
+- **Edge Function** para Vercel (`src/api/keep-alive.ts`)
+- **Configuración Vercel** (`vercel.json`) con cronjob cada 10 minutos
+- **Documentación completa** en `scripts/README.md` y `scripts/README-VERCEL.md`
+
+### Configuración
+- **`.gitignore`** para excluir archivos sensibles
+- **`package.json`** con nuevos scripts npm
 
 ---
 
@@ -98,3 +118,21 @@ Requiere `.env` en la raíz:
 VITE_SUPABASE_URL=...
 VITE_SUPABASE_ANON_KEY=...
 ```
+
+## 🕐 Mantener activa la base de datos
+
+Para evitar que Supabase entre en modo de suspensión, ejecuta el script keep-alive:
+
+```bash
+# Ping único (testing)
+pnpm run keep-alive
+
+# Ejecución continua (testing)
+pnpm run keep-alive:continuous
+
+# Configurar cronjob automático (cada 10 minutos)
+chmod +x scripts/setup-cron.sh
+./scripts/setup-cron.sh
+```
+
+Ver [scripts/README.md](scripts/README.md) para más detalles.

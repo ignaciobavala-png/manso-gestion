@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useSupabaseStore } from '../store-supabase'
 import Ingresos from '../components/Ingresos'
 import EventCreator from '../components/EventCreator'
+import AlertModal from '../components/AlertModal'
 
 export default function Home() {
   const { products, balance, updateProduct, activeEvent, closeEvent, sales, ticketSales } = useSupabaseStore()
@@ -11,6 +12,11 @@ export default function Home() {
   const [stockValues, setStockValues] = useState<Record<string, number>>({})
   const [showCloseConfirm, setShowCloseConfirm] = useState(false)
   const [closing, setClosing] = useState(false)
+  const [alertModal, setAlertModal] = useState({
+    isOpen: false,
+    message: '',
+    type: 'info' as 'info' | 'error' | 'warning' | 'success'
+  })
 
   useEffect(() => {
     console.log('🏠 Componente Home montado')
@@ -41,7 +47,11 @@ export default function Home() {
       await closeEvent(activeEvent.id)
       setShowCloseConfirm(false)
     } catch (error) {
-      alert('Error al cerrar el evento: ' + (error as Error).message)
+      setAlertModal({
+        isOpen: true,
+        message: 'Error al cerrar el evento: ' + (error as Error).message,
+        type: 'error'
+      })
     } finally {
       setClosing(false)
     }
@@ -52,7 +62,11 @@ export default function Home() {
     try {
       await updateProduct(productId, { stock: value })
     } catch (error) {
-      alert('Error al actualizar stock: ' + (error as Error).message)
+      setAlertModal({
+        isOpen: true,
+        message: 'Error al actualizar stock: ' + (error as Error).message,
+        type: 'error'
+      })
     }
   }
 
@@ -278,8 +292,15 @@ export default function Home() {
               {formatCurrency(products.reduce((sum, product) => sum + (stockValues[product.id] * product.price), 0))}
             </p>
           </div>
-        </div>
-      </main>
-    </div>
-  )
-}
+         </div>
+       </main>
+
+       <AlertModal
+         isOpen={alertModal.isOpen}
+         onClose={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
+         message={alertModal.message}
+         type={alertModal.type}
+       />
+     </div>
+   )
+ }

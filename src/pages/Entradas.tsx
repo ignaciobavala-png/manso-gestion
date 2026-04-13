@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import QrScanner from 'qr-scanner'
 import { useSupabaseStore } from '../store-supabase'
 import SinEventoActivo from '../components/SinEventoActivo'
+import AlertModal from '../components/AlertModal'
 
 export default function Entradas() {
   const { guests, addGuest, addTicketSale, getTicketPrices, activeEvent } = useSupabaseStore()
@@ -15,6 +16,11 @@ export default function Entradas() {
   const [showSuccess, setShowSuccess] = useState(false)
   const [showInvitadoInput, setShowInvitadoInput] = useState(false)
   const [invitadoName, setInvitadoName] = useState('')
+  const [alertModal, setAlertModal] = useState({
+    isOpen: false,
+    message: '',
+    type: 'info' as 'info' | 'error' | 'warning' | 'success'
+  })
   const videoRef = useRef<HTMLVideoElement>(null)
   const qrScannerRef = useRef<QrScanner | null>(null)
 
@@ -61,14 +67,18 @@ export default function Entradas() {
       // Query params genéricos con nombre
       const name = url.searchParams.get('name') || url.searchParams.get('nombre') || url.searchParams.get('attendee')
       if (name) return name.trim()
-    } catch {}
+    } catch {
+      // Ignorar error de parsing de URL
+    }
     // JSON con campo name/nombre
     try {
       const json = JSON.parse(raw)
       if (json.name) return String(json.name).trim()
       if (json.nombre) return String(json.nombre).trim()
       if (json.attendee_name) return String(json.attendee_name).trim()
-    } catch {}
+    } catch {
+      // Ignorar error de parsing de JSON
+    }
     // Fallback: mostrar el raw para que el operador lo edite
     return raw.length <= 40 ? raw : ''
   }
@@ -127,7 +137,11 @@ export default function Entradas() {
       setShowSuccess(true)
       setTimeout(() => setShowSuccess(false), 2000)
     } catch (error) {
-      alert('Error al registrar entrada: ' + (error as Error).message)
+      setAlertModal({
+        isOpen: true,
+        message: 'Error al registrar entrada: ' + (error as Error).message,
+        type: 'error'
+      })
     } finally {
       setConfirming(false)
     }
@@ -135,7 +149,11 @@ export default function Entradas() {
 
   const handleAddInvitado = async () => {
     if (!invitadoName.trim()) {
-      alert('Por favor ingresa el nombre del invitado')
+      setAlertModal({
+        isOpen: true,
+        message: 'Por favor ingresa el nombre del invitado',
+        type: 'warning'
+      })
       return
     }
     
@@ -150,7 +168,11 @@ export default function Entradas() {
       setInvitadoName('')
       setShowInvitadoInput(false)
     } catch (error) {
-      alert('Error al agregar invitado: ' + (error as Error).message)
+      setAlertModal({
+        isOpen: true,
+        message: 'Error al agregar invitado: ' + (error as Error).message,
+        type: 'error'
+      })
     }
   }
 
@@ -416,6 +438,13 @@ export default function Entradas() {
           </div>
         </div>
       </main>
+
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
     </div>
   )
 }

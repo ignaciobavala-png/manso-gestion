@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useSupabaseStore } from '../store-supabase'
 import SinEventoActivo from '../components/SinEventoActivo'
+import AlertModal from '../components/AlertModal'
+import ConfirmModal from '../components/ConfirmModal'
 
 export default function Barra() {
   const { products, balance, addSale, flushBalance, addProduct, deleteProduct, sales, activeEvent } = useSupabaseStore()
@@ -15,6 +17,17 @@ export default function Barra() {
     name: '',
     price: '',
     category: 'bebida' as 'bebida' | 'comida' | 'otro'
+  })
+  const [alertModal, setAlertModal] = useState({
+    isOpen: false,
+    message: '',
+    type: 'info' as 'info' | 'error' | 'warning' | 'success'
+  })
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    message: '',
+    productId: '',
+    productName: ''
   })
 
   useEffect(() => {
@@ -96,15 +109,35 @@ export default function Barra() {
     }
   }
 
+  const handleConfirmDelete = async (productId: string) => {
+    try {
+      await deleteProduct(productId)
+    } catch (error) {
+      setAlertModal({
+        isOpen: true,
+        message: 'Error al eliminar producto: ' + (error as Error).message,
+        type: 'error'
+      })
+    }
+  }
+
   const handleAddItem = async () => {
     if (!newItem.name || !newItem.price) {
-      alert('Por favor completa todos los campos')
+      setAlertModal({
+        isOpen: true,
+        message: 'Por favor completa todos los campos',
+        type: 'warning'
+      })
       return
     }
 
     const price = parseFloat(newItem.price)
     if (isNaN(price) || price <= 0) {
-      alert('Por favor ingresa un precio válido')
+      setAlertModal({
+        isOpen: true,
+        message: 'Por favor ingresa un precio válido',
+        type: 'warning'
+      })
       return
     }
 
@@ -119,7 +152,11 @@ export default function Barra() {
       setNewItem({ name: '', price: '', category: 'bebida' })
       setShowAddItem(false)
     } catch (error) {
-      alert('Error al agregar producto: ' + (error as Error).message)
+      setAlertModal({
+        isOpen: true,
+        message: 'Error al agregar producto: ' + (error as Error).message,
+        type: 'error'
+      })
     }
   }
 
@@ -273,11 +310,14 @@ export default function Barra() {
                             {product.stock}
                           </p>
                         </div>
-                        <button
+                         <button
                           onClick={() => {
-                            if (confirm(`¿Eliminar "${product.name}"?`)) {
-                              deleteProduct(product.id).catch(e => alert('Error: ' + (e as Error).message))
-                            }
+                            setConfirmModal({
+                              isOpen: true,
+                              message: `¿Eliminar "${product.name}"?`,
+                              productId: product.id,
+                              productName: product.name
+                            })
                           }}
                           className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-colors"
                           aria-label={`Eliminar ${product.name}`}
@@ -432,6 +472,21 @@ export default function Barra() {
           </div>
         </section>
       </main>
+
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={() => handleConfirmDelete(confirmModal.productId)}
+        message={confirmModal.message}
+        type="danger"
+      />
     </div>
   )
 }
