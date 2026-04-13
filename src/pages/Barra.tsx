@@ -89,6 +89,9 @@ export default function Barra() {
 
   const cartTotal = cartItems.reduce((sum, { product, qty }) => sum + product.price * qty, 0)
 
+  // Solo ventas del evento activo
+  const activeSales = activeEvent ? sales.filter(s => s.event_id === activeEvent.id) : []
+
   const showError = (msg: string) => {
     setPurchaseError(msg)
     setTimeout(() => setPurchaseError(null), 3000)
@@ -222,11 +225,11 @@ export default function Barra() {
           </div>
           <div className="bg-gray-800 bg-opacity-50 border border-gray-700 rounded-2xl p-4">
             <p className="text-sm text-gray-400">Ventas</p>
-            <p className="text-2xl font-bold mt-1 text-white">{sales.length}</p>
+            <p className="text-2xl font-bold mt-1 text-white">{activeSales.length}</p>
           </div>
           <div className="bg-gray-800 bg-opacity-50 border border-gray-700 rounded-2xl p-4">
             <p className="text-sm text-gray-400">Ingresos</p>
-            <p className="text-2xl font-bold mt-1 text-emerald-400">{formatCurrency(sales.reduce((sum, s) => sum + s.total, 0))}</p>
+            <p className="text-2xl font-bold mt-1 text-emerald-400">{formatCurrency(activeSales.reduce((sum, s) => sum + s.total, 0))}</p>
           </div>
         </div>
 
@@ -467,10 +470,10 @@ export default function Barra() {
         <section className="bg-gray-800/50 border border-gray-700 rounded-3xl p-6 sm:p-8">
           <h2 className="text-xl font-semibold mb-6 text-white">Ventas Recientes</h2>
           <div className="space-y-3">
-            {sales.length === 0 ? (
+            {activeSales.length === 0 ? (
               <p className="text-center text-gray-500 py-4">Sin ventas registradas</p>
             ) : (
-              sales.slice(0, 10).map((sale) => (
+              activeSales.slice(0, 10).map((sale) => (
                 <div key={sale.id} className="flex items-center justify-between p-4 bg-gray-700/50 rounded-2xl border border-gray-600">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 flex items-center justify-center bg-emerald-900 bg-opacity-30 text-emerald-400 rounded-full">

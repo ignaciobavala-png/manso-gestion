@@ -48,8 +48,8 @@ export default function Main({ setCurrentPage }: MainProps): React.JSX.Element {
           </button>
         </div>
         
-        <p className="text-gray-600 text-sm text-center mt-8 font-light">
-          Seleccionar módulo
+        <p className="text-gray-300 text-sm text-center mt-8 font-light tracking-wide">
+          Que empiece el evento
         </p>
       </main>
     </Background>
