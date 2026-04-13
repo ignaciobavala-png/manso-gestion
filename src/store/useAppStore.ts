@@ -1,0 +1,371 @@
+import { create } from 'zustand'
+import { supabase } from '../lib/supabase'
+import type { Database } from '../lib/supabase'
+
+type Product = Database['public']['Tables']['products']['Row']
+type Guest = Database['public']['Tables']['guests']['Row']
+type Sale = Database['public']['Tables']['sales']['Row']
+type TicketSale = Database['public']['Tables']['ticket_sales']['Row']
+type Event = Database['public']['Tables']['events']['Row']
+
+interface AppState {
+  // Datos
+  products: Product[]
+  guests: Guest[]
+  sales: Sale[]
+  ticketSales: TicketSale[]
+  events: Event[]
+  activeEvent: Event | null
+  balance: number
+  
+  // Estado
+  isLoading: boolean
+  error: string | null
+  lastFetch: Date | null
+  isInitialized: boolean
+  
+  // Acciones
+  fetchData: () => Promise<void>
+  refreshData: () => Promise<void>
+  calculateBalance: (eventId?: string | null) => Promise<void>
+  
+  // Acciones de productos
+  addProduct: (product: Omit<Product, 'id' | 'created_at' | 'updated_at'>) => Promise<void>
+  updateProduct: (id: string, updates: Partial<Product>) => Promise<void>
+  deleteProduct: (id: string) => Promise<void>
+  
+  // Acciones de ventas
+  addSale: (sale: Omit<Sale, 'id' | 'created_at'>) => Promise<void>
+  flushBalance: () => void
+  
+  // Acciones de invitados
+  addGuest: (guest: Omit<Guest, 'id' | 'created_at' | 'updated_at'>) => Promise<void>
+  
+  // Acciones de tickets
+  addTicketSale: (ticket: Omit<TicketSale, 'id' | 'created_at'>) => Promise<void>
+  
+  // Acciones de eventos
+  addEvent: (event: Omit<Event, 'id' | 'created_at' | 'updated_at' | 'closed_at'>) => Promise<Event>
+  setActiveEventStatus: (eventId: string, isActive: boolean) => Promise<void>
+  closeEvent: (eventId: string) => Promise<void>
+  
+  // Utilidades
+  getTicketPrices: () => { regular: number; invitado: number }
+}
+
+export const useAppStore = create<AppState>((set, get) => ({
+  // Estado inicial
+  products: [],
+  guests: [],
+  sales: [],
+  ticketSales: [],
+  events: [],
+  activeEvent: null,
+  balance: 0,
+  isLoading: false,
+  error: null,
+  lastFetch: null,
+  isInitialized: false,
+  
+  // Fetch de datos
+  fetchData: async () => {
+    const state = get()
+    
+    // Si ya estamos cargando, no hacer nada
+    if (state.isLoading) return
+    
+    // Si los datos son recientes (< 30 segundos), no refrescar
+    const now = new Date()
+    if (state.lastFetch && (now.getTime() - state.lastFetch.getTime()) < 30000) {
+      return
+    }
+    
+    set({ isLoading: true, error: null })
+    
+    try {
+      console.log('🔄 Fetching data from Supabase...')
+      
+      const [
+        productsResult,
+        guestsResult,
+        salesResult,
+        ticketSalesResult,
+        eventsResult,
+        activeEventResult
+      ] = await Promise.all([
+        supabase.from('products').select('*').order('name'),
+        supabase.from('guests').select('*').order('created_at', { ascending: false }),
+        supabase.from('sales').select('*').order('created_at', { ascending: false }),
+        supabase.from('ticket_sales').select('*').order('created_at', { ascending: false }),
+        supabase.from('events').select('*').order('created_at', { ascending: false }),
+        supabase.from('active_event').select('*').single()
+      ])
+      
+      // Verificar errores
+      const errors = [
+        productsResult.error,
+        guestsResult.error,
+        salesResult.error,
+        ticketSalesResult.error,
+        eventsResult.error
+      ].filter(Boolean)
+      
+      if (errors.length > 0) {
+        throw errors[0]
+      }
+      
+      const newState = {
+        products: productsResult.data || [],
+        guests: guestsResult.data || [],
+        sales: salesResult.data || [],
+        ticketSales: ticketSalesResult.data || [],
+        events: eventsResult.data || [],
+        activeEvent: activeEventResult.data || null,
+        lastFetch: new Date(),
+        isInitialized: true
+      }
+      
+      set(newState)
+      
+      // Calcular balance para el evento activo
+      if (activeEventResult.data?.id) {
+        await get().calculateBalance(activeEventResult.data.id)
+      }
+      
+      console.log('✅ Data loaded successfully')
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Error al cargar datos'
+      console.error('❌ Error fetching data:', errorMessage)
+      set({ error: errorMessage })
+    } finally {
+      set({ isLoading: false })
+    }
+  },
+  
+  refreshData: async () => {
+    set({ lastFetch: null })
+    await get().fetchData()
+  },
+  
+  calculateBalance: async (eventId?: string | null) => {
+    if (!eventId) {
+      set({ balance: 0 })
+      return
+    }
+    
+    try {
+      const { data, error } = await supabase.rpc('get_current_balance', { p_event_id: eventId })
+      if (error) throw error
+      set({ balance: data || 0 })
+    } catch (error) {
+      console.error('Error calculating balance:', error)
+    }
+  },
+  
+  // Acciones de productos
+  addProduct: async (productData) => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .insert([{
+          ...productData,
+          stock: productData.stock || 0
+        }])
+        .select()
+        .single()
+      
+      if (error) throw error
+      
+      set(state => ({
+        products: [...state.products, data].sort((a, b) => a.name.localeCompare(b.name))
+      }))
+    } catch (error) {
+      console.error('Error adding product:', error)
+      throw error
+    }
+  },
+  
+  updateProduct: async (id, updates) => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single()
+      
+      if (error) throw error
+      
+      set(state => ({
+        products: state.products.map(p => p.id === id ? data : p)
+      }))
+    } catch (error) {
+      console.error('Error updating product:', error)
+      throw error
+    }
+  },
+  
+  deleteProduct: async (id) => {
+    try {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', id)
+      
+      if (error) throw error
+      
+      set(state => ({
+        products: state.products.filter(p => p.id !== id)
+      }))
+    } catch (error) {
+      console.error('Error deleting product:', error)
+      throw error
+    }
+  },
+  
+  // Acciones de ventas
+  addSale: async (saleData) => {
+    try {
+      const { data, error } = await supabase
+        .from('sales')
+        .insert([{
+          ...saleData,
+          event_id: get().activeEvent?.id
+        }])
+        .select()
+        .single()
+      
+      if (error) throw error
+      
+      set(state => ({
+        sales: [data, ...state.sales],
+        balance: state.balance + data.total
+      }))
+    } catch (error) {
+      console.error('Error adding sale:', error)
+      throw error
+    }
+  },
+  
+  flushBalance: () => {
+    set({ balance: 0 })
+  },
+  
+  // Acciones de invitados
+  addGuest: async (guestData) => {
+    try {
+      const { data, error } = await supabase
+        .from('guests')
+        .insert([{
+          ...guestData,
+          event_id: get().activeEvent?.id
+        }])
+        .select()
+        .single()
+      
+      if (error) throw error
+      
+      set(state => ({
+        guests: [data, ...state.guests]
+      }))
+    } catch (error) {
+      console.error('Error adding guest:', error)
+      throw error
+    }
+  },
+  
+  // Acciones de tickets
+  addTicketSale: async (ticketData) => {
+    try {
+      const { data, error } = await supabase
+        .from('ticket_sales')
+        .insert([{
+          ...ticketData,
+          event_id: get().activeEvent?.id
+        }])
+        .select()
+        .single()
+      
+      if (error) throw error
+      
+      set(state => ({
+        ticketSales: [data, ...state.ticketSales],
+        balance: state.balance + data.price
+      }))
+    } catch (error) {
+      console.error('Error adding ticket sale:', error)
+      throw error
+    }
+  },
+  
+  // Acciones de eventos
+  addEvent: async (eventData) => {
+    try {
+      const { data, error } = await supabase
+        .from('events')
+        .insert([{
+          ...eventData,
+          is_active: true
+        }])
+        .select()
+        .single()
+      
+      if (error) throw error
+      
+      set(state => ({
+        events: [...state.events, data]
+      }))
+      
+      return data
+    } catch (error) {
+      console.error('Error adding event:', error)
+      throw error
+    }
+  },
+  
+  setActiveEventStatus: async (eventId, isActive) => {
+    try {
+      const { error } = await supabase
+        .from('events')
+        .update({ is_active: isActive })
+        .eq('id', eventId)
+      
+      if (error) throw error
+      
+      // Refrescar datos para actualizar activeEvent
+      await get().refreshData()
+    } catch (error) {
+      console.error('Error setting active event status:', error)
+      throw error
+    }
+  },
+  
+  closeEvent: async (eventId) => {
+    try {
+      const { error } = await supabase
+        .from('events')
+        .update({ 
+          is_active: false,
+          closed_at: new Date().toISOString()
+        })
+        .eq('id', eventId)
+      
+      if (error) throw error
+      
+      // Refrescar datos
+      await get().refreshData()
+    } catch (error) {
+      console.error('Error closing event:', error)
+      throw error
+    }
+  },
+  
+  // Utilidades
+  getTicketPrices: () => {
+    const { activeEvent } = get()
+    return {
+      regular: activeEvent?.regular_ticket_price || 0,
+      invitado: activeEvent?.invited_ticket_price || 0
+    }
+  }
+}))

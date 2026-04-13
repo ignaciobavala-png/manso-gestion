@@ -49,19 +49,20 @@ export async function GET() {
         headers: { 'Content-Type': 'application/json' }
       }
     )
-  } catch (error: any) {
-    console.error(`❌ [${timestamp}] Error en ping:`, error.message)
-
-    return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error.message,
-        timestamp
-      }),
-      { 
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      }
-    )
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      console.error(`❌ [${timestamp}] Error en ping:`, errorMessage)
+      
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: errorMessage,
+          timestamp
+        }),
+        { 
+          status: 500,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      )
   }
 }

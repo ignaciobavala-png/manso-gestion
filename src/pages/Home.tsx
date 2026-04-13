@@ -1,11 +1,20 @@
 import { useState, useEffect } from 'react'
-import { useSupabaseStore } from '../store-supabase'
+import { useAppStore } from '../store/useAppStore'
 import Ingresos from '../components/Ingresos'
 import EventCreator from '../components/EventCreator'
 import AlertModal from '../components/AlertModal'
 
 export default function Home() {
-  const { products, balance, updateProduct, activeEvent, closeEvent, sales, ticketSales } = useSupabaseStore()
+  const { 
+    products, 
+    balance, 
+    updateProduct, 
+    activeEvent, 
+    closeEvent, 
+    sales, 
+    ticketSales,
+    isLoading 
+  } = useAppStore()
   const [loading, setLoading] = useState(true)
   const [isStockExpanded, setIsStockExpanded] = useState(false)
   const [showEventCreator, setShowEventCreator] = useState(false)
@@ -20,8 +29,11 @@ export default function Home() {
 
   useEffect(() => {
     console.log('🏠 Componente Home montado')
-    setTimeout(() => setLoading(false), 1000)
-  }, [])
+    // Usar el loading real del store en lugar de timer hardcodeado
+    if (!isLoading) {
+      setLoading(false)
+    }
+  }, [isLoading])
 
   useEffect(() => {
     const initial: Record<string, number> = {}

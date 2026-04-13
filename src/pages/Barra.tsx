@@ -1,11 +1,21 @@
 import { useState, useEffect } from 'react'
-import { useSupabaseStore } from '../store-supabase'
+import { useAppStore } from '../store/useAppStore'
 import SinEventoActivo from '../components/SinEventoActivo'
 import AlertModal from '../components/AlertModal'
 import ConfirmModal from '../components/ConfirmModal'
 
 export default function Barra() {
-  const { products, balance, addSale, flushBalance, addProduct, deleteProduct, sales, activeEvent } = useSupabaseStore()
+  const { 
+    products, 
+    balance, 
+    addSale, 
+    flushBalance, 
+    addProduct, 
+    deleteProduct, 
+    sales, 
+    activeEvent,
+    isLoading 
+  } = useAppStore()
   const [loading, setLoading] = useState(true)
   const [cart, setCart] = useState<Record<string, number>>({})
   const [paymentMethod, setPaymentMethod] = useState<'efectivo' | 'tarjeta' | 'transferencia'>('efectivo')
@@ -32,8 +42,11 @@ export default function Barra() {
 
   useEffect(() => {
     console.log('🍺 Componente Barra montado')
-    setTimeout(() => setLoading(false), 1000)
-  }, [])
+    // Usar el loading real del store en lugar de timer hardcodeado
+    if (!isLoading) {
+      setLoading(false)
+    }
+  }, [isLoading])
 
   if (loading) {
     return (

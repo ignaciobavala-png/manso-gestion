@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import QRCode from 'qrcode'
-import { useSupabaseStore } from '../store-supabase'
+import { useAppStore } from '../store/useAppStore'
 import AlertModal from '../components/AlertModal'
 
 export default function EventCreator() {
-  const { addEvent, setActiveEventStatus } = useSupabaseStore()
+  const { addEvent, setActiveEventStatus } = useAppStore()
 
   const [form, setForm] = useState({ name: '', description: '' })
   const [qrCodeUrl, setQrCodeUrl] = useState('')
@@ -31,6 +31,8 @@ export default function EventCreator() {
       const event = await addEvent({
         name: form.name.trim(),
         description: form.description.trim() || undefined,
+        regular_ticket_price: 0,
+        invited_ticket_price: 0,
         is_active: true,
       })
 

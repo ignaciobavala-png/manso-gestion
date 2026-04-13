@@ -1,11 +1,18 @@
 import { useState, useEffect, useRef } from 'react'
 import QrScanner from 'qr-scanner'
-import { useSupabaseStore } from '../store-supabase'
+import { useAppStore } from '../store/useAppStore'
 import SinEventoActivo from '../components/SinEventoActivo'
 import AlertModal from '../components/AlertModal'
 
 export default function Entradas() {
-  const { guests, addGuest, addTicketSale, getTicketPrices, activeEvent } = useSupabaseStore()
+  const { 
+    guests, 
+    addGuest, 
+    addTicketSale, 
+    getTicketPrices, 
+    activeEvent,
+    isLoading 
+  } = useAppStore()
   const ticketPrices = getTicketPrices()
   const [loading, setLoading] = useState(true)
   const [isScanning, setIsScanning] = useState(false)
@@ -26,8 +33,11 @@ export default function Entradas() {
 
   useEffect(() => {
     console.log('🎫 Componente Entradas montado')
-    setTimeout(() => setLoading(false), 1000)
-  }, [])
+    // Usar el loading real del store en lugar de timer hardcodeado
+    if (!isLoading) {
+      setLoading(false)
+    }
+  }, [isLoading])
 
   // Cleanup on unmount — debe estar antes del early return
   useEffect(() => {

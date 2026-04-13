@@ -4,6 +4,7 @@ import Home from './pages/Home'
 import Entradas from './pages/Entradas'
 import Barra from './pages/Barra'
 import BottomNav from './components/BottomNav'
+import { AppStoreInitializer } from './store/useAppStoreInit'
 
 function App() {
   const [currentPage, setCurrentPage] = useState<'main' | 'home' | 'entradas' | 'barra'>('main')
@@ -25,6 +26,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100">
+      <AppStoreInitializer />
       {renderPage()}
       {currentPage !== 'main' && <BottomNav currentPage={currentPage} setCurrentPage={setCurrentPage} />}
     </div>

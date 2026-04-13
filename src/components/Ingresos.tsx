@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { useSupabaseStore } from '../store-supabase'
+import { useAppStore } from '../store/useAppStore'
 
 export default function Ingresos() {
-  const { sales, ticketSales, getTicketPrices } = useSupabaseStore()
+  const { sales, ticketSales, getTicketPrices } = useAppStore()
   const ticketPrices = getTicketPrices()
   const [isExpanded, setIsExpanded] = useState(false)
 
