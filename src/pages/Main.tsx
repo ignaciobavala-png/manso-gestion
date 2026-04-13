@@ -1,16 +1,23 @@
+import Background from '../components/Background'
+
 interface MainProps {
   setCurrentPage: (page: 'main' | 'home' | 'entradas' | 'barra') => void
 }
 
-export default function Main({ setCurrentPage }: MainProps) {
+export default function Main({ setCurrentPage }: MainProps): React.JSX.Element {
   const handleNavigation = (pageId: 'home' | 'entradas' | 'barra') => {
     setCurrentPage(pageId)
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-200 font-montserrat flex flex-col items-center justify-center">
-      <main className="w-full max-w-md px-4">
-        <div className="flex justify-center mb-12">
+    <Background>
+      <main className="w-full max-w-md px-4 flex flex-col items-center justify-center min-h-screen">
+        <div className="flex justify-center items-center mb-12 gap-4">
+          <img 
+            src="/logo.png" 
+            alt="Logo Manso" 
+            className="h-16 w-auto"
+          />
           <img 
             src="/manso-name-white.png" 
             alt="Manso Gestión" 
@@ -45,6 +52,6 @@ export default function Main({ setCurrentPage }: MainProps) {
           Seleccionar módulo
         </p>
       </main>
-    </div>
+    </Background>
   )
 }
