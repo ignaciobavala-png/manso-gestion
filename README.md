@@ -65,8 +65,7 @@ Sistema de gestión para eventos: barra, entradas y control financiero en tiempo
 ### Media prioridad
 - **Precios de entradas configurables desde la UI**
   - Hoy viven en la BD pero no hay pantalla para editarlos
-- **Historial de eventos cerrados**
-  - Ver arqueos anteriores desde Control
+- **✅ Historial de eventos cerrados** - COMPLETADO (`RegistroEventos.tsx`)
 - **Página Principal** (`Main.tsx`)
   - Revisar qué muestra y si tiene sentido mantenerla
 
@@ -74,6 +73,19 @@ Sistema de gestión para eventos: barra, entradas y control financiero en tiempo
 - Eliminar `test-supabase.js` del root (archivo de prueba temporal)
 - Eliminar `console.log` de debug que quedaron en el store y componentes
 - Documentar si `active_event` en Supabase es una vista o una tabla real
+
+## Cambios — 13 de abril 2025
+
+### Ingresos filtrados por evento activo
+- `Ingresos.tsx` ahora filtra ventas y tickets por `event_id` del evento activo
+- Sin evento activo, todos los totales muestran `$0` (antes acumulaba datos de eventos anteriores)
+
+### Nuevo componente: Registro de Eventos (`RegistroEventos.tsx`)
+- Sección colapsable en Home con el historial de eventos cerrados
+- Por cada evento cerrado: nombre, fecha de cierre, total recaudado y desglose barra vs entradas
+- Se oculta automáticamente si no hay eventos cerrados aún
+
+---
 
 ## 🆕 Nuevas funcionalidades implementadas
 

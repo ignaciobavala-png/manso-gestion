@@ -1,5 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import QrScanner from 'qr-scanner'
+import qrWorkerUrl from 'qr-scanner/qr-scanner-worker.min.js?url'
+
+// Necesario para que el worker funcione en el build de producción (Vercel)
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore — WORKER_PATH deprecated pero es la única API disponible en v1.4.x
+QrScanner.WORKER_PATH = qrWorkerUrl
 import { useAppStore } from '../store/useAppStore'
 import SinEventoActivo from '../components/SinEventoActivo'
 import AlertModal from '../components/AlertModal'

@@ -2,9 +2,13 @@ import { useState } from 'react'
 import { useAppStore } from '../store/useAppStore'
 
 export default function Ingresos() {
-  const { sales, ticketSales, getTicketPrices } = useAppStore()
+  const { sales, ticketSales, getTicketPrices, activeEvent } = useAppStore()
   const ticketPrices = getTicketPrices()
   const [isExpanded, setIsExpanded] = useState(false)
+
+  // Solo mostrar datos del evento activo
+  const activeSales = activeEvent ? sales.filter(s => s.event_id === activeEvent.id) : []
+  const activeTicketSales = activeEvent ? ticketSales.filter(t => t.event_id === activeEvent.id) : []
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-AR', {
@@ -15,20 +19,20 @@ export default function Ingresos() {
     }).format(amount)
   }
 
-  // Calculate totals by payment method
+  // Calculate totals by payment method (solo evento activo)
   const barRevenueByPayment = {
-    efectivo: sales.filter(s => s.payment_method === 'efectivo').reduce((sum, sale) => sum + sale.total, 0),
-    tarjeta: sales.filter(s => s.payment_method === 'tarjeta').reduce((sum, sale) => sum + sale.total, 0),
-    transferencia: sales.filter(s => s.payment_method === 'transferencia').reduce((sum, sale) => sum + sale.total, 0)
+    efectivo: activeSales.filter(s => s.payment_method === 'efectivo').reduce((sum, sale) => sum + sale.total, 0),
+    tarjeta: activeSales.filter(s => s.payment_method === 'tarjeta').reduce((sum, sale) => sum + sale.total, 0),
+    transferencia: activeSales.filter(s => s.payment_method === 'transferencia').reduce((sum, sale) => sum + sale.total, 0)
   }
-  
-  const barRevenue = sales.reduce((sum, sale) => sum + sale.total, 0)
-  const ticketRevenue = ticketSales.reduce((sum, ticket) => sum + ticket.price, 0)
+
+  const barRevenue = activeSales.reduce((sum, sale) => sum + sale.total, 0)
+  const ticketRevenue = activeTicketSales.reduce((sum, ticket) => sum + ticket.price, 0)
   const totalRevenue = barRevenue + ticketRevenue
 
   // Get recent transactions
-  const recentSales = sales.slice(-3).reverse()
-  const recentTickets = ticketSales.slice(-3).reverse()
+  const recentSales = activeSales.slice(-3).reverse()
+  const recentTickets = activeTicketSales.slice(-3).reverse()
 
   return (
     <section className="bg-gray-800/50 border border-gray-700 rounded-3xl overflow-hidden">
@@ -73,7 +77,7 @@ export default function Ingresos() {
                   <span className="text-2xl">🍺</span>
                 </div>
                 <p className="text-2xl font-bold text-white">{formatCurrency(barRevenue)}</p>
-                <p className="text-xs text-gray-400 mt-1">{sales.length} ventas</p>
+                <p className="text-xs text-gray-400 mt-1">{activeSales.length} ventas</p>
               </div>
               
               <div className="bg-amber-900/30 border border-amber-700 rounded-2xl p-4">
@@ -82,7 +86,7 @@ export default function Ingresos() {
                   <span className="text-2xl">🎫</span>
                 </div>
                 <p className="text-2xl font-bold text-white">{formatCurrency(ticketRevenue)}</p>
-                <p className="text-xs text-gray-400 mt-1">{ticketSales.length} tickets</p>
+                <p className="text-xs text-gray-400 mt-1">{activeTicketSales.length} tickets</p>
               </div>
             </div>
 

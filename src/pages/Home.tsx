@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import Ingresos from '../components/Ingresos'
+import RegistroEventos from '../components/RegistroEventos'
 import EventCreator from '../components/EventCreator'
 import AlertModal from '../components/AlertModal'
 import Background from '../components/Background'
@@ -221,6 +222,9 @@ export default function Home() {
 
         {/* Ingresos Section */}
         <Ingresos />
+
+        {/* Registro de Eventos */}
+        <RegistroEventos />
 
         {/* Arqueo de Caja */}
         {activeEvent && (
