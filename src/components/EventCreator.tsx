@@ -6,7 +6,7 @@ import AlertModal from '../components/AlertModal'
 export default function EventCreator() {
   const { addEvent, setActiveEventStatus } = useAppStore()
 
-  const [form, setForm] = useState({ name: '', description: '' })
+  const [form, setForm] = useState({ name: '', description: '', ticketPrice: '' })
   const [qrCodeUrl, setQrCodeUrl] = useState('')
   const [createdEventName, setCreatedEventName] = useState('')
   const [saving, setSaving] = useState(false)
@@ -28,11 +28,12 @@ export default function EventCreator() {
 
     setSaving(true)
     try {
+      const price = parseFloat(form.ticketPrice) || 0
       const event = await addEvent({
         name: form.name.trim(),
         description: form.description.trim() || undefined,
-        regular_ticket_price: 0,
-        invited_ticket_price: 0,
+        regular_ticket_price: price,
+        invited_ticket_price: price,
         is_active: true,
       })
 
@@ -47,7 +48,7 @@ export default function EventCreator() {
 
       setQrCodeUrl(url)
       setCreatedEventName(form.name.trim())
-      setForm({ name: '', description: '' })
+      setForm({ name: '', description: '', ticketPrice: '' })
     } catch (error) {
       setAlertModal({
         isOpen: true,
@@ -103,6 +104,21 @@ export default function EventCreator() {
           className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
           onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
         />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-2">Precio de entrada</label>
+        <div className="relative">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">$</span>
+          <input
+            type="number"
+            min="0"
+            value={form.ticketPrice}
+            onChange={(e) => setForm(prev => ({ ...prev, ticketPrice: e.target.value }))}
+            placeholder="0"
+            className="w-full pl-8 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+          />
+        </div>
+        <p className="text-xs text-gray-500 mt-1">Se aplica igual para regular e invitado. Dejá en 0 si la entrada es gratis.</p>
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-2">Descripción</label>
