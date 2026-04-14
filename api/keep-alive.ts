@@ -4,18 +4,18 @@ export const config = {
   runtime: 'edge'
 }
 
-export async function GET() {
+export default async function handler() {
   const supabaseUrl = process.env.VITE_SUPABASE_URL
   const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseAnonKey) {
     return new Response(
-      JSON.stringify({ 
-        success: false, 
+      JSON.stringify({
+        success: false,
         error: 'Missing environment variables',
         timestamp: new Date().toISOString()
       }),
-      { 
+      {
         status: 500,
         headers: { 'Content-Type': 'application/json' }
       }
@@ -26,43 +26,40 @@ export async function GET() {
   const timestamp = new Date().toISOString()
 
   try {
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('products')
       .select('count')
       .limit(1)
 
-    if (error) {
-      throw error
-    }
+    if (error) throw error
 
-    console.log(`✅ [${timestamp}] Ping exitoso a Supabase`)
+    console.log(`[${timestamp}] Keep-alive ping OK`)
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         message: 'Supabase ping successful',
-        timestamp,
-        data
+        timestamp
       }),
-      { 
+      {
         status: 200,
         headers: { 'Content-Type': 'application/json' }
       }
     )
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      console.error(`❌ [${timestamp}] Error en ping:`, errorMessage)
-      
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: errorMessage,
-          timestamp
-        }),
-        { 
-          status: 500,
-          headers: { 'Content-Type': 'application/json' }
-        }
-      )
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    console.error(`[${timestamp}] Keep-alive error:`, errorMessage)
+
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: errorMessage,
+        timestamp
+      }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    )
   }
 }
