@@ -139,7 +139,12 @@ export default function Entradas(): React.JSX.Element {
           setPendingQr({ rawData, name: extractName(rawData) })
           setPendingType('regular')
         },
-        { returnDetailedScanResult: true, highlightScanRegion: true, highlightCodeOutline: true }
+        {
+          returnDetailedScanResult: true,
+          highlightScanRegion: true,
+          highlightCodeOutline: true,
+          preferredCamera: 'environment',
+        }
       )
       await qrScannerRef.current.start()
     } catch (error) {
@@ -331,23 +336,28 @@ export default function Entradas(): React.JSX.Element {
           {!showSuccess && !pendingQr && (
             <div className="flex flex-col items-center space-y-6">
               <div className="w-full aspect-square max-w-xs bg-gray-700/50 border-2 border-dashed border-gray-600 rounded-2xl overflow-hidden">
-                {isScanning ? (
-                  <video ref={videoRef} className="w-full h-full object-cover" playsInline muted />
-                ) : cameraError ? (
+                {/* El video siempre está en el DOM para que videoRef.current esté disponible al iniciar */}
+                <video
+                  ref={videoRef}
+                  className={`w-full h-full object-cover ${isScanning ? 'block' : 'hidden'}`}
+                  playsInline
+                  muted
+                />
+                {!isScanning && cameraError ? (
                   <div className="flex flex-col items-center justify-center h-full p-4 text-center">
                     <svg className="w-10 h-10 text-red-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
                     </svg>
                     <p className="text-red-400 text-sm">{cameraError}</p>
                   </div>
-                ) : (
+                ) : !isScanning ? (
                   <div className="flex flex-col items-center justify-center h-full">
                     <svg className="w-12 h-12 text-gray-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
                     </svg>
                     <p className="text-gray-500 text-sm">Listo para escanear</p>
                   </div>
-                )}
+                ) : null}
               </div>
 
               <div className="flex flex-col gap-3 w-full max-w-xs">
