@@ -32,6 +32,7 @@ export default function Entradas(): React.JSX.Element {
   const [showSuccess, setShowSuccess] = useState(false)
   const [showInvitadoInput, setShowInvitadoInput] = useState(false)
   const [invitadoName, setInvitadoName] = useState('')
+  const [submittingInvitado, setSubmittingInvitado] = useState(false)
   const [mansoTicketPending, setMansoTicketPending] = useState<{ token: string; name: string } | null>(null)
   const [validating, setValidating] = useState(false)
   const [alertModal, setAlertModal] = useState({
@@ -249,6 +250,7 @@ export default function Entradas(): React.JSX.Element {
   }
 
   const handleAddInvitado = async () => {
+    if (submittingInvitado) return
     if (!invitadoName.trim()) {
       setAlertModal({
         isOpen: true,
@@ -257,15 +259,15 @@ export default function Entradas(): React.JSX.Element {
       })
       return
     }
-    
+
+    setSubmittingInvitado(true)
     try {
       await addGuest({ name: invitadoName.trim(), type: 'invitado' })
-      await addTicketSale({ 
-        guest_name: invitadoName.trim(), 
-        type: 'invitado', 
-        price: ticketPrices.invitado 
+      await addTicketSale({
+        guest_name: invitadoName.trim(),
+        type: 'invitado',
+        price: ticketPrices.invitado
       })
-      
       setInvitadoName('')
       setShowInvitadoInput(false)
     } catch (error) {
@@ -274,6 +276,8 @@ export default function Entradas(): React.JSX.Element {
         message: 'Error al agregar invitado: ' + (error as Error).message,
         type: 'error'
       })
+    } finally {
+      setTimeout(() => setSubmittingInvitado(false), 2000)
     }
   }
 
@@ -496,7 +500,8 @@ export default function Entradas(): React.JSX.Element {
                     <div className="flex gap-2">
                       <button
                         onClick={handleAddInvitado}
-                        className="flex-1 min-h-10 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-xl transition-colors"
+                        disabled={submittingInvitado}
+                        className="flex-1 min-h-10 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-medium rounded-xl transition-colors"
                       >
                         Confirmar
                       </button>
