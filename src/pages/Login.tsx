@@ -42,11 +42,11 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center px-4 select-none">
+    <div className="min-h-screen bg-black flex flex-col items-center justify-center px-4 select-none">
       {/* Logo */}
-      <div className="mb-12 text-center">
-        <h1 className="text-4xl font-bold text-white tracking-[0.3em]">MANSO</h1>
-        <p className="text-gray-500 text-xs mt-2 tracking-widest uppercase">gestión</p>
+      <div className="mb-12 flex flex-col items-center gap-3">
+        <img src="/logo.png" alt="Manso" className="h-20 w-auto object-contain" />
+        <img src="/manso-name-white.png" alt="MANSO" className="h-7 w-auto object-contain opacity-90" />
       </div>
 
       {/* Puntos del PIN */}
