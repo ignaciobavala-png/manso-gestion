@@ -48,6 +48,7 @@ interface AppState {
   addEvent: (event: Omit<Event, 'id' | 'created_at' | 'updated_at' | 'closed_at'>) => Promise<Event>
   setActiveEventStatus: (eventId: string, isActive: boolean) => Promise<void>
   closeEvent: (eventId: string) => Promise<void>
+  deleteEvent: (eventId: string) => Promise<void>
   
   // Utilidades
   getTicketPrices: () => { regular: number; invitado: number }
@@ -349,18 +350,38 @@ export const useAppStore = create<AppState>((set, get) => ({
     try {
       const { error } = await supabase
         .from('events')
-        .update({ 
+        .update({
           is_active: false,
           closed_at: new Date().toISOString()
         })
         .eq('id', eventId)
-      
+
       if (error) throw error
-      
+
       // Refrescar datos
       await get().refreshData()
     } catch (error) {
       console.error('Error closing event:', error)
+      throw error
+    }
+  },
+
+  deleteEvent: async (eventId) => {
+    try {
+      const { error } = await supabase
+        .from('events')
+        .delete()
+        .eq('id', eventId)
+
+      if (error) throw error
+
+      set(state => ({
+        events: state.events.filter(e => e.id !== eventId),
+        sales: state.sales.filter(s => s.event_id !== eventId),
+        ticketSales: state.ticketSales.filter(t => t.event_id !== eventId),
+      }))
+    } catch (error) {
+      console.error('Error deleting event:', error)
       throw error
     }
   },
