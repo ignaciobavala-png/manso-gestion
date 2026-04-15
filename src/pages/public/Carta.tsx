@@ -202,41 +202,52 @@ export default function Carta() {
     <PublicLayout>
       <div className="flex-1 flex flex-col pb-28">
         {/* Subtítulo */}
-        <p className="text-center text-gray-500 text-xs uppercase tracking-widest -mt-2 mb-6">carta digital</p>
+        <p className="text-center text-gray-300 text-sm font-semibold uppercase tracking-[0.25em] -mt-2 mb-8">
+          Carta digital
+        </p>
 
         {/* Productos */}
-        <div className="px-5 space-y-8">
+        <div className="px-4 space-y-10">
           {Object.entries(grouped).map(([cat, items]) => (
             <div key={cat}>
-              <h2 className="text-xs uppercase tracking-widest text-gray-500 mb-4 font-semibold text-center">
-                {CATEGORY_LABELS[cat] ?? cat}
-              </h2>
+              {/* Separador de categoría */}
+              <div className="flex items-center gap-3 mb-5">
+                <div className="flex-1 h-px bg-white/10" />
+                <h2 className="text-white/60 text-xs uppercase tracking-[0.2em] font-bold">
+                  {CATEGORY_LABELS[cat] ?? cat}
+                </h2>
+                <div className="flex-1 h-px bg-white/10" />
+              </div>
+
               <div className="space-y-3">
                 {items.map(product => {
                   const qty = getQty(product.id)
                   return (
-                    <div key={product.id} className="bg-black/50 backdrop-blur-md border border-white/10 rounded-2xl px-5 py-5 flex flex-col items-center text-center gap-3">
-                      <div>
-                        <p className="text-white font-semibold text-base leading-tight">{product.name}</p>
-                        <p className="text-emerald-400 text-lg font-bold mt-1">{formatPrice(product.price)}</p>
+                    <div
+                      key={product.id}
+                      className="bg-black/50 backdrop-blur-md border border-white/10 rounded-2xl px-6 py-6 flex flex-col items-center text-center gap-4"
+                    >
+                      <div className="space-y-1">
+                        <p className="text-white font-bold text-lg leading-tight">{product.name}</p>
+                        <p className="text-emerald-400 text-2xl font-bold">{formatPrice(product.price)}</p>
                       </div>
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-5">
                         {qty > 0 ? (
                           <>
                             <button
                               onClick={() => setQty(product, qty - 1)}
-                              className="w-10 h-10 rounded-full bg-white/10 text-white flex items-center justify-center text-xl font-bold active:scale-90 transition-transform"
+                              className="w-11 h-11 rounded-full bg-white/10 text-white flex items-center justify-center text-2xl font-bold active:scale-90 transition-transform"
                             >−</button>
-                            <span className="text-white w-6 text-center font-bold text-lg">{qty}</span>
+                            <span className="text-white w-7 text-center font-bold text-xl">{qty}</span>
                             <button
                               onClick={() => setQty(product, qty + 1)}
-                              className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xl font-bold active:scale-90 transition-transform"
+                              className="w-11 h-11 rounded-full bg-emerald-600 text-white flex items-center justify-center text-2xl font-bold active:scale-90 transition-transform"
                             >+</button>
                           </>
                         ) : (
                           <button
                             onClick={() => setQty(product, 1)}
-                            className="px-6 py-2 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold active:scale-90 transition-transform"
+                            className="px-8 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm active:scale-90 transition-transform"
                           >
                             Agregar
                           </button>
