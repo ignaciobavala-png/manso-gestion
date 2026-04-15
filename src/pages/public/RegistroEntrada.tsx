@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import PublicLayout from '../../components/PublicLayout'
 
 interface ActiveEvent {
   id: string
@@ -77,41 +78,45 @@ export default function RegistroEntrada() {
 
   if (loadingEvent) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-emerald-500" />
-      </div>
+      <PublicLayout>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-emerald-400" />
+        </div>
+      </PublicLayout>
     )
   }
 
   if (!activeEvent) {
     return (
-      <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center px-6 text-center gap-4">
-        <p className="text-4xl">🎵</p>
-        <h1 className="text-2xl font-bold text-white">No hay evento esta noche</h1>
-        <p className="text-gray-500 text-sm max-w-xs">Seguinos en redes para enterarte de la próxima fecha.</p>
-      </div>
+      <PublicLayout>
+        <div className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-4 -mt-12">
+          <p className="text-4xl">🎵</p>
+          <h2 className="text-2xl font-bold text-white">No hay evento esta noche</h2>
+          <p className="text-gray-400 text-sm max-w-xs">Seguinos en redes para enterarte de la próxima fecha.</p>
+        </div>
+      </PublicLayout>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 flex flex-col">
-      {/* Encabezado del evento */}
-      <div className="px-6 pt-14 pb-10 text-center">
-        <p className="text-gray-600 text-xs uppercase tracking-[0.25em] mb-3">esta noche</p>
-        <h1 className="text-3xl font-bold text-white leading-tight">{activeEvent.name}</h1>
-        <div className="mt-5 inline-flex items-center gap-2 bg-emerald-950 border border-emerald-800/60 rounded-full px-4 py-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-emerald-400 text-xs font-medium tracking-wide">Entrada disponible</span>
+    <PublicLayout>
+      <div className="flex-1 flex flex-col px-5 pb-10">
+        {/* Nombre del evento */}
+        <div className="text-center mb-6">
+          <p className="text-gray-500 text-xs uppercase tracking-[0.25em] mb-2">esta noche</p>
+          <h2 className="text-2xl font-bold text-white">{activeEvent.name}</h2>
+          <div className="mt-3 inline-flex items-center gap-2 bg-emerald-950/80 border border-emerald-800/60 rounded-full px-4 py-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-emerald-400 text-xs font-medium tracking-wide">Entrada disponible</span>
+          </div>
         </div>
-      </div>
 
-      {/* Card del formulario */}
-      <div className="flex-1 px-5">
-        <div className="max-w-sm mx-auto">
-          <div className="bg-gray-900 rounded-3xl p-6 space-y-5">
+        {/* Card del formulario */}
+        <div className="max-w-sm w-full mx-auto">
+          <div className="bg-black/50 backdrop-blur-md border border-white/10 rounded-3xl p-6 space-y-5">
             <div>
-              <h2 className="text-white font-semibold text-lg">Reservá tu lugar</h2>
-              <p className="text-gray-500 text-sm mt-1">
+              <h3 className="text-white font-semibold text-lg">Reservá tu lugar</h3>
+              <p className="text-gray-400 text-sm mt-1">
                 Ponés tu nombre y mail, y te generamos un QR para entrar sin esperar.
               </p>
             </div>
@@ -125,7 +130,7 @@ export default function RegistroEntrada() {
                   required
                   autoComplete="name"
                   placeholder="Tu nombre"
-                  className="w-full bg-gray-800 border border-gray-700 rounded-2xl px-4 py-3.5 text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
+                  className="w-full bg-white/10 border border-white/15 rounded-2xl px-4 py-3.5 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
                 />
                 <input
                   type="email"
@@ -134,7 +139,7 @@ export default function RegistroEntrada() {
                   required
                   autoComplete="email"
                   placeholder="Tu email"
-                  className="w-full bg-gray-800 border border-gray-700 rounded-2xl px-4 py-3.5 text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
+                  className="w-full bg-white/10 border border-white/15 rounded-2xl px-4 py-3.5 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
                 />
               </div>
 
@@ -145,30 +150,28 @@ export default function RegistroEntrada() {
                   onChange={e => setAccepted(e.target.checked)}
                   className="mt-0.5 accent-emerald-500 w-4 h-4 flex-shrink-0"
                 />
-                <span className="text-gray-500 text-xs leading-relaxed">
+                <span className="text-gray-400 text-xs leading-relaxed">
                   Acepto que Manso guarde mis datos para avisarme de próximas fechas.
                 </span>
               </label>
 
-              {error && (
-                <p className="text-red-400 text-sm text-center">{error}</p>
-              )}
+              {error && <p className="text-red-400 text-sm text-center">{error}</p>}
 
               <button
                 type="submit"
                 disabled={submitting || !accepted || !name.trim() || !email.trim()}
-                className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-800 disabled:text-gray-600 text-white font-semibold py-4 rounded-2xl transition-all active:scale-95 text-sm"
+                className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-white/10 disabled:text-gray-600 text-white font-semibold py-4 rounded-2xl transition-all active:scale-95 text-sm"
               >
                 {submitting ? 'Generando tu entrada...' : 'Quiero mi entrada →'}
               </button>
             </form>
           </div>
 
-          <p className="text-center text-gray-700 text-xs mt-5 pb-10">
+          <p className="text-center text-gray-600 text-xs mt-5">
             El QR queda guardado en este dispositivo
           </p>
         </div>
       </div>
-    </div>
+    </PublicLayout>
   )
 }
