@@ -83,8 +83,6 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ isLoading: true, error: null })
     
     try {
-      console.log('🔄 Fetching data from Supabase...')
-      
       const [
         productsResult,
         guestsResult,
@@ -126,13 +124,11 @@ export const useAppStore = create<AppState>((set, get) => ({
       }
       
       set(newState)
-      
+
       // Calcular balance para el evento activo
       if (activeEventResult.data?.id) {
         await get().calculateBalance(activeEventResult.data.id)
       }
-      
-      console.log('✅ Data loaded successfully')
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Error al cargar datos'
       console.error('❌ Error fetching data:', errorMessage)
@@ -325,13 +321,22 @@ export const useAppStore = create<AppState>((set, get) => ({
   
   setActiveEventStatus: async (eventId, isActive) => {
     try {
+      // Si estamos activando un evento, primero desactivar todos los demás
+      if (isActive) {
+        const { error: deactivateError } = await supabase
+          .from('events')
+          .update({ is_active: false })
+          .neq('id', eventId)
+        if (deactivateError) throw deactivateError
+      }
+
       const { error } = await supabase
         .from('events')
         .update({ is_active: isActive })
         .eq('id', eventId)
-      
+
       if (error) throw error
-      
+
       // Refrescar datos para actualizar activeEvent
       await get().refreshData()
     } catch (error) {

@@ -1,0 +1,165 @@
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { supabase } from '../../lib/supabase'
+
+interface ActiveEvent {
+  id: string
+  name: string
+}
+
+const LS_KEY = (eventId: string) => `manso_ticket_${eventId}`
+
+export default function RegistroEntrada() {
+  const navigate = useNavigate()
+  const [activeEvent, setActiveEvent] = useState<ActiveEvent | null>(null)
+  const [loadingEvent, setLoadingEvent] = useState(true)
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [accepted, setAccepted] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    supabase
+      .from('active_event')
+      .select('id, name')
+      .single()
+      .then(({ data }) => {
+        setLoadingEvent(false)
+        if (!data) return
+        setActiveEvent(data as ActiveEvent)
+
+        // Si ya tiene entrada guardada para este evento, ir directo
+        const saved = localStorage.getItem(LS_KEY(data.id))
+        if (saved) {
+          navigate('/mi-entrada', { replace: true })
+        }
+      })
+  }, [navigate])
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!activeEvent || !accepted) return
+
+    setSubmitting(true)
+    setError('')
+
+    try {
+      const res = await fetch('/api/registro-entrada', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim(), email: email.trim(), event_id: activeEvent.id })
+      })
+
+      const data = await res.json()
+
+      if (res.status === 409) {
+        setError('Ya tenés una entrada para este evento. Si la perdiste, acercate a la puerta.')
+        setSubmitting(false)
+        return
+      }
+
+      if (!res.ok) {
+        setError(data.error || 'Ocurrió un error. Intentá de nuevo.')
+        setSubmitting(false)
+        return
+      }
+
+      // Guardar en localStorage y navegar
+      localStorage.setItem(
+        LS_KEY(activeEvent.id),
+        JSON.stringify({ token: data.token, name: name.trim(), event_name: activeEvent.name, event_id: activeEvent.id })
+      )
+      navigate('/mi-entrada')
+    } catch {
+      setError('Error de conexión. Intentá de nuevo.')
+      setSubmitting(false)
+    }
+  }
+
+  if (loadingEvent) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-emerald-500" />
+      </div>
+    )
+  }
+
+  if (!activeEvent) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center px-6 text-center">
+        <h1 className="text-3xl font-bold text-white tracking-widest mb-3">MANSO</h1>
+        <p className="text-gray-400 text-sm">No hay ningún evento activo en este momento.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center px-6">
+      <div className="w-full max-w-sm">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-white tracking-[0.3em]">MANSO</h1>
+          <p className="text-gray-500 text-xs mt-1 tracking-widest uppercase">entrada digital</p>
+          <p className="text-emerald-400 text-sm mt-3 font-medium">{activeEvent.name}</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs text-gray-400 uppercase tracking-wider mb-1">
+              Nombre completo
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              required
+              autoComplete="name"
+              placeholder="Tu nombre"
+              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500 transition-colors"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs text-gray-400 uppercase tracking-wider mb-1">
+              Email
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+              placeholder="tu@email.com"
+              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500 transition-colors"
+            />
+          </div>
+
+          <label className="flex items-start gap-3 cursor-pointer pt-1">
+            <input
+              type="checkbox"
+              checked={accepted}
+              onChange={e => setAccepted(e.target.checked)}
+              className="mt-0.5 accent-emerald-500 w-4 h-4 flex-shrink-0"
+            />
+            <span className="text-gray-400 text-sm leading-relaxed">
+              Acepto que Manso Club guarde mis datos para comunicaciones futuras.
+            </span>
+          </label>
+
+          {error && (
+            <p className="text-red-400 text-sm text-center">{error}</p>
+          )}
+
+          <button
+            type="submit"
+            disabled={submitting || !accepted || !name.trim() || !email.trim()}
+            className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 disabled:text-gray-500 text-white font-semibold py-4 rounded-2xl transition-all active:scale-95 mt-2"
+          >
+            {submitting ? 'Generando entrada...' : 'Obtener mi entrada'}
+          </button>
+        </form>
+      </div>
+    </div>
+  )
+}

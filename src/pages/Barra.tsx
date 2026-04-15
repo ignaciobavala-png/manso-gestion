@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import SinEventoActivo from '../components/SinEventoActivo'
 import AlertModal from '../components/AlertModal'
@@ -6,18 +6,17 @@ import ConfirmModal from '../components/ConfirmModal'
 import Background from '../components/Background'
 
 export default function Barra() {
-  const { 
-    products, 
-    balance, 
-    addSale, 
-    flushBalance, 
-    addProduct, 
-    deleteProduct, 
-    sales, 
+  const {
+    products,
+    balance,
+    addSale,
+    flushBalance,
+    addProduct,
+    deleteProduct,
+    sales,
     activeEvent,
-    isLoading 
+    isInitialized
   } = useAppStore()
-  const [loading, setLoading] = useState(true)
   const [cart, setCart] = useState<Record<string, number>>({})
   const [paymentMethod, setPaymentMethod] = useState<'efectivo' | 'tarjeta' | 'transferencia'>('efectivo')
   const [confirming, setConfirming] = useState(false)
@@ -41,15 +40,7 @@ export default function Barra() {
     productName: ''
   })
 
-  useEffect(() => {
-    console.log('🍺 Componente Barra montado')
-    // Usar el loading real del store en lugar de timer hardcodeado
-    if (!isLoading) {
-      setLoading(false)
-    }
-  }, [isLoading])
-
-  if (loading) {
+  if (!isInitialized) {
     return (
       <Background>
         <div className="max-w-6xl mx-auto px-4 py-8">
@@ -116,7 +107,7 @@ export default function Barra() {
           payment_method: paymentMethod
         })
       ))
-      await flushBalance()
+      flushBalance()
       setCart({})
       setPurchaseSuccess(true)
       setTimeout(() => setPurchaseSuccess(false), 2500)

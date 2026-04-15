@@ -7,17 +7,16 @@ import AlertModal from '../components/AlertModal'
 import Background from '../components/Background'
 
 export default function Home() {
-  const { 
-    products, 
-    balance, 
-    updateProduct, 
-    activeEvent, 
-    closeEvent, 
-    sales, 
+  const {
+    products,
+    balance,
+    updateProduct,
+    activeEvent,
+    closeEvent,
+    sales,
     ticketSales,
-    isLoading 
+    isInitialized
   } = useAppStore()
-  const [loading, setLoading] = useState(true)
   const [isStockExpanded, setIsStockExpanded] = useState(false)
   const [showEventCreator, setShowEventCreator] = useState(false)
   const [stockValues, setStockValues] = useState<Record<string, number>>({})
@@ -30,20 +29,12 @@ export default function Home() {
   })
 
   useEffect(() => {
-    console.log('🏠 Componente Home montado')
-    // Usar el loading real del store en lugar de timer hardcodeado
-    if (!isLoading) {
-      setLoading(false)
-    }
-  }, [isLoading])
-
-  useEffect(() => {
     const initial: Record<string, number> = {}
     products.forEach(p => { initial[p.id] = p.stock })
     setStockValues(initial)
   }, [products])
 
-  if (loading) {
+  if (!isInitialized) {
     return (
       <Background>
         <div className="max-w-4xl mx-auto px-4 py-8">
