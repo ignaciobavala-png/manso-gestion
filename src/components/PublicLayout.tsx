@@ -10,8 +10,9 @@ export default function PublicLayout({ children, showHeader = true }: PublicLayo
       className="min-h-screen flex flex-col"
       style={{
         backgroundImage: 'url(/fondo.png)',
-        backgroundRepeat: 'repeat',
-        backgroundSize: '180px',
+        backgroundRepeat: 'no-repeat',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
       }}
     >
       {/* Overlay oscuro sobre el patrón */}

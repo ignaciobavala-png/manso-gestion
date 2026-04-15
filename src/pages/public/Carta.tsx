@@ -205,29 +205,42 @@ export default function Carta() {
         <p className="text-center text-gray-500 text-xs uppercase tracking-widest -mt-2 mb-6">carta digital</p>
 
         {/* Productos */}
-        <div className="px-5 space-y-6">
+        <div className="px-5 space-y-8">
           {Object.entries(grouped).map(([cat, items]) => (
             <div key={cat}>
-              <h2 className="text-xs uppercase tracking-widest text-gray-500 mb-3 font-semibold">
+              <h2 className="text-xs uppercase tracking-widest text-gray-500 mb-4 font-semibold text-center">
                 {CATEGORY_LABELS[cat] ?? cat}
               </h2>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {items.map(product => {
                   const qty = getQty(product.id)
                   return (
-                    <div key={product.id} className="bg-black/50 backdrop-blur-md border border-white/10 rounded-xl px-4 py-3 flex items-center justify-between">
+                    <div key={product.id} className="bg-black/50 backdrop-blur-md border border-white/10 rounded-2xl px-5 py-5 flex flex-col items-center text-center gap-3">
                       <div>
-                        <p className="text-white text-sm font-medium">{product.name}</p>
-                        <p className="text-emerald-400 text-sm font-semibold mt-0.5">{formatPrice(product.price)}</p>
+                        <p className="text-white font-semibold text-base leading-tight">{product.name}</p>
+                        <p className="text-emerald-400 text-lg font-bold mt-1">{formatPrice(product.price)}</p>
                       </div>
-                      <div className="flex items-center gap-3">
-                        {qty > 0 && (
+                      <div className="flex items-center gap-4">
+                        {qty > 0 ? (
                           <>
-                            <button onClick={() => setQty(product, qty - 1)} className="w-8 h-8 rounded-full bg-white/10 text-white flex items-center justify-center text-lg font-bold">−</button>
-                            <span className="text-white w-4 text-center font-semibold">{qty}</span>
+                            <button
+                              onClick={() => setQty(product, qty - 1)}
+                              className="w-10 h-10 rounded-full bg-white/10 text-white flex items-center justify-center text-xl font-bold active:scale-90 transition-transform"
+                            >−</button>
+                            <span className="text-white w-6 text-center font-bold text-lg">{qty}</span>
+                            <button
+                              onClick={() => setQty(product, qty + 1)}
+                              className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xl font-bold active:scale-90 transition-transform"
+                            >+</button>
                           </>
+                        ) : (
+                          <button
+                            onClick={() => setQty(product, 1)}
+                            className="px-6 py-2 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold active:scale-90 transition-transform"
+                          >
+                            Agregar
+                          </button>
                         )}
-                        <button onClick={() => setQty(product, qty + 1)} className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xl font-bold">+</button>
                       </div>
                     </div>
                   )
