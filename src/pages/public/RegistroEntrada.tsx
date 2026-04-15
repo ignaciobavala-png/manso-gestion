@@ -29,7 +29,6 @@ export default function RegistroEntrada() {
         if (!data) return
         setActiveEvent(data as ActiveEvent)
 
-        // Si ya tiene entrada guardada para este evento, ir directo
         const saved = localStorage.getItem(LS_KEY(data.id))
         if (saved) {
           navigate('/mi-entrada', { replace: true })
@@ -60,26 +59,25 @@ export default function RegistroEntrada() {
       }
 
       if (!res.ok) {
-        setError(data.error || 'Ocurrió un error. Intentá de nuevo.')
+        setError(data.error || 'Algo salió mal. Intentá de nuevo.')
         setSubmitting(false)
         return
       }
 
-      // Guardar en localStorage y navegar
       localStorage.setItem(
         LS_KEY(activeEvent.id),
         JSON.stringify({ token: data.token, name: name.trim(), event_name: activeEvent.name, event_id: activeEvent.id })
       )
       navigate('/mi-entrada')
     } catch {
-      setError('Error de conexión. Intentá de nuevo.')
+      setError('Sin conexión. Intentá de nuevo.')
       setSubmitting(false)
     }
   }
 
   if (loadingEvent) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
         <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-emerald-500" />
       </div>
     )
@@ -87,78 +85,89 @@ export default function RegistroEntrada() {
 
   if (!activeEvent) {
     return (
-      <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center px-6 text-center">
-        <h1 className="text-3xl font-bold text-white tracking-widest mb-3">MANSO</h1>
-        <p className="text-gray-400 text-sm">No hay ningún evento activo en este momento.</p>
+      <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center px-6 text-center gap-4">
+        <p className="text-4xl">🎵</p>
+        <h1 className="text-2xl font-bold text-white">No hay evento esta noche</h1>
+        <p className="text-gray-500 text-sm max-w-xs">Seguinos en redes para enterarte de la próxima fecha.</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center px-6">
-      <div className="w-full max-w-sm">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white tracking-[0.3em]">MANSO</h1>
-          <p className="text-gray-500 text-xs mt-1 tracking-widest uppercase">entrada digital</p>
-          <p className="text-emerald-400 text-sm mt-3 font-medium">{activeEvent.name}</p>
+    <div className="min-h-screen bg-gray-950 flex flex-col">
+      {/* Encabezado del evento */}
+      <div className="px-6 pt-14 pb-10 text-center">
+        <p className="text-gray-600 text-xs uppercase tracking-[0.25em] mb-3">esta noche</p>
+        <h1 className="text-3xl font-bold text-white leading-tight">{activeEvent.name}</h1>
+        <div className="mt-5 inline-flex items-center gap-2 bg-emerald-950 border border-emerald-800/60 rounded-full px-4 py-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="text-emerald-400 text-xs font-medium tracking-wide">Entrada disponible</span>
         </div>
+      </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs text-gray-400 uppercase tracking-wider mb-1">
-              Nombre completo
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              required
-              autoComplete="name"
-              placeholder="Tu nombre"
-              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500 transition-colors"
-            />
+      {/* Card del formulario */}
+      <div className="flex-1 px-5">
+        <div className="max-w-sm mx-auto">
+          <div className="bg-gray-900 rounded-3xl p-6 space-y-5">
+            <div>
+              <h2 className="text-white font-semibold text-lg">Reservá tu lugar</h2>
+              <p className="text-gray-500 text-sm mt-1">
+                Ponés tu nombre y mail, y te generamos un QR para entrar sin esperar.
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  required
+                  autoComplete="name"
+                  placeholder="Tu nombre"
+                  className="w-full bg-gray-800 border border-gray-700 rounded-2xl px-4 py-3.5 text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
+                />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                  placeholder="Tu email"
+                  className="w-full bg-gray-800 border border-gray-700 rounded-2xl px-4 py-3.5 text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
+                />
+              </div>
+
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={accepted}
+                  onChange={e => setAccepted(e.target.checked)}
+                  className="mt-0.5 accent-emerald-500 w-4 h-4 flex-shrink-0"
+                />
+                <span className="text-gray-500 text-xs leading-relaxed">
+                  Acepto que Manso guarde mis datos para avisarme de próximas fechas.
+                </span>
+              </label>
+
+              {error && (
+                <p className="text-red-400 text-sm text-center">{error}</p>
+              )}
+
+              <button
+                type="submit"
+                disabled={submitting || !accepted || !name.trim() || !email.trim()}
+                className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-800 disabled:text-gray-600 text-white font-semibold py-4 rounded-2xl transition-all active:scale-95 text-sm"
+              >
+                {submitting ? 'Generando tu entrada...' : 'Quiero mi entrada →'}
+              </button>
+            </form>
           </div>
 
-          <div>
-            <label className="block text-xs text-gray-400 uppercase tracking-wider mb-1">
-              Email
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-              placeholder="tu@email.com"
-              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500 transition-colors"
-            />
-          </div>
-
-          <label className="flex items-start gap-3 cursor-pointer pt-1">
-            <input
-              type="checkbox"
-              checked={accepted}
-              onChange={e => setAccepted(e.target.checked)}
-              className="mt-0.5 accent-emerald-500 w-4 h-4 flex-shrink-0"
-            />
-            <span className="text-gray-400 text-sm leading-relaxed">
-              Acepto que Manso Club guarde mis datos para comunicaciones futuras.
-            </span>
-          </label>
-
-          {error && (
-            <p className="text-red-400 text-sm text-center">{error}</p>
-          )}
-
-          <button
-            type="submit"
-            disabled={submitting || !accepted || !name.trim() || !email.trim()}
-            className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 disabled:text-gray-500 text-white font-semibold py-4 rounded-2xl transition-all active:scale-95 mt-2"
-          >
-            {submitting ? 'Generando entrada...' : 'Obtener mi entrada'}
-          </button>
-        </form>
+          <p className="text-center text-gray-700 text-xs mt-5 pb-10">
+            El QR queda guardado en este dispositivo
+          </p>
+        </div>
       </div>
     </div>
   )

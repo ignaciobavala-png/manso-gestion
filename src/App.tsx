@@ -8,6 +8,7 @@ import Barra from './pages/Barra'
 import Entradas from './pages/Entradas'
 import RegistroEntrada from './pages/public/RegistroEntrada'
 import MiEntrada from './pages/public/MiEntrada'
+import Carta from './pages/public/Carta'
 import Comunidad from './pages/admin/Comunidad'
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
           {/* Rutas públicas */}
           <Route path="/registro" element={<RegistroEntrada />} />
           <Route path="/mi-entrada" element={<MiEntrada />} />
+          <Route path="/carta" element={<Carta />} />
 
           <Route
             path="/admin"
