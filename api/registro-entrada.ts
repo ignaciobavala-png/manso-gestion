@@ -31,6 +31,37 @@ export default async function handler(req: Request): Promise<Response> {
     process.env.VITE_SUPABASE_ANON_KEY!
   )
 
+  // Verificar que el evento existe, está activo y tiene registros abiertos
+  const { data: event, error: eventError } = await supabase
+    .from('events')
+    .select('id, is_active, registrations_open, max_capacity')
+    .eq('id', event_id)
+    .single()
+
+  if (eventError || !event) {
+    return json({ error: 'Evento no encontrado' }, 404)
+  }
+
+  if (!event.is_active) {
+    return json({ error: 'El evento ya no está activo' }, 409)
+  }
+
+  if (!event.registrations_open) {
+    return json({ error: 'El registro de entradas está pausado momentáneamente' }, 503)
+  }
+
+  // Verificar capacidad máxima si está configurada
+  if (event.max_capacity !== null) {
+    const { count, error: countError } = await supabase
+      .from('ticket_registrations')
+      .select('id', { count: 'exact', head: true })
+      .eq('event_id', event_id)
+
+    if (!countError && count !== null && count >= event.max_capacity) {
+      return json({ error: 'El evento alcanzó su capacidad máxima' }, 409)
+    }
+  }
+
   const { data, error } = await supabase
     .from('ticket_registrations')
     .insert({
@@ -42,7 +73,6 @@ export default async function handler(req: Request): Promise<Response> {
     .single()
 
   if (error) {
-    // Violación de unique(email, event_id)
     if (error.code === '23505') {
       return json({ error: 'ya_registrado' }, 409)
     }

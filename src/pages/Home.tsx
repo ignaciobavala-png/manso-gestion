@@ -3,6 +3,7 @@ import { useAppStore } from '../store/useAppStore'
 import Ingresos from '../components/Ingresos'
 import RegistroEventos from '../components/RegistroEventos'
 import EventCreator from '../components/EventCreator'
+import EventoActivo from '../components/EventoActivo'
 import AlertModal from '../components/AlertModal'
 import Background from '../components/Background'
 import Configuracion from './admin/Configuracion'
@@ -162,6 +163,9 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        {/* Gestión del evento activo — QR, pausa y capacidad */}
+        {activeEvent && <EventoActivo />}
 
         {/* Event Creator Section — solo visible si no hay evento activo */}
         {!activeEvent && (

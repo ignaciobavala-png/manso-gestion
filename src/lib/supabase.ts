@@ -133,6 +133,8 @@ export interface Database {
           regular_ticket_price: number
           invited_ticket_price: number
           is_active: boolean
+          registrations_open: boolean
+          max_capacity: number | null
           start_date?: string
           end_date?: string
           closed_at?: string
@@ -146,6 +148,8 @@ export interface Database {
           regular_ticket_price?: number
           invited_ticket_price?: number
           is_active?: boolean
+          registrations_open?: boolean
+          max_capacity?: number | null
           start_date?: string
           end_date?: string
           closed_at?: string
@@ -159,6 +163,8 @@ export interface Database {
           regular_ticket_price?: number
           invited_ticket_price?: number
           is_active?: boolean
+          registrations_open?: boolean
+          max_capacity?: number | null
           start_date?: string
           end_date?: string
           closed_at?: string
