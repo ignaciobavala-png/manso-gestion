@@ -105,15 +105,15 @@ export default function RegistroEntrada() {
         <div className="text-center mb-7">
           <p className="text-white/60 text-sm font-semibold uppercase tracking-[0.25em] mb-2">Esta noche</p>
           <h2 className="text-3xl font-bold text-white">{activeEvent.name}</h2>
-          <div className="mt-3 inline-flex items-center gap-2 bg-emerald-950/80 border border-emerald-700/70 rounded-full px-4 py-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-emerald-300 text-xs font-semibold tracking-wide">Entrada disponible</span>
+          <div className="mt-3 inline-flex items-center gap-2 bg-black/50 border border-white/15 rounded-full px-4 py-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-white/70 animate-pulse" />
+            <span className="text-white/70 text-xs font-semibold tracking-wide">Entrada disponible</span>
           </div>
         </div>
 
         {/* Card del formulario */}
         <div className="max-w-sm w-full mx-auto">
-          <div className="bg-gray-900/90 backdrop-blur-md border border-white/20 rounded-3xl p-6 space-y-5 shadow-2xl">
+          <div className="bg-black/50 backdrop-blur-md border border-white/15 rounded-3xl p-6 space-y-5 shadow-2xl">
             <div>
               <h3 className="text-white font-bold text-xl">Reservá tu lugar</h3>
               <p className="text-gray-300 text-sm mt-1.5">
@@ -151,7 +151,7 @@ export default function RegistroEntrada() {
                   className="mt-0.5 accent-emerald-500 w-4 h-4 flex-shrink-0"
                 />
                 <span className="text-gray-300 text-xs leading-relaxed">
-                  Acepto que Manso guarde mis datos para avisarme de próximas fechas.
+                  Que Manso me avise cuando haya próximas fechas.
                 </span>
               </label>
 
