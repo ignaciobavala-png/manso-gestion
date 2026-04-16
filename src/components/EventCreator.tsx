@@ -35,6 +35,8 @@ export default function EventCreator() {
         regular_ticket_price: price,
         invited_ticket_price: price,
         is_active: true,
+        registrations_open: true,
+        max_capacity: null,
       })
 
       await setActiveEventStatus(event.id, true)
