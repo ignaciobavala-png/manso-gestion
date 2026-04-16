@@ -9,21 +9,21 @@ const workerBlobUrl = URL.createObjectURL(workerBlob)
 // @ts-ignore
 QrScanner.WORKER_PATH = workerBlobUrl
 import { useAppStore } from '../store/useAppStore'
+import { supabase } from '../lib/supabase'
 import SinEventoActivo from '../components/SinEventoActivo'
 import AlertModal from '../components/AlertModal'
 import Background from '../components/Background'
 
 export default function Entradas(): React.JSX.Element {
-  const { 
-    guests, 
-    addGuest, 
-    addTicketSale, 
-    getTicketPrices, 
+  const {
+    guests,
+    addGuest,
+    addTicketSale,
+    getTicketPrices,
     activeEvent,
-    isLoading 
+    isInitialized
   } = useAppStore()
   const ticketPrices = getTicketPrices()
-  const [loading, setLoading] = useState(true)
   const [isScanning, setIsScanning] = useState(false)
   const [cameraError, setCameraError] = useState<string | null>(null)
   const [pendingQr, setPendingQr] = useState<{ rawData: string; name: string } | null>(null)
@@ -32,6 +32,9 @@ export default function Entradas(): React.JSX.Element {
   const [showSuccess, setShowSuccess] = useState(false)
   const [showInvitadoInput, setShowInvitadoInput] = useState(false)
   const [invitadoName, setInvitadoName] = useState('')
+  const [submittingInvitado, setSubmittingInvitado] = useState(false)
+  const [mansoTicketPending, setMansoTicketPending] = useState<{ token: string; name: string } | null>(null)
+  const [validating, setValidating] = useState(false)
   const [alertModal, setAlertModal] = useState({
     isOpen: false,
     message: '',
@@ -39,14 +42,6 @@ export default function Entradas(): React.JSX.Element {
   })
   const videoRef = useRef<HTMLVideoElement>(null)
   const qrScannerRef = useRef<QrScanner | null>(null)
-
-  useEffect(() => {
-    console.log('🎫 Componente Entradas montado')
-    // Usar el loading real del store en lugar de timer hardcodeado
-    if (!isLoading) {
-      setLoading(false)
-    }
-  }, [isLoading])
 
   // Cleanup on unmount — debe estar antes del early return
   useEffect(() => {
@@ -59,7 +54,7 @@ export default function Entradas(): React.JSX.Element {
     }
   }, [])
 
-  if (loading) {
+  if (!isInitialized) {
     return (
       <Background>
         <div className="max-w-4xl mx-auto px-4 py-8">
@@ -103,13 +98,74 @@ export default function Entradas(): React.JSX.Element {
     return raw.length <= 40 ? raw : ''
   }
 
-  // Detecta si el QR es del sistema Manso
+  // Detecta si el QR es del sistema Manso (evento)
   const isMansQr = (raw: string) => raw.startsWith('manso|')
   const getMansEventName = (raw: string) => raw.split('|')[2] || ''
   // Verifica que el QR pertenezca al evento activo
   const isMansQrFromActiveEvent = (raw: string) => {
     const parts = raw.split('|')
     return parts[1] === activeEvent?.id
+  }
+  // Nuevo formato: ticket individual de registro público
+  const isMansoTicket = (raw: string) => raw.startsWith('manso-ticket|')
+  const getMansoTicketToken = (raw: string) => raw.split('|')[1] || ''
+
+  const handleValidateMansoTicket = async (rawData: string) => {
+    const token = getMansoTicketToken(rawData)
+    if (!token) {
+      setAlertModal({ isOpen: true, message: 'QR de ticket inválido.', type: 'error' })
+      return
+    }
+    setValidating(true)
+
+    const { data, error } = await supabase
+      .from('ticket_registrations')
+      .select('name, event_id, used_at')
+      .eq('token', token)
+      .single()
+
+    setValidating(false)
+
+    if (error || !data) {
+      setAlertModal({ isOpen: true, message: 'Token no encontrado.', type: 'error' })
+      return
+    }
+    if (data.event_id !== activeEvent?.id) {
+      setAlertModal({ isOpen: true, message: 'Este QR pertenece a otro evento.', type: 'error' })
+      return
+    }
+    if (data.used_at) {
+      setAlertModal({
+        isOpen: true,
+        message: `Este QR ya fue usado el ${new Date(data.used_at).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })}.`,
+        type: 'error'
+      })
+      return
+    }
+
+    setMansoTicketPending({ token, name: data.name })
+  }
+
+  const handleConfirmMansoTicket = async () => {
+    if (!mansoTicketPending) return
+    setConfirming(true)
+
+    const { error } = await supabase
+      .from('ticket_registrations')
+      .update({ used_at: new Date().toISOString() })
+      .eq('token', mansoTicketPending.token)
+      .is('used_at', null)
+
+    setConfirming(false)
+
+    if (error) {
+      setAlertModal({ isOpen: true, message: 'Error al registrar el ingreso.', type: 'error' })
+      return
+    }
+
+    setMansoTicketPending(null)
+    setShowSuccess(true)
+    setTimeout(() => setShowSuccess(false), 2000)
   }
 
   const handleScanQR = async () => {
@@ -122,10 +178,15 @@ export default function Entradas(): React.JSX.Element {
         videoRef.current,
         (result) => {
           const rawData = result.data
-          console.log('QR detectado:', rawData)
           stopScanning()
 
-          // Si es QR de Manso pero de otro evento → rechazar
+          // Nuevo formato: ticket individual de registro público
+          if (isMansoTicket(rawData)) {
+            handleValidateMansoTicket(rawData)
+            return
+          }
+
+          // Si es QR de Manso (evento) pero de otro evento → rechazar
           if (isMansQr(rawData) && !isMansQrFromActiveEvent(rawData)) {
             setAlertModal({
               isOpen: true,
@@ -189,6 +250,7 @@ export default function Entradas(): React.JSX.Element {
   }
 
   const handleAddInvitado = async () => {
+    if (submittingInvitado) return
     if (!invitadoName.trim()) {
       setAlertModal({
         isOpen: true,
@@ -197,15 +259,15 @@ export default function Entradas(): React.JSX.Element {
       })
       return
     }
-    
+
+    setSubmittingInvitado(true)
     try {
       await addGuest({ name: invitadoName.trim(), type: 'invitado' })
-      await addTicketSale({ 
-        guest_name: invitadoName.trim(), 
-        type: 'invitado', 
-        price: ticketPrices.invitado 
+      await addTicketSale({
+        guest_name: invitadoName.trim(),
+        type: 'invitado',
+        price: ticketPrices.invitado
       })
-      
       setInvitadoName('')
       setShowInvitadoInput(false)
     } catch (error) {
@@ -214,8 +276,13 @@ export default function Entradas(): React.JSX.Element {
         message: 'Error al agregar invitado: ' + (error as Error).message,
         type: 'error'
       })
+    } finally {
+      setTimeout(() => setSubmittingInvitado(false), 2000)
     }
   }
+
+  // Solo los guests del evento activo
+  const eventGuests = guests.filter(g => g.event_id === activeEvent.id)
 
   return (
     <Background>
@@ -231,13 +298,15 @@ export default function Entradas(): React.JSX.Element {
                 className="h-8 sm:h-10 w-auto"
               />
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">Entradas</h1>
-              <div className="flex items-center gap-2">
-                <div className="relative">
-                  <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                  <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-75"></div>
+              {activeEvent?.is_active && (
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                    <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-75"></div>
+                  </div>
+                  <span className="text-sm text-emerald-400 font-medium">Vivo</span>
                 </div>
-                <span className="text-sm text-emerald-400 font-medium">Vivo</span>
-              </div>
+              )}
             </div>
           </div>
         </div>
@@ -247,6 +316,41 @@ export default function Entradas(): React.JSX.Element {
         {/* QR Scanner Section */}
         <section className="bg-gray-800/50 border border-gray-700 rounded-3xl p-6 sm:p-8">
           <h2 className="text-xl font-semibold mb-6 text-white">Escanear QR</h2>
+
+          {/* Estado: validando ticket */}
+          {validating && (
+            <div className="flex flex-col items-center justify-center py-8 gap-3">
+              <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-emerald-500" />
+              <p className="text-gray-400 text-sm">Validando ticket...</p>
+            </div>
+          )}
+
+          {/* Estado: confirmar ticket de registro público */}
+          {!validating && !showSuccess && mansoTicketPending && (
+            <div className="space-y-4">
+              <div className="bg-emerald-900/20 border border-emerald-700 rounded-2xl p-4 text-center">
+                <p className="text-xs text-emerald-500 mb-1 uppercase tracking-wider">Entrada Digital</p>
+                <p className="text-white font-semibold text-lg">{mansoTicketPending.name}</p>
+                <p className="text-emerald-400 text-xs mt-1">Token válido — sin uso previo</p>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setMansoTicketPending(null)}
+                  disabled={confirming}
+                  className="flex-1 py-3 bg-gray-600 hover:bg-gray-500 disabled:opacity-50 text-white font-medium rounded-xl transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleConfirmMansoTicket}
+                  disabled={confirming}
+                  className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold rounded-xl transition-colors"
+                >
+                  {confirming ? 'Registrando...' : 'Confirmar ingreso'}
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Estado: éxito */}
           {showSuccess && (
@@ -333,7 +437,7 @@ export default function Entradas(): React.JSX.Element {
           )}
 
           {/* Estado: scanner / idle */}
-          {!showSuccess && !pendingQr && (
+          {!showSuccess && !pendingQr && !mansoTicketPending && !validating && (
             <div className="flex flex-col items-center space-y-6">
               <div className="w-full aspect-square max-w-xs bg-gray-700/50 border-2 border-dashed border-gray-600 rounded-2xl overflow-hidden">
                 {/* El video siempre está en el DOM para que videoRef.current esté disponible al iniciar */}
@@ -398,7 +502,8 @@ export default function Entradas(): React.JSX.Element {
                     <div className="flex gap-2">
                       <button
                         onClick={handleAddInvitado}
-                        className="flex-1 min-h-10 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-xl transition-colors"
+                        disabled={submittingInvitado}
+                        className="flex-1 min-h-10 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-medium rounded-xl transition-colors"
                       >
                         Confirmar
                       </button>
@@ -422,16 +527,16 @@ export default function Entradas(): React.JSX.Element {
             <h2 className="text-xl font-semibold text-white">Últimos Invitados</h2>
             <div className="flex items-center gap-4">
               <span className="text-sm text-gray-400">
-                Total: {guests.length}
+                Total: {eventGuests.length}
               </span>
               <span className="text-sm text-amber-400">
-                Invitados: {guests.filter(g => g.type === 'invitado').length}
+                Invitados: {eventGuests.filter(g => g.type === 'invitado').length}
               </span>
             </div>
           </div>
           
           <div className="space-y-3">
-            {guests.slice(0, 10).map((guest) => (
+            {eventGuests.slice(0, 10).map((guest) => (
               <div
                 key={guest.id}
                 className="flex items-center justify-between p-4 bg-gray-700/50 rounded-2xl border border-gray-600"
@@ -458,7 +563,7 @@ export default function Entradas(): React.JSX.Element {
             ))}
           </div>
 
-          {guests.length === 0 && (
+          {eventGuests.length === 0 && (
             <div className="text-center py-8">
               <p className="text-gray-400">No hay invitados registrados aún</p>
             </div>
@@ -466,7 +571,7 @@ export default function Entradas(): React.JSX.Element {
 
           <div className="mt-6 pt-6 border-t border-gray-700">
             <p className="text-sm text-gray-400 text-center">
-              Mostrando los últimos {Math.min(10, guests.length)} invitados
+              Mostrando los últimos {Math.min(10, eventGuests.length)} invitados
             </p>
           </div>
         </section>
@@ -475,12 +580,12 @@ export default function Entradas(): React.JSX.Element {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-4">
             <p className="text-sm text-gray-400">Entradas Hoy</p>
-            <p className="text-2xl font-bold mt-1 text-white">{guests.length}</p>
+            <p className="text-2xl font-bold mt-1 text-white">{eventGuests.length}</p>
           </div>
           <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-4">
             <p className="text-sm text-gray-400">Invitados Activos</p>
             <p className="text-2xl font-bold mt-1 text-amber-400">
-              {guests.filter(g => g.type === 'invitado').length}
+              {eventGuests.filter(g => g.type === 'invitado').length}
             </p>
           </div>
         </div>

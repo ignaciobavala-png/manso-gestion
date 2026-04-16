@@ -1,35 +1,61 @@
-import { useState } from 'react'
-import Main from './pages/Main'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider } from './context/AuthContext'
+import ProtectedRoute from './components/ProtectedRoute'
+import AdminLayout from './components/AdminLayout'
+import Login from './pages/Login'
 import Home from './pages/Home'
-import Entradas from './pages/Entradas'
 import Barra from './pages/Barra'
-import BottomNav from './components/BottomNav'
-import { AppStoreInitializer } from './store/useAppStoreInit'
+import Entradas from './pages/Entradas'
+import RegistroEntrada from './pages/public/RegistroEntrada'
+import MiEntrada from './pages/public/MiEntrada'
+import Carta from './pages/public/Carta'
+import Comunidad from './pages/admin/Comunidad'
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<'main' | 'home' | 'entradas' | 'barra'>('main')
-
-  const renderPage = () => {
-    switch (currentPage) {
-      case 'main':
-        return <Main setCurrentPage={setCurrentPage} />
-      case 'home':
-        return <Home />
-      case 'entradas':
-        return <Entradas />
-      case 'barra':
-        return <Barra />
-      default:
-        return <Main setCurrentPage={setCurrentPage} />
-    }
-  }
-
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100">
-      <AppStoreInitializer />
-      {renderPage()}
-      {currentPage !== 'main' && <BottomNav currentPage={currentPage} setCurrentPage={setCurrentPage} />}
-    </div>
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+
+          {/* Rutas públicas */}
+          <Route path="/registro" element={<RegistroEntrada />} />
+          <Route path="/mi-entrada" element={<MiEntrada />} />
+          <Route path="/carta" element={<Carta />} />
+
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute>
+                <AdminLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route
+              path="home"
+              element={
+                <ProtectedRoute requiredRole="control">
+                  <Home />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="barra" element={<Barra />} />
+            <Route path="entradas" element={<Entradas />} />
+            <Route
+              path="comunidad"
+              element={
+                <ProtectedRoute requiredRole="control">
+                  <Comunidad />
+                </ProtectedRoute>
+              }
+            />
+          </Route>
+
+          {/* Cualquier otra ruta va a login */}
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
   )
 }
 

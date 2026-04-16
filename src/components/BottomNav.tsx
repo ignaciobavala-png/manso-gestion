@@ -1,40 +1,61 @@
-interface BottomNavProps {
-  currentPage: 'main' | 'home' | 'entradas' | 'barra'
-  setCurrentPage: (page: 'main' | 'home' | 'entradas' | 'barra') => void
-}
+import { useNavigate, useLocation } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 
-export default function BottomNav({ currentPage, setCurrentPage }: BottomNavProps) {
-  const navItems = [
-    { id: 'main', label: 'Principal', icon: '🏠' },
-    { id: 'home', label: 'Control', icon: '📊' },
-    { id: 'entradas', label: 'Entradas', icon: '🎫' },
-    { id: 'barra', label: 'Barra', icon: '🍺' },
+export default function BottomNav() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { role, signOut } = useAuth()
+
+  const tabs = [
+    ...(role === 'control'
+      ? [
+          { path: '/admin/home', label: 'Control', icon: '📊' },
+          { path: '/admin/comunidad', label: 'Comunidad', icon: '👥' },
+        ]
+      : []),
+    { path: '/admin/barra', label: 'Barra', icon: '🍺' },
+    { path: '/admin/entradas', label: 'Entradas', icon: '🎫' },
   ]
+
+  const handleSignOut = async () => {
+    await signOut()
+    navigate('/login')
+  }
 
   return (
     <nav className="fixed bottom-0 inset-x-0 z-50 bg-gray-800 border-t border-gray-700">
       <div className="max-w-7xl mx-auto px-4">
         <ul className="flex justify-around">
-          {navItems.map((item) => (
-            <li key={item.id} className="flex-1">
+          {tabs.map((tab) => (
+            <li key={tab.path} className="flex-1">
               <button
-                onClick={() => setCurrentPage(item.id as 'main' | 'home' | 'entradas' | 'barra')}
+                onClick={() => navigate(tab.path)}
                 className={`
                   w-full flex flex-col items-center
-                  min-h-14 min-w-14 px-3 py-2
-                  text-xs font-medium
-                  transition-colors
-                  ${currentPage === item.id 
-                    ? 'text-emerald-400' 
+                  min-h-14 px-3 py-2
+                  text-xs font-medium transition-colors
+                  ${location.pathname === tab.path
+                    ? 'text-emerald-400'
                     : 'text-gray-400 hover:text-gray-300'
                   }
                 `}
               >
-                <span className="text-2xl mb-1">{item.icon}</span>
-                {item.label}
+                <span className="text-2xl mb-1">{tab.icon}</span>
+                {tab.label}
               </button>
             </li>
           ))}
+
+          {/* Cerrar sesión */}
+          <li className="flex-1">
+            <button
+              onClick={handleSignOut}
+              className="w-full flex flex-col items-center min-h-14 px-3 py-2 text-xs font-medium text-gray-400 hover:text-red-400 transition-colors"
+            >
+              <span className="text-2xl mb-1">→</span>
+              Salir
+            </button>
+          </li>
         </ul>
       </div>
     </nav>

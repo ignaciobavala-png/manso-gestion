@@ -36,6 +36,7 @@ interface AppState {
   
   // Acciones de ventas
   addSale: (sale: Omit<Sale, 'id' | 'created_at'>) => Promise<void>
+  addSaleBatch: (items: Array<Pick<Sale, 'product_id' | 'product_name' | 'quantity' | 'total'>>, paymentMethod: string) => Promise<void>
   flushBalance: () => void
   
   // Acciones de invitados
@@ -48,6 +49,7 @@ interface AppState {
   addEvent: (event: Omit<Event, 'id' | 'created_at' | 'updated_at' | 'closed_at'>) => Promise<Event>
   setActiveEventStatus: (eventId: string, isActive: boolean) => Promise<void>
   closeEvent: (eventId: string) => Promise<void>
+  deleteEvent: (eventId: string) => Promise<void>
   
   // Utilidades
   getTicketPrices: () => { regular: number; invitado: number }
@@ -83,8 +85,6 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ isLoading: true, error: null })
     
     try {
-      console.log('🔄 Fetching data from Supabase...')
-      
       const [
         productsResult,
         guestsResult,
@@ -126,13 +126,11 @@ export const useAppStore = create<AppState>((set, get) => ({
       }
       
       set(newState)
-      
+
       // Calcular balance para el evento activo
       if (activeEventResult.data?.id) {
         await get().calculateBalance(activeEventResult.data.id)
       }
-      
-      console.log('✅ Data loaded successfully')
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Error al cargar datos'
       console.error('❌ Error fetching data:', errorMessage)
@@ -247,6 +245,38 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
   
+  addSaleBatch: async (items, paymentMethod) => {
+    const eventId = get().activeEvent?.id
+    if (!eventId) throw new Error('No hay evento activo')
+
+    const { data, error } = await supabase.rpc('add_sale_batch', {
+      p_event_id: eventId,
+      p_payment_method: paymentMethod,
+      p_items: items.map(i => ({
+        product_id: i.product_id,
+        product_name: i.product_name,
+        quantity: i.quantity,
+        total: i.total,
+      })),
+    })
+
+    if (error) throw error
+
+    const inserted = data as Sale[]
+    const totalSum = inserted.reduce((sum, s) => sum + Number(s.total), 0)
+
+    set(state => ({
+      sales: [...inserted, ...state.sales],
+      balance: state.balance + totalSum,
+      // Actualizar stock localmente para reflejar el decremento del trigger
+      products: state.products.map(p => {
+        const sold = items.find(i => i.product_id === p.id)
+        if (!sold) return p
+        return { ...p, stock: Math.max(0, p.stock - sold.quantity) }
+      }),
+    }))
+  },
+
   flushBalance: () => {
     set({ balance: 0 })
   },
@@ -325,13 +355,22 @@ export const useAppStore = create<AppState>((set, get) => ({
   
   setActiveEventStatus: async (eventId, isActive) => {
     try {
+      // Si estamos activando un evento, primero desactivar todos los demás
+      if (isActive) {
+        const { error: deactivateError } = await supabase
+          .from('events')
+          .update({ is_active: false })
+          .neq('id', eventId)
+        if (deactivateError) throw deactivateError
+      }
+
       const { error } = await supabase
         .from('events')
         .update({ is_active: isActive })
         .eq('id', eventId)
-      
+
       if (error) throw error
-      
+
       // Refrescar datos para actualizar activeEvent
       await get().refreshData()
     } catch (error) {
@@ -344,18 +383,39 @@ export const useAppStore = create<AppState>((set, get) => ({
     try {
       const { error } = await supabase
         .from('events')
-        .update({ 
+        .update({
           is_active: false,
           closed_at: new Date().toISOString()
         })
         .eq('id', eventId)
-      
+
       if (error) throw error
-      
+
       // Refrescar datos
       await get().refreshData()
     } catch (error) {
       console.error('Error closing event:', error)
+      throw error
+    }
+  },
+
+  deleteEvent: async (eventId) => {
+    try {
+      const { error } = await supabase
+        .from('events')
+        .delete()
+        .eq('id', eventId)
+
+      if (error) throw error
+
+      set(state => ({
+        events: state.events.filter(e => e.id !== eventId),
+        sales: state.sales.filter(s => s.event_id !== eventId),
+        ticketSales: state.ticketSales.filter(t => t.event_id !== eventId),
+        guests: state.guests.filter(g => g.event_id !== eventId),
+      }))
+    } catch (error) {
+      console.error('Error deleting event:', error)
       throw error
     }
   },

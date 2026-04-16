@@ -3,21 +3,25 @@ import { useAppStore } from '../store/useAppStore'
 import Ingresos from '../components/Ingresos'
 import RegistroEventos from '../components/RegistroEventos'
 import EventCreator from '../components/EventCreator'
+import EventoActivo from '../components/EventoActivo'
 import AlertModal from '../components/AlertModal'
 import Background from '../components/Background'
+import Configuracion from './admin/Configuracion'
+
+type Tab = 'operacion' | 'config'
 
 export default function Home() {
-  const { 
-    products, 
-    balance, 
-    updateProduct, 
-    activeEvent, 
-    closeEvent, 
-    sales, 
+  const [activeTab, setActiveTab] = useState<Tab>('operacion')
+  const {
+    products,
+    balance,
+    updateProduct,
+    activeEvent,
+    closeEvent,
+    sales,
     ticketSales,
-    isLoading 
+    isInitialized
   } = useAppStore()
-  const [loading, setLoading] = useState(true)
   const [isStockExpanded, setIsStockExpanded] = useState(false)
   const [showEventCreator, setShowEventCreator] = useState(false)
   const [stockValues, setStockValues] = useState<Record<string, number>>({})
@@ -30,20 +34,12 @@ export default function Home() {
   })
 
   useEffect(() => {
-    console.log('🏠 Componente Home montado')
-    // Usar el loading real del store en lugar de timer hardcodeado
-    if (!isLoading) {
-      setLoading(false)
-    }
-  }, [isLoading])
-
-  useEffect(() => {
     const initial: Record<string, number> = {}
     products.forEach(p => { initial[p.id] = p.stock })
     setStockValues(initial)
   }, [products])
 
-  if (loading) {
+  if (!isInitialized) {
     return (
       <Background>
         <div className="max-w-4xl mx-auto px-4 py-8">
@@ -54,6 +50,10 @@ export default function Home() {
       </Background>
     )
   }
+
+  // Solo las transacciones del evento activo
+  const eventSales = activeEvent ? sales.filter(s => s.event_id === activeEvent.id) : []
+  const eventTicketSales = activeEvent ? ticketSales.filter(t => t.event_id === activeEvent.id) : []
 
   const handleCloseEvent = async () => {
     if (!activeEvent) return
@@ -99,27 +99,58 @@ export default function Home() {
       <div className="min-h-screen bg-gray-950 text-gray-200 font-montserrat pb-20">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-gray-800 bg-opacity-95 backdrop-blur-sm border-b border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between py-4">
             <div className="flex items-center gap-3">
-              <img 
-                src="/manso-name-white.png" 
-                alt="Manso Gestión" 
+              <img
+                src="/manso-name-white.png"
+                alt="Manso Gestión"
                 className="h-8 sm:h-10 w-auto"
               />
-              <div className="flex items-center gap-2">
-                <div className="relative">
-                  <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                  <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-75"></div>
+              {activeEvent?.is_active && (
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                    <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-75"></div>
+                  </div>
+                  <span className="text-sm text-emerald-400 font-medium">Vivo</span>
                 </div>
-                <span className="text-sm text-emerald-400 font-medium">Vivo</span>
-              </div>
+              )}
             </div>
+          </div>
+          {/* Tabs */}
+          <div className="flex gap-1 pb-0">
+            <button
+              onClick={() => setActiveTab('operacion')}
+              className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
+                activeTab === 'operacion'
+                  ? 'text-white border-b-2 border-emerald-500'
+                  : 'text-gray-500 hover:text-gray-300'
+              }`}
+            >
+              Operación
+            </button>
+            <button
+              onClick={() => setActiveTab('config')}
+              className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
+                activeTab === 'config'
+                  ? 'text-white border-b-2 border-emerald-500'
+                  : 'text-gray-500 hover:text-gray-300'
+              }`}
+            >
+              Configuración
+            </button>
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
+        {activeTab === 'config' && (
+          <section className="bg-gray-800/50 border border-gray-700 rounded-3xl p-6 sm:p-8">
+            <Configuracion />
+          </section>
+        )}
+        {activeTab === 'operacion' && (<>
         {/* Balance Card */}
         <section className="bg-gray-800 bg-opacity-50 border border-gray-700 rounded-3xl p-6 sm:p-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -135,29 +166,34 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Event Creator Section */}
-        <section className="bg-gray-800/50 border border-gray-700 rounded-3xl overflow-hidden">
-          <button
-            onClick={() => setShowEventCreator(!showEventCreator)}
-            className="w-full p-6 sm:p-8 flex items-center justify-between text-left hover:bg-gray-700 hover:bg-opacity-30 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
-          >
-            <h2 className="text-xl font-semibold text-white">Crear Evento</h2>
-            <svg
-              className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${showEventCreator ? 'rotate-180' : ''}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+        {/* Gestión del evento activo — QR, pausa y capacidad */}
+        {activeEvent && <EventoActivo />}
+
+        {/* Event Creator Section — solo visible si no hay evento activo */}
+        {!activeEvent && (
+          <section className="bg-gray-800/50 border border-gray-700 rounded-3xl overflow-hidden">
+            <button
+              onClick={() => setShowEventCreator(!showEventCreator)}
+              className="w-full p-6 sm:p-8 flex items-center justify-between text-left hover:bg-gray-700 hover:bg-opacity-30 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-          
-          {showEventCreator && (
-            <div className="px-6 sm:px-8 pb-6 sm:pb-8">
-              <EventCreator />
-            </div>
-          )}
-        </section>
+              <h2 className="text-xl font-semibold text-white">Crear Evento</h2>
+              <svg
+                className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${showEventCreator ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {showEventCreator && (
+              <div className="px-6 sm:px-8 pb-6 sm:pb-8">
+                <EventCreator />
+              </div>
+            )}
+          </section>
+        )}
 
         {/* Stock Inicial Section */}
         <section className="bg-gray-800/50 border border-gray-700 rounded-3xl overflow-hidden">
@@ -243,18 +279,18 @@ export default function Home() {
               </div>
               <div className="bg-gray-700/50 rounded-2xl p-3 text-center">
                 <p className="text-xs text-gray-400">Ventas barra</p>
-                <p className="text-lg font-bold text-white">{sales.length}</p>
+                <p className="text-lg font-bold text-white">{eventSales.length}</p>
               </div>
               <div className="bg-gray-700/50 rounded-2xl p-3 text-center">
                 <p className="text-xs text-gray-400">Entradas</p>
-                <p className="text-lg font-bold text-white">{ticketSales.length}</p>
+                <p className="text-lg font-bold text-white">{eventTicketSales.length}</p>
               </div>
               <div className="bg-gray-700/50 rounded-2xl p-3 text-center">
                 <p className="text-xs text-gray-400">Recaudado</p>
                 <p className="text-lg font-bold text-emerald-400">
                   {formatCurrency(
-                    sales.reduce((s, v) => s + v.total, 0) +
-                    ticketSales.reduce((s, t) => s + t.price, 0)
+                    eventSales.reduce((s, v) => s + v.total, 0) +
+                    eventTicketSales.reduce((s, t) => s + t.price, 0)
                   )}
                 </p>
               </div>
@@ -312,6 +348,7 @@ export default function Home() {
             </p>
           </div>
          </div>
+        </>)}
        </main>
 
         <AlertModal

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import SinEventoActivo from '../components/SinEventoActivo'
 import AlertModal from '../components/AlertModal'
@@ -6,18 +6,17 @@ import ConfirmModal from '../components/ConfirmModal'
 import Background from '../components/Background'
 
 export default function Barra() {
-  const { 
-    products, 
-    balance, 
-    addSale, 
-    flushBalance, 
-    addProduct, 
-    deleteProduct, 
-    sales, 
+  const {
+    products,
+    balance,
+    addSaleBatch,
+    flushBalance,
+    addProduct,
+    deleteProduct,
+    sales,
     activeEvent,
-    isLoading 
+    isInitialized
   } = useAppStore()
-  const [loading, setLoading] = useState(true)
   const [cart, setCart] = useState<Record<string, number>>({})
   const [paymentMethod, setPaymentMethod] = useState<'efectivo' | 'tarjeta' | 'transferencia'>('efectivo')
   const [confirming, setConfirming] = useState(false)
@@ -41,15 +40,7 @@ export default function Barra() {
     productName: ''
   })
 
-  useEffect(() => {
-    console.log('🍺 Componente Barra montado')
-    // Usar el loading real del store en lugar de timer hardcodeado
-    if (!isLoading) {
-      setLoading(false)
-    }
-  }, [isLoading])
-
-  if (loading) {
+  if (!isInitialized) {
     return (
       <Background>
         <div className="max-w-6xl mx-auto px-4 py-8">
@@ -107,16 +98,16 @@ export default function Barra() {
     }
     setConfirming(true)
     try {
-      await Promise.all(cartItems.map(({ product, qty }) =>
-        addSale({
+      await addSaleBatch(
+        cartItems.map(({ product, qty }) => ({
           product_id: product.id,
           product_name: product.name,
           quantity: qty,
           total: product.price * qty,
-          payment_method: paymentMethod
-        })
-      ))
-      await flushBalance()
+        })),
+        paymentMethod
+      )
+      flushBalance()
       setCart({})
       setPurchaseSuccess(true)
       setTimeout(() => setPurchaseSuccess(false), 2500)
@@ -194,13 +185,15 @@ export default function Barra() {
                 className="h-8 sm:h-10 w-auto"
               />
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">Barra</h1>
-              <div className="flex items-center gap-2">
-                <div className="relative">
-                  <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                  <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-75"></div>
+              {activeEvent?.is_active && (
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                    <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-75"></div>
+                  </div>
+                  <span className="text-sm text-emerald-400 font-medium">Vivo</span>
                 </div>
-                <span className="text-sm text-emerald-400 font-medium">Vivo</span>
-              </div>
+              )}
             </div>
             <div className="text-right">
               <p className="text-sm text-gray-400">Balance</p>
