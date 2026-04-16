@@ -6,6 +6,7 @@ export default function RegistroEventos() {
   const [isExpanded, setIsExpanded] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('es-AR', {
@@ -23,11 +24,12 @@ export default function RegistroEventos() {
 
   const handleDelete = async (eventId: string) => {
     setDeleting(true)
+    setDeleteError(null)
     try {
       await deleteEvent(eventId)
       setConfirmingDelete(null)
-    } catch {
-      // silencioso — el store ya loguea el error
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : 'No se pudo eliminar el evento.')
     } finally {
       setDeleting(false)
     }
@@ -94,7 +96,7 @@ export default function RegistroEventos() {
                 {/* Eliminar */}
                 {!isConfirming ? (
                   <button
-                    onClick={() => setConfirmingDelete(event.id)}
+                    onClick={() => { setConfirmingDelete(event.id); setDeleteError(null) }}
                     className="w-full text-xs text-gray-600 hover:text-red-400 transition-colors py-1 text-center"
                   >
                     Eliminar evento
@@ -104,9 +106,14 @@ export default function RegistroEventos() {
                     <p className="text-xs text-red-300 text-center">
                       Esto elimina el evento y todos sus datos. No se puede deshacer.
                     </p>
+                    {deleteError && (
+                      <p className="text-xs text-red-400 text-center bg-red-900/40 rounded-lg px-2 py-1">
+                        {deleteError}
+                      </p>
+                    )}
                     <div className="flex gap-2">
                       <button
-                        onClick={() => setConfirmingDelete(null)}
+                        onClick={() => { setConfirmingDelete(null); setDeleteError(null) }}
                         disabled={deleting}
                         className="flex-1 py-2 text-sm bg-gray-600 hover:bg-gray-500 disabled:opacity-50 text-white rounded-lg transition-colors"
                       >

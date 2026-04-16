@@ -131,6 +131,37 @@ pnpm dev
 
 ---
 
+## Plan de debugging (auditoría 2026-04-15)
+
+### 🔴 Críticos
+
+| # | Ubicación | Descripción | Fix |
+|---|---|---|---|
+| 1 | `Barra.tsx:101` — `handleConfirmPurchase` | `Promise.all(cartItems.map(addSale))` no es atómico: si falla el ítem 3, los 2 anteriores ya se insertaron y el balance queda corrupto. | Crear RPC `add_sale_batch(items[])` en Supabase que inserte todo en una transacción; llamarla desde un único `addSaleBatch` en el store. |
+| 2 | `products.stock` — sin decremento | El stock se valida en Barra antes de vender, pero nunca se descuenta en DB. Si hay dos dispositivos, el stock se puede pasar fácilmente. | Agregar trigger `after insert on sales` que reste `quantity` de `products.stock`; o incluir el UPDATE en la misma transacción del RPC del bug #1. |
+| 3 | `RegistroEventos.tsx:29` — `catch {}` vacío | Si el DELETE falla por FK (ej. hay sales con ese `event_id`), el error se traga silenciosamente y la UI muestra éxito mientras el evento sigue en DB. | Relanzar el error en `handleDelete` y mostrar un mensaje de error en la UI. |
+
+### 🟡 Importantes
+
+| # | Ubicación | Descripción | Fix |
+|---|---|---|---|
+| 4 | `MiEntrada.tsx` — `findSavedTicket()` | Itera todas las keys `manso_ticket_*` en localStorage y devuelve la primera que encuentra. Si el usuario registró entradas a varios eventos, puede mostrar un QR de un evento anterior. | Leer primero el evento activo desde Supabase y cruzar con la key `manso_ticket_{active_event_id}`. |
+| 5 | `EventoActivo.tsx:66` — `parseInt` | `parseInt(e.target.value)` retorna `NaN` cuando el input está vacío. Se pasa `NaN` al UPDATE en Supabase y la columna `max_capacity` queda en NULL sin validación. | Usar `parseInt(e.target.value) || null` o validar antes de llamar al update. |
+| 6 | `api/change-pin.ts` — `listUsers()` | `supabase.auth.admin.listUsers()` sin parámetro `perPage` devuelve por defecto 50 usuarios. Si hay más de 50, el usuario objetivo puede no estar en la lista y el cambio de PIN fallará silenciosamente. | Pasar `{ perPage: 1000 }` o usar `getUserByEmail()` si está disponible en el SDK. |
+| 7 | `useAppStore` — `activeEvent` stale | `addSale` y `addTicketSale` usan `get().activeEvent?.id` capturado al momento de la llamada. Si el evento fue cerrado desde otro dispositivo, la venta se inserta con `event_id` incorrecto hasta que la caché de 30 s expira. | Siempre leer el `event_id` desde la vista `active_event` en el servidor antes de insertar, o reducir el TTL de caché. |
+| 8 | `api/registro-entrada.ts` — sin rate limiting | El endpoint público no tiene límite de solicitudes por IP ni por email. Un bot puede saturar `ticket_registrations` con emails falsos. | Agregar un header `X-Forwarded-For` check + tabla de rate-limit en Supabase, o usar Vercel WAF / middleware. |
+
+### 🟢 Menores
+
+| # | Ubicación | Descripción | Fix |
+|---|---|---|---|
+| 9 | `EventoActivo.tsx` — badge "Vivo" | El badge "En vivo" siempre se renderiza si hay `activeEvent`, sin verificar si el evento está realmente `is_active`. | Condicionar el badge a `activeEvent.is_active === true`. |
+| 10 | `deleteEvent` en store | Al eliminar un evento se limpian `sales` y `ticketSales` del estado local, pero no `guests`. Si se abre la sección Entradas después, los invitados del evento borrado siguen en la UI. | Agregar `guests: state.guests.filter(g => g.event_id !== eventId)` al `set()` de `deleteEvent`. |
+| 11 | `EventoActivo.tsx` — `setTimeout` sin cleanup | El `setTimeout` para mostrar el toast de capacidad guardada no retorna un cleanup en el `useEffect`. En React Strict Mode (doble render) puede dispararse dos veces. | Retornar `() => clearTimeout(timer)` en el efecto. |
+| 12 | `AuthContext` — expiración de token | No hay manejo de `TOKEN_REFRESHED` / `SIGNED_OUT` por expiración. Si el token vence durante una sesión larga, las llamadas a Supabase empezarán a dar 401 sin que el usuario vea feedback. | Suscribirse a `supabase.auth.onAuthStateChange` y redirigir al login en evento `SIGNED_OUT`. |
+
+---
+
 ## Pendientes
 
 - Spinner hardcodeado con `setTimeout` → reemplazar por `isLoading` real del store

@@ -63,7 +63,7 @@ export default async function handler(req: Request): Promise<Response> {
 
   // Buscar el usuario target por email
   const targetEmail = role === 'control' ? CONTROL_EMAIL : EMPLEADO_EMAIL
-  const { data: { users }, error: listError } = await adminClient.auth.admin.listUsers()
+  const { data: { users }, error: listError } = await adminClient.auth.admin.listUsers({ perPage: 1000 })
 
   if (listError) {
     return json({ error: 'Error al buscar usuarios' }, 500)

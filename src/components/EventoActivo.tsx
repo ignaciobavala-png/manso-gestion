@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import QRCode from 'qrcode'
 import { supabase } from '../lib/supabase'
 import { useAppStore } from '../store/useAppStore'
@@ -13,6 +13,10 @@ export default function EventoActivo() {
   const [savingPause, setSavingPause] = useState(false)
   const [savingCapacity, setSavingCapacity] = useState(false)
   const [capacitySaved, setCapacitySaved] = useState(false)
+  const capacityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Limpiar timer de capacidad al desmontar
+  useEffect(() => () => { if (capacityTimerRef.current) clearTimeout(capacityTimerRef.current) }, [])
 
   // Generar QR del evento
   useEffect(() => {
@@ -63,7 +67,8 @@ export default function EventoActivo() {
   const saveCapacity = async () => {
     setSavingCapacity(true)
     setCapacitySaved(false)
-    const parsed = maxCapacity.trim() === '' ? null : parseInt(maxCapacity)
+    const raw = parseInt(maxCapacity)
+    const parsed = maxCapacity.trim() === '' || isNaN(raw) ? null : raw
     const { error } = await supabase
       .from('events')
       .update({ max_capacity: parsed })
@@ -71,7 +76,8 @@ export default function EventoActivo() {
 
     if (!error) {
       setCapacitySaved(true)
-      setTimeout(() => setCapacitySaved(false), 2000)
+      if (capacityTimerRef.current) clearTimeout(capacityTimerRef.current)
+      capacityTimerRef.current = setTimeout(() => setCapacitySaved(false), 2000)
       refreshData()
     }
     setSavingCapacity(false)
@@ -87,7 +93,7 @@ export default function EventoActivo() {
     document.body.removeChild(a)
   }
 
-  const maxCap = maxCapacity.trim() !== '' ? parseInt(maxCapacity) : null
+  const maxCap = maxCapacity.trim() !== '' && !isNaN(parseInt(maxCapacity)) ? parseInt(maxCapacity) : null
   const isFull = maxCap !== null && registrationCount !== null && registrationCount >= maxCap
 
   return (

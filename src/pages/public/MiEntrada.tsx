@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import QRCode from 'qrcode'
+import { supabase } from '../../lib/supabase'
 import PublicLayout from '../../components/PublicLayout'
 
 interface TicketData {
@@ -10,15 +11,21 @@ interface TicketData {
   event_id: string
 }
 
-function findSavedTicket(): TicketData | null {
+function getTicketForEvent(eventId: string): TicketData | null {
+  try {
+    const raw = localStorage.getItem(`manso_ticket_${eventId}`)
+    if (raw) return JSON.parse(raw) as TicketData
+  } catch { /* ignorar entradas corruptas */ }
+  return null
+}
+
+function findAnyTicket(): TicketData | null {
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i)
     if (key?.startsWith('manso_ticket_')) {
       try {
         return JSON.parse(localStorage.getItem(key)!) as TicketData
-      } catch {
-        // ignorar entradas corruptas
-      }
+      } catch { /* ignorar */ }
     }
   }
   return null
@@ -31,12 +38,25 @@ export default function MiEntrada() {
   const [downloading, setDownloading] = useState(false)
 
   useEffect(() => {
-    const saved = findSavedTicket()
-    if (!saved) {
-      navigate('/registro', { replace: true })
-      return
-    }
-    setTicket(saved)
+    // Intentar encontrar el ticket del evento activo primero
+    supabase.from('active_event').select('id').single().then(({ data }) => {
+      let saved: TicketData | null = null
+
+      if (data?.id) {
+        saved = getTicketForEvent(data.id)
+      }
+
+      // Si no hay evento activo o no hay ticket para ese evento, buscar cualquier ticket guardado
+      if (!saved) {
+        saved = findAnyTicket()
+      }
+
+      if (!saved) {
+        navigate('/registro', { replace: true })
+        return
+      }
+      setTicket(saved)
+    })
   }, [navigate])
 
   useEffect(() => {

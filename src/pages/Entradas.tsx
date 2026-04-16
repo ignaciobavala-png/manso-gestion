@@ -298,13 +298,15 @@ export default function Entradas(): React.JSX.Element {
                 className="h-8 sm:h-10 w-auto"
               />
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">Entradas</h1>
-              <div className="flex items-center gap-2">
-                <div className="relative">
-                  <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                  <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-75"></div>
+              {activeEvent?.is_active && (
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                    <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-75"></div>
+                  </div>
+                  <span className="text-sm text-emerald-400 font-medium">Vivo</span>
                 </div>
-                <span className="text-sm text-emerald-400 font-medium">Vivo</span>
-              </div>
+              )}
             </div>
           </div>
         </div>
