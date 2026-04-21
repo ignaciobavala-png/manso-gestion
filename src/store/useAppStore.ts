@@ -37,6 +37,7 @@ interface AppState {
   // Acciones de ventas
   addSale: (sale: Omit<Sale, 'id' | 'created_at'>) => Promise<void>
   addSaleBatch: (items: Array<Pick<Sale, 'product_id' | 'product_name' | 'quantity' | 'total'>>, paymentMethod: string) => Promise<void>
+  deleteSale: (id: string) => Promise<void>
   flushBalance: () => void
   
   // Acciones de invitados
@@ -274,6 +275,16 @@ export const useAppStore = create<AppState>((set, get) => ({
         if (!sold) return p
         return { ...p, stock: Math.max(0, p.stock - sold.quantity) }
       }),
+    }))
+  },
+
+  deleteSale: async (id) => {
+    const sale = get().sales.find(s => s.id === id)
+    const { error } = await supabase.from('sales').delete().eq('id', id)
+    if (error) throw error
+    set(state => ({
+      sales: state.sales.filter(s => s.id !== id),
+      balance: sale ? state.balance - Number(sale.total) : state.balance
     }))
   },
 
