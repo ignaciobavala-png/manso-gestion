@@ -62,15 +62,16 @@ export default async function handler(req: Request): Promise<Response> {
     }
   }
 
-  const { data, error } = await supabase
+  const token = crypto.randomUUID()
+
+  const { error } = await supabase
     .from('ticket_registrations')
     .insert({
       event_id,
       name: name.trim(),
       email: email.toLowerCase().trim(),
+      token,
     })
-    .select('token')
-    .single()
 
   if (error) {
     if (error.code === '23505') {
@@ -79,7 +80,7 @@ export default async function handler(req: Request): Promise<Response> {
     return json({ error: 'Error al registrar' }, 500)
   }
 
-  return json({ token: data.token }, 201)
+  return json({ token }, 201)
 }
 
 function json(body: unknown, status: number) {
