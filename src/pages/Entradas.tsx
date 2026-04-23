@@ -288,7 +288,7 @@ export default function Entradas(): React.JSX.Element {
     <Background>
       <div className="flex flex-col flex-grow pb-20">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-black/95 border-b border-white/10">
+      <header className="sticky top-0 z-50 bg-black/95 border-b border-zinc-800">
         <div className="px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -313,9 +313,9 @@ export default function Entradas(): React.JSX.Element {
       </header>
 
       <main className="flex flex-col flex-grow">
-        <div className="flex flex-col flex-grow bg-black border-b border-white/10">
+        <div className="flex flex-col flex-grow bg-black">
           {/* QR Scanner Section */}
-          <div className="p-6 sm:p-8">
+          <div className="p-6 sm:p-8 bg-gradient-to-b from-zinc-900/50 to-black border-b-2 border-zinc-800">
             <h2 className="text-xl font-semibold mb-6 text-white">Escanear QR</h2>
 
             {/* Estado: validando ticket */}
@@ -330,9 +330,9 @@ export default function Entradas(): React.JSX.Element {
             {!validating && !showSuccess && mansoTicketPending && (
               <div className="space-y-4">
                 <div className="bg-emerald-900/20 border border-emerald-700 rounded-2xl p-4 text-center">
-                  <p className="text-xs text-emerald-500 mb-1 uppercase tracking-wider">Entrada Digital</p>
+                  <p className="text-sm text-emerald-500 mb-1 uppercase tracking-wider">Entrada Digital</p>
                   <p className="text-white font-semibold text-lg">{mansoTicketPending.name}</p>
-                  <p className="text-emerald-400 text-xs mt-1">Token válido — sin uso previo</p>
+                  <p className="text-emerald-400 text-sm mt-1">Token válido — sin uso previo</p>
                 </div>
                 <div className="flex gap-3 pt-2">
                   <button
@@ -370,12 +370,12 @@ export default function Entradas(): React.JSX.Element {
               <div className="space-y-4">
                 {isMansQr(pendingQr.rawData) ? (
                   <div className="bg-emerald-900/20 border border-emerald-700 rounded-2xl p-4">
-                    <p className="text-xs text-emerald-500 mb-1">QR de Manso</p>
+                    <p className="text-sm text-emerald-500 mb-1">QR de Manso</p>
                     <p className="text-sm text-emerald-300 font-medium">{getMansEventName(pendingQr.rawData)}</p>
                   </div>
                 ) : (
                   <div className="bg-neutral-900 border border-white/10 rounded-2xl p-4">
-                    <p className="text-xs text-gray-500 mb-1">Datos del QR</p>
+                    <p className="text-sm text-gray-500 mb-1">Datos del QR</p>
                     <p className="text-sm text-gray-400 break-all font-mono">{pendingQr.rawData}</p>
                   </div>
                 )}
@@ -523,7 +523,7 @@ export default function Entradas(): React.JSX.Element {
           </div>
 
           {/* Invitados Section */}
-          <div className="p-6 sm:p-8 border-t border-white/10">
+          <div className="p-6 sm:p-8 border-t-2 border-zinc-800">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold text-white">Últimos Invitados</h2>
               <div className="flex items-center gap-4">
@@ -578,7 +578,7 @@ export default function Entradas(): React.JSX.Element {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-6 sm:p-8 border-t border-white/10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-6 sm:p-8 border-t-2 border-zinc-800 bg-neutral-950/50">
             <div className="bg-neutral-900 border border-white/10 rounded-2xl p-4">
               <p className="text-sm text-gray-400">Entradas Hoy</p>
               <p className="text-2xl font-bold mt-1 text-white">{eventGuests.length}</p>

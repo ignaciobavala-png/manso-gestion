@@ -97,7 +97,7 @@ export default function Home() {
     <Background>
       <div className="flex flex-col flex-grow pb-20">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-black/95 border-b border-white/10">
+      <header className="sticky top-0 z-50 bg-black/95 border-b border-zinc-800">
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between py-4">
             <div className="flex items-center gap-3">
@@ -143,7 +143,7 @@ export default function Home() {
       </header>
 
       <main className="flex flex-col flex-grow">
-        <div className="flex flex-col flex-grow bg-black border-b border-white/10">
+        <div className="flex flex-col flex-grow bg-black">
           {activeTab === 'config' && (
             <div className="p-6 sm:p-8">
               <Configuracion />
@@ -152,7 +152,7 @@ export default function Home() {
           {activeTab === 'operacion' && (
             <div>
               {/* Balance Card */}
-              <div className="p-6 sm:p-8 border-b border-white/10">
+              <div className="p-6 sm:p-8 border-b border-white/20 bg-gradient-to-b from-zinc-900/50 to-black">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div>
                     <h2 className="text-lg sm:text-xl font-medium text-gray-400">Balance Total</h2>
@@ -173,7 +173,7 @@ export default function Home() {
               {activeEvent && <EventoActivo />}
 
               {/* Stock Inicial Section */}
-              <div className="border-t border-white/10">
+              <div className="border-t-2 border-zinc-800">
                 <button
                   onClick={() => setIsStockExpanded(!isStockExpanded)}
                   className="w-full p-6 sm:p-8 flex items-center justify-between text-left hover:bg-white/5 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
@@ -241,7 +241,7 @@ export default function Home() {
 
               {/* Arqueo de Caja */}
               {activeEvent && (
-                <div id="arqueo" className="border-t border-white/10 p-6 sm:p-8">
+                <div id="arqueo" className="border-t-2 border-zinc-800 p-6 sm:p-8 bg-gradient-to-b from-zinc-900/30 to-black">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                     <div>
                       <h2 className="text-xl font-semibold text-white">Arqueo de Caja</h2>
@@ -251,19 +251,19 @@ export default function Home() {
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
                     <div className="bg-neutral-900 border border-white/10 rounded-2xl p-3 text-center">
-                      <p className="text-xs text-gray-400">Balance</p>
+                      <p className="text-sm text-gray-400">Balance</p>
                       <p className="text-lg font-bold text-emerald-400">{formatCurrency(balance)}</p>
                     </div>
                     <div className="bg-neutral-900 border border-white/10 rounded-2xl p-3 text-center">
-                      <p className="text-xs text-gray-400">Ventas barra</p>
+                      <p className="text-sm text-gray-400">Ventas barra</p>
                       <p className="text-lg font-bold text-white">{eventSales.length}</p>
                     </div>
                     <div className="bg-neutral-900 border border-white/10 rounded-2xl p-3 text-center">
-                      <p className="text-xs text-gray-400">Entradas</p>
+                      <p className="text-sm text-gray-400">Entradas</p>
                       <p className="text-lg font-bold text-white">{eventTicketSales.length}</p>
                     </div>
                     <div className="bg-neutral-900 border border-white/10 rounded-2xl p-3 text-center">
-                      <p className="text-xs text-gray-400">Recaudado</p>
+                      <p className="text-sm text-gray-400">Recaudado</p>
                       <p className="text-lg font-bold text-emerald-400">
                         {formatCurrency(
                           eventSales.reduce((s, v) => s + v.total, 0) +
@@ -307,7 +307,7 @@ export default function Home() {
               )}
 
               {/* Quick Stats */}
-              <div className="border-t border-white/10 grid grid-cols-1 sm:grid-cols-3 gap-4 p-6 sm:p-8">
+              <div className="border-t-2 border-zinc-800 grid grid-cols-1 sm:grid-cols-3 gap-4 p-6 sm:p-8 bg-neutral-950/50">
                 <div className="bg-neutral-900 border border-white/10 rounded-2xl p-4">
                   <p className="text-sm text-gray-400">Productos</p>
                   <p className="text-2xl font-bold mt-1 text-white">{products.length}</p>

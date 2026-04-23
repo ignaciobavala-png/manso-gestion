@@ -50,7 +50,7 @@ La app soporta múltiples eventos en paralelo. Hay dos conceptos distintos:
 
 La vista `active_event` lee desde `venue_config.current_event_id` via JOIN. Todo el sistema apunta a esa vista.
 
-### Flujo típico de una semana
+### Flujo típico
 
 1. Ana crea los eventos de la semana desde antemano (todos quedan como "abiertos")
 2. Antes de cada evento, toca **Operar** en `GestionEventos` para poner ese evento en operación
@@ -66,7 +66,7 @@ La vista `active_event` lee desde `venue_config.current_event_id` via JOIN. Todo
 Tiene dos pestañas:
 
 **Operación:**
-- **GestionEventos**: lista de eventos abiertos con conteo de entradas; botón "Operar" para cambiar el evento en operación; botón "Arqueo ↓" que hace scroll al arqueo; historial colapsable de eventos cerrados; formulario inline para crear nuevo evento
+- **GestionEventos**: lista de eventos abiertos con conteo de entradas y capacidad; botón "Operar" para cambiar el evento en operación; botón "Arqueo ↓" que hace scroll al arqueo; historial colapsable de eventos cerrados; formulario inline con subida de flyer para crear nuevo evento
 - Balance total en tiempo real vía RPC `get_current_balance`
 - Gestión de stock inicial por producto con controles +/−
 - Ingresos desglosados por origen (barra / entradas) y método de pago
@@ -128,21 +128,33 @@ Tiene dos pestañas:
 
 | Tabla / Vista | Campos clave |
 |---|---|
-| `events` | id, name, is_active, registrations_open, max_capacity, closed_at |
+| `events` | id, name, is_active, registrations_open, max_capacity, flyer_url, closed_at |
 | `products` | id, name, price, category, stock, visible_en_carta |
 | `sales` | id, product_id, product_name, quantity, total, payment_method, event_id |
 | `ticket_sales` | id, guest_name, type (regular/invitado), price, event_id |
 | `guests` | id, name, type, event_id |
 | `ticket_registrations` | id, event_id, name, email, token (UUID), used_at |
 | `drink_orders` | id, event_id, items (jsonb), total, status, comprobante_token |
-| `venue_config` | id, alias_pago, cbu_pago, carta_activa, **current_event_id** |
+| `venue_config` | id, alias_pago, cbu_pago, carta_activa, current_event_id |
 | `user_profiles` | id (→ auth.users), role (control / empleado) |
 | `active_event` | Vista: JOIN events + venue_config WHERE venue_config.current_event_id = events.id |
 
-### RLS relevante
-- `venue_config`: lectura pública (anon), escritura solo rol `control`
-- `ticket_registrations`: escritura anónima (registro público), lectura autenticada
-- `drink_orders`: inserción anónima, lectura/actualización autenticada
+### RLS vigente
+
+Las políticas reemplazan las antiguas `FOR ALL USING (true)` por reglas granulares basadas en email del JWT:
+
+| Tabla | Políticas |
+|---|---|
+| `products` | SELECT público + ALL para staff (control@, empleado@) |
+| `guests` | ALL solo para staff |
+| `sales` | ALL solo para staff |
+| `ticket_sales` | ALL solo para staff |
+| `events` | SELECT público + ALL para staff |
+| `ticket_registrations` | INSERT público + SELECT público + ALL para staff |
+| `venue_config` | SELECT público + ALL solo para control@ |
+| `drink_orders` | INSERT público + SELECT/UPDATE autenticado (heredadas de v2.0) |
+
+Los usuarios staff se identifican via `auth.jwt() ->> 'email'` contra los emails fijos `control@manso.internal` y `empleado@manso.internal`.
 
 ---
 
@@ -151,7 +163,7 @@ Tiene dos pestañas:
 | Endpoint | Descripción |
 |---|---|
 | `POST /api/registro-entrada` | Registra asistente y genera token UUID |
-| `POST /api/change-pin` | Cambia PIN de Control o Empleados (requiere sesión de Control) |
+| `POST /api/change-pin` | Cambia PIN de Control o Empleados (requiere sesión de Control + service_role) |
 | `GET /api/keep-alive` | Ping a Supabase para evitar suspensión (cron cada 10 min) |
 
 ---
@@ -188,6 +200,7 @@ Ver `DEBUGGING.md` para el detalle completo.
 | 10 | 🟢 Menor | `deleteEvent` no limpia `guests` del estado local |
 | 11 | 🟢 Menor | `setTimeout` sin cleanup en `EventoActivo` |
 | 12 | 🟢 Menor | Auth: no hay manejo de expiración de token (sin redirect a login) |
+| 13 | 🟢 Menor | `setActiveEventStatus` redundante en `EventCreator` |
 
 ---
 
@@ -197,4 +210,5 @@ Ver `DEBUGGING.md` para el detalle completo.
 |---|---|
 | v1.0 | Sistema base: barra, entradas, balance monoevento |
 | v2.0 | Roles (Control / Empleados), páginas públicas (registro, carta, mi entrada), auth con PIN |
-| v2.1 (rama `new-features`) | Multievento, landing pública `/`, vistas públicas para admin, carta simplificada a solo lectura, gestión de eventos |
+| v2.1 | Multievento, landing pública `/`, vistas públicas para admin, carta simplificada a solo lectura, gestión de eventos |
+| v2.2 | RLS policies granulares por email, migración de seguridad, flyers de eventos |

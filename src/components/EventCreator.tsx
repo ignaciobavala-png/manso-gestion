@@ -129,7 +129,7 @@ export default function EventCreator({ onCreated }: Props) {
             className="w-full pl-8 pr-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
           />
         </div>
-        <p className="text-xs text-gray-500 mt-1">Se aplica igual para regular e invitado. Dejá en 0 si la entrada es gratis.</p>
+        <p className="text-sm text-gray-500 mt-1">Se aplica igual para regular e invitado. Dejá en 0 si la entrada es gratis.</p>
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-2">Fecha y hora *</label>

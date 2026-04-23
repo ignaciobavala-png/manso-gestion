@@ -97,7 +97,7 @@ export default function EventoActivo() {
   const isFull = maxCap !== null && registrationCount !== null && registrationCount >= maxCap
 
   return (
-    <div className="p-6 sm:p-8 space-y-6">
+    <div className="p-6 sm:p-8 space-y-6 border-t-2 border-zinc-800 bg-neutral-950/30">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -105,7 +105,7 @@ export default function EventoActivo() {
           <p className="text-emerald-400 text-sm mt-0.5">{activeEvent.name}</p>
         </div>
         {/* Estado del registro */}
-        <span className={`text-xs font-semibold px-3 py-1.5 rounded-full ${
+        <span className={`text-sm font-semibold px-3 py-1.5 rounded-full ${
           registrationsOpen
             ? 'bg-emerald-900/50 text-emerald-400 border border-emerald-700'
             : 'bg-amber-900/50 text-amber-400 border border-amber-700'
@@ -132,7 +132,7 @@ export default function EventoActivo() {
       {/* Registros emitidos */}
       <div className="bg-neutral-900 border border-white/10 rounded-2xl p-4 flex items-center justify-between">
         <div>
-          <p className="text-gray-400 text-xs uppercase tracking-wider">QRs emitidos</p>
+          <p className="text-gray-400 text-sm uppercase tracking-wider">QRs emitidos</p>
           <p className="text-white font-bold text-2xl mt-0.5">
             {registrationCount ?? '—'}
             {maxCap !== null && (
@@ -141,7 +141,7 @@ export default function EventoActivo() {
           </p>
         </div>
         {isFull && (
-          <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-red-900/50 text-red-400 border border-red-700">
+          <span className="text-sm font-semibold px-3 py-1.5 rounded-full bg-red-900/50 text-red-400 border border-red-700">
             Lleno
           </span>
         )}
@@ -149,7 +149,7 @@ export default function EventoActivo() {
 
       {/* Capacidad máxima */}
       <div className="space-y-2">
-        <label className="text-xs text-gray-400 uppercase tracking-wider block">
+        <label className="text-sm text-gray-400 uppercase tracking-wider block">
           Capacidad máxima <span className="text-gray-600 normal-case">(dejá vacío para ilimitado)</span>
         </label>
         <div className="flex gap-2">

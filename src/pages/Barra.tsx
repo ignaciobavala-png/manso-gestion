@@ -194,7 +194,7 @@ export default function Barra() {
     <Background>
       <div className="flex flex-col flex-grow pb-20">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-black/95 border-b border-white/10">
+      <header className="sticky top-0 z-50 bg-black/95 border-b border-zinc-800">
         <div className="px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -223,9 +223,9 @@ export default function Barra() {
       </header>
 
       <main className="flex flex-col flex-grow">
-        <div className="flex flex-col flex-grow bg-black border-b border-white/10">
+        <div className="flex flex-col flex-grow bg-black">
           {/* Quick Stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-6 sm:p-8">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-6 sm:p-8 bg-gradient-to-b from-zinc-900/50 to-black border-b-2 border-zinc-800">
             <div className="bg-neutral-900 border border-white/10 rounded-2xl p-4">
               <p className="text-sm text-gray-400">Productos</p>
               <p className="text-2xl font-bold mt-1 text-white">{products.length}</p>
@@ -247,7 +247,7 @@ export default function Barra() {
           </div>
 
           {/* Add Item Section */}
-          <div className="p-6 sm:p-8 border-t border-white/10">
+          <div className="p-6 sm:p-8 border-t-2 border-zinc-800">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold text-white">Agregar Nuevo Item</h2>
               <button
@@ -395,7 +395,7 @@ export default function Barra() {
           </div>
 
           {/* Recent Sales */}
-          <div className="p-6 sm:p-8 border-t border-white/10">
+          <div className="p-6 sm:p-8 border-t-2 border-zinc-800">
             <h2 className="text-xl font-semibold mb-6 text-white">Ventas Recientes</h2>
             <div className="space-y-3">
               {activeSales.length === 0 ? (
@@ -433,14 +433,14 @@ export default function Barra() {
                           <button
                             onClick={() => setConfirmingSaleDelete(null)}
                             disabled={deletingSale}
-                            className="flex-1 py-1.5 text-xs bg-gray-600 hover:bg-gray-500 disabled:opacity-50 text-white rounded-lg transition-colors"
+                            className="flex-1 py-1.5 text-sm bg-gray-600 hover:bg-gray-500 disabled:opacity-50 text-white rounded-lg transition-colors"
                           >
                             Cancelar
                           </button>
                           <button
                             onClick={() => handleDeleteSale(sale.id)}
                             disabled={deletingSale}
-                            className="flex-1 py-1.5 text-xs bg-red-700 hover:bg-red-600 disabled:opacity-50 text-white font-semibold rounded-lg transition-colors"
+                            className="flex-1 py-1.5 text-sm bg-red-700 hover:bg-red-600 disabled:opacity-50 text-white font-semibold rounded-lg transition-colors"
                           >
                             {deletingSale ? 'Eliminando...' : 'Confirmar borrar'}
                           </button>
@@ -455,7 +455,7 @@ export default function Barra() {
 
         {/* Resumen del carrito */}
         {cartItems.length > 0 && (
-          <div className="p-6 sm:p-8 border-t border-white/10 space-y-2">
+          <div className="p-6 sm:p-8 border-t-2 border-zinc-800 space-y-2 bg-neutral-950/30">
             <h2 className="text-lg font-semibold text-white">Pedido</h2>
             {cartItems.map(({ product, qty }) => (
               <div key={product.id} className="flex items-center justify-between text-sm">
@@ -471,7 +471,7 @@ export default function Barra() {
         )}
 
         {/* Método de pago + Confirmar */}
-        <div className="p-6 sm:p-8 border-t border-white/10 space-y-4">
+        <div className="p-6 sm:p-8 border-t-2 border-zinc-800 space-y-4 bg-neutral-950/30">
           <h2 className="text-lg font-semibold text-white">Método de Pago</h2>
           <div className="grid grid-cols-3 gap-3">
             <button

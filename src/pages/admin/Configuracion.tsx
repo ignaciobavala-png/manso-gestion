@@ -112,8 +112,8 @@ export default function Configuracion() {
           ))}
         </div>
 
-        <p className="text-gray-400 text-xs uppercase tracking-widest mb-1">{STEP_LABELS[flow.step]}</p>
-        {flow.message && <p className="text-red-400 text-xs mt-2 mb-1 text-center">{flow.message}</p>}
+        <p className="text-gray-400 text-sm uppercase tracking-widest mb-1">{STEP_LABELS[flow.step]}</p>
+        {flow.message && <p className="text-red-400 text-sm mt-2 mb-1 text-center">{flow.message}</p>}
 
         <div className="flex gap-5 my-6">
           {[0, 1, 2, 3].map(i => (
@@ -176,14 +176,14 @@ export default function Configuracion() {
 
       {/* PINs */}
       <div className="space-y-3">
-        <p className="text-gray-500 text-xs uppercase tracking-widest">PINs de acceso</p>
+        <p className="text-gray-500 text-sm uppercase tracking-widest">PINs de acceso</p>
         <button
           onClick={() => startFlow('control')}
           className="w-full flex items-center justify-between bg-white/10 hover:bg-white/20 rounded-xl px-4 py-3.5 transition-colors"
         >
           <div className="text-left">
             <p className="text-white text-sm font-medium">Tu PIN (Control)</p>
-            <p className="text-gray-500 text-xs">Acceso al panel de administración</p>
+            <p className="text-gray-500 text-sm">Acceso al panel de administración</p>
           </div>
           <span className="text-gray-400 text-lg">›</span>
         </button>
@@ -193,7 +193,7 @@ export default function Configuracion() {
         >
           <div className="text-left">
             <p className="text-white text-sm font-medium">PIN de empleados</p>
-            <p className="text-gray-500 text-xs">Acceso a Barra y Entradas</p>
+            <p className="text-gray-500 text-sm">Acceso a Barra y Entradas</p>
           </div>
           <span className="text-gray-400 text-lg">›</span>
         </button>

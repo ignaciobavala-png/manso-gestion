@@ -1,6 +1,10 @@
 # Manso Gestión — Plan v2.0 (ARCHIVADO)
 
-> Documento de planificación original. La v2.0 fue implementada — ver `README.md` para el estado actual.
+> **ARCHIVADO** — Todo el contenido de este documento fue implementado y reemplazado por versiones más maduras.
+>
+> - Las RLS policies originales descritas acá fueron reemplazadas por políticas granulares por email (ver `supabase-rls-migration.sql`)
+> - La tabla `user_profiles` con role-check por subquery fue reemplazada por `auth.jwt() ->> 'email'`
+> - Ver `README.md` para documentación actual, `AGENTS.md` para contexto de IA, y `supabase-rls-migration.sql` para RLS vigente
 
 ---
 

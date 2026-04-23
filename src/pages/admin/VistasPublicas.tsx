@@ -41,7 +41,7 @@ export default function VistasPublicas() {
           </button>
           <div>
             <h2 className="text-xl font-bold text-white">Vistas públicas</h2>
-            <p className="text-gray-500 text-xs">Lo que ve el público — se abre en nueva pestaña</p>
+            <p className="text-gray-500 text-sm">Lo que ve el público — se abre en nueva pestaña</p>
           </div>
         </div>
 
@@ -55,8 +55,8 @@ export default function VistasPublicas() {
               <span className="text-3xl">{page.icon}</span>
               <div className="flex-1 min-w-0">
                 <p className="text-white font-semibold text-sm">{page.label}</p>
-                <p className="text-gray-400 text-xs mt-0.5">{page.description}</p>
-                <p className="text-emerald-600 text-xs mt-1 font-mono">{page.path}</p>
+                <p className="text-gray-400 text-sm mt-0.5">{page.description}</p>
+                <p className="text-emerald-600 text-sm mt-1 font-mono">{page.path}</p>
               </div>
               <span className="text-gray-500 text-lg flex-shrink-0">↗</span>
             </button>

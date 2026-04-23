@@ -35,7 +35,7 @@ export default function Ingresos() {
   const recentTickets = activeTicketSales.slice(-3).reverse()
 
   return (
-    <div>
+    <div className="border-t-2 border-zinc-800">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
         className="w-full p-6 sm:p-8 flex items-center justify-between text-left hover:bg-white/5 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
@@ -77,7 +77,7 @@ export default function Ingresos() {
                   <span className="text-2xl">🍺</span>
                 </div>
                 <p className="text-2xl font-bold text-white">{formatCurrency(barRevenue)}</p>
-                <p className="text-xs text-gray-400 mt-1">{activeSales.length} ventas</p>
+                <p className="text-sm text-gray-400 mt-1">{activeSales.length} ventas</p>
               </div>
               
               <div className="bg-amber-900/30 border border-amber-700 rounded-2xl p-4">
@@ -86,7 +86,7 @@ export default function Ingresos() {
                   <span className="text-2xl">🎫</span>
                 </div>
                 <p className="text-2xl font-bold text-white">{formatCurrency(ticketRevenue)}</p>
-                <p className="text-xs text-gray-400 mt-1">{activeTicketSales.length} tickets</p>
+                <p className="text-sm text-gray-400 mt-1">{activeTicketSales.length} tickets</p>
               </div>
             </div>
 
@@ -160,8 +160,8 @@ export default function Ingresos() {
                         <div>
                           <p className="text-sm font-medium text-white">{sale.product_name} ×{sale.quantity}</p>
                           <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-400">{new Date(sale.created_at).toLocaleString()}</span>
-                            <span className="text-xs">{paymentIcons[sale.payment_method]}</span>
+                            <span className="text-sm text-gray-400">{new Date(sale.created_at).toLocaleString()}</span>
+                            <span className="text-sm">{paymentIcons[sale.payment_method]}</span>
                           </div>
                         </div>
                       </div>
@@ -185,7 +185,7 @@ export default function Ingresos() {
                       </div>
                       <div>
                         <p className="text-sm font-medium text-white">{ticket.guest_name}</p>
-                        <p className="text-xs text-gray-400">{ticket.type} • {new Date(ticket.created_at).toLocaleString()}</p>
+                        <p className="text-sm text-gray-400">{ticket.type} • {new Date(ticket.created_at).toLocaleString()}</p>
                       </div>
                     </div>
                     <span className="text-sm font-bold text-emerald-400">{formatCurrency(ticket.price)}</span>

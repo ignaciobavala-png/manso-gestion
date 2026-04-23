@@ -36,7 +36,7 @@ export default function RegistroEventos() {
   }
 
   return (
-    <div>
+    <div className="border-t-2 border-zinc-800">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
         className="w-full p-6 sm:p-8 flex items-center justify-between text-left hover:bg-white/5 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
@@ -70,26 +70,26 @@ export default function RegistroEventos() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-white truncate">{event.name}</h3>
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-sm text-gray-400 mt-1">
                       Cerrado: {new Date(event.closed_at!).toLocaleString('es-AR')}
                     </p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-xs text-gray-400">Total recaudado</p>
+                    <p className="text-sm text-gray-400">Total recaudado</p>
                     <p className="text-xl font-bold text-emerald-400">{formatCurrency(total)}</p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-blue-900/30 border border-blue-800/50 rounded-xl p-3">
-                    <p className="text-xs text-blue-400 mb-1">Barra</p>
+                    <p className="text-sm text-blue-400 mb-1">Barra</p>
                     <p className="text-base font-bold text-white">{formatCurrency(barRevenue)}</p>
-                    <p className="text-xs text-gray-500">{eventSales.length} ventas</p>
+                    <p className="text-sm text-gray-500">{eventSales.length} ventas</p>
                   </div>
                   <div className="bg-amber-900/30 border border-amber-800/50 rounded-xl p-3">
-                    <p className="text-xs text-amber-400 mb-1">Entradas</p>
+                    <p className="text-sm text-amber-400 mb-1">Entradas</p>
                     <p className="text-base font-bold text-white">{formatCurrency(ticketRevenue)}</p>
-                    <p className="text-xs text-gray-500">{eventTickets.length} tickets</p>
+                    <p className="text-sm text-gray-500">{eventTickets.length} tickets</p>
                   </div>
                 </div>
 
@@ -97,7 +97,7 @@ export default function RegistroEventos() {
                 {!isConfirming ? (
                   <button
                     onClick={() => { setConfirmingDelete(event.id); setDeleteError(null) }}
-                    className="w-full flex items-center justify-center gap-1.5 text-xs text-gray-500 hover:text-red-400 hover:bg-red-900/10 transition-colors py-2 rounded-xl border border-transparent hover:border-red-900/30"
+                    className="w-full flex items-center justify-center gap-1.5 text-sm text-gray-500 hover:text-red-400 hover:bg-red-900/10 transition-colors py-2 rounded-xl border border-transparent hover:border-red-900/30"
                   >
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -106,11 +106,11 @@ export default function RegistroEventos() {
                   </button>
                 ) : (
                   <div className="bg-red-950/40 border border-red-800/50 rounded-xl p-3 space-y-2">
-                    <p className="text-xs text-red-300 text-center">
+                    <p className="text-sm text-red-300 text-center">
                       Esto elimina el evento y todos sus datos. No se puede deshacer.
                     </p>
                     {deleteError && (
-                      <p className="text-xs text-red-400 text-center bg-red-900/40 rounded-lg px-2 py-1">
+                      <p className="text-sm text-red-400 text-center bg-red-900/40 rounded-lg px-2 py-1">
                         {deleteError}
                       </p>
                     )}

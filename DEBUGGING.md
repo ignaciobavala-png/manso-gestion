@@ -2,9 +2,6 @@
 
 Última auditoría: 2026-04-23.
 
-Bugs críticos e importantes de baja complejidad resueltos en sesiones anteriores.
-Los siguientes requieren decisiones de arquitectura o infraestructura.
-
 ---
 
 ## #7 — Stale `activeEvent` entre dispositivos
@@ -14,7 +11,7 @@ Los siguientes requieren decisiones de arquitectura o infraestructura.
 
 El store usa `get().activeEvent?.id` al insertar una venta. Si el evento fue cerrado desde otro dispositivo, el store local puede tener hasta 30 s de caché desactualizada y las nuevas ventas se insertarían con `event_id` incorrecto.
 
-**Fix propuesto:** En el RPC `add_sale_batch` leer el `event_id` directamente desde la vista `active_event` en el servidor, en lugar de confiar en el estado local. Alternativa más simple: reducir el TTL de caché de 30 s a 5–10 s.
+**Fix propuesto:** En el RPC `add_sale_batch` leer el `event_id` directamente desde la vista `active_event` en el servidor, en lugar de confiar en el estado local.
 
 ---
 

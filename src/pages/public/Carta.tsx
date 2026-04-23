@@ -41,10 +41,6 @@ export default function Carta() {
         }
         setLoading(false)
       })
-      .catch(() => {
-        setError('No pudimos cargar la carta. Verificá tu conexión e intentá de nuevo.')
-        setLoading(false)
-      })
   }, [])
 
   const grouped = CATEGORY_ORDER.reduce<Record<string, Product[]>>((acc, cat) => {

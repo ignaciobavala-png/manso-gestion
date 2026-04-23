@@ -80,7 +80,7 @@ export default function Comunidad() {
           </button>
           <div>
             <h2 className="text-xl font-bold text-white">Comunidad</h2>
-            <p className="text-gray-500 text-xs">{rows.length} registros totales</p>
+            <p className="text-gray-500 text-sm">{rows.length} registros totales</p>
           </div>
         </div>
 
@@ -124,18 +124,18 @@ export default function Comunidad() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="text-white font-medium text-sm truncate">{r.name}</p>
-                    <p className="text-gray-400 text-xs truncate">{r.email}</p>
-                    <p className="text-gray-600 text-xs mt-0.5">{r.event_name}</p>
+                    <p className="text-gray-400 text-sm truncate">{r.email}</p>
+                    <p className="text-gray-600 text-sm mt-0.5">{r.event_name}</p>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <span className={`inline-block text-xs px-2 py-0.5 rounded-full ${
+                    <span className={`inline-block text-sm px-2 py-0.5 rounded-full ${
                       r.used_at
                         ? 'bg-emerald-900/50 text-emerald-400'
                         : 'bg-white/10 text-gray-400'
                     }`}>
                       {r.used_at ? 'Ingresó' : 'Pendiente'}
                     </span>
-                    <p className="text-gray-600 text-xs mt-1">
+                    <p className="text-gray-600 text-sm mt-1">
                       {new Date(r.registered_at).toLocaleDateString('es-AR')}
                     </p>
                   </div>

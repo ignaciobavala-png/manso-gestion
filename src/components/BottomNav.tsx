@@ -34,7 +34,7 @@ export default function BottomNav() {
                 className={`
                   w-full flex flex-col items-center
                   min-h-14 px-3 py-2
-                  text-xs font-medium transition-colors
+                  text-sm font-medium transition-colors
                   ${location.pathname === tab.path
                     ? 'text-emerald-400'
                     : 'text-gray-400 hover:text-gray-300'
@@ -51,7 +51,7 @@ export default function BottomNav() {
           <li className="flex-1">
             <button
               onClick={handleSignOut}
-              className="w-full flex flex-col items-center min-h-14 px-3 py-2 text-xs font-medium text-gray-400 hover:text-red-400 transition-colors"
+              className="w-full flex flex-col items-center min-h-14 px-3 py-2 text-sm font-medium text-gray-400 hover:text-red-400 transition-colors"
             >
               <span className="text-2xl mb-1">→</span>
               Salir
