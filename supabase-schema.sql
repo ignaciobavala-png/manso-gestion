@@ -52,11 +52,24 @@ CREATE TABLE events (
   description TEXT,
   regular_ticket_price DECIMAL(10, 2) NOT NULL DEFAULT 0,
   invited_ticket_price DECIMAL(10, 2) NOT NULL DEFAULT 0,
-  is_active BOOLEAN DEFAULT false,
+  is_active BOOLEAN DEFAULT false,  -- true = evento abierto (puede haber varios)
+  registrations_open BOOLEAN NOT NULL DEFAULT true,
+  max_capacity INTEGER,
   start_date TIMESTAMP WITH TIME ZONE,
   end_date TIMESTAMP WITH TIME ZONE,
+  closed_at TIMESTAMP WITH TIME ZONE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Configuración del venue (fila única, id = 1)
+CREATE TABLE venue_config (
+  id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+  alias_pago TEXT,
+  cbu_pago TEXT,
+  carta_activa BOOLEAN DEFAULT false,
+  current_event_id UUID REFERENCES events(id) ON DELETE SET NULL  -- evento actualmente en operación
+
 );
 
 -- Update sales table to include event reference
@@ -102,9 +115,12 @@ CREATE TRIGGER update_products_updated_at BEFORE UPDATE ON products FOR EACH ROW
 CREATE TRIGGER update_guests_updated_at BEFORE UPDATE ON guests FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_events_updated_at BEFORE UPDATE ON events FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- View for current active event
-CREATE VIEW active_event AS
-SELECT * FROM events WHERE is_active = true LIMIT 1;
+-- View for current active event (driven by venue_config.current_event_id)
+CREATE OR REPLACE VIEW active_event AS
+  SELECT e.*
+  FROM events e
+  JOIN venue_config vc ON vc.current_event_id = e.id
+  WHERE vc.id = 1;
 
 -- Function to get current balance (sum of all sales and ticket sales)
 CREATE OR REPLACE FUNCTION get_current_balance(p_event_id UUID DEFAULT NULL)

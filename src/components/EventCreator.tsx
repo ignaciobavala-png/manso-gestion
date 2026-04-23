@@ -3,10 +3,14 @@ import QRCode from 'qrcode'
 import { useAppStore } from '../store/useAppStore'
 import AlertModal from '../components/AlertModal'
 
-export default function EventCreator() {
-  const { addEvent, setActiveEventStatus } = useAppStore()
+interface Props {
+  onCreated?: () => void
+}
 
-  const [form, setForm] = useState({ name: '', description: '', ticketPrice: '' })
+export default function EventCreator({ onCreated }: Props) {
+  const { addEvent } = useAppStore()
+
+  const [form, setForm] = useState({ name: '', description: '', ticketPrice: '', startDate: '' })
   const [qrCodeUrl, setQrCodeUrl] = useState('')
   const [createdEventName, setCreatedEventName] = useState('')
   const [saving, setSaving] = useState(false)
@@ -18,11 +22,11 @@ export default function EventCreator() {
 
   const handleCreate = async () => {
     if (!form.name.trim()) {
-      setAlertModal({
-        isOpen: true,
-        message: 'El nombre del evento es obligatorio',
-        type: 'warning'
-      })
+      setAlertModal({ isOpen: true, message: 'El nombre del evento es obligatorio', type: 'warning' })
+      return
+    }
+    if (!form.startDate) {
+      setAlertModal({ isOpen: true, message: 'La fecha del evento es obligatoria', type: 'warning' })
       return
     }
 
@@ -37,11 +41,10 @@ export default function EventCreator() {
         is_active: true,
         registrations_open: true,
         max_capacity: null,
+        start_date: new Date(form.startDate).toISOString(),
       })
 
-      await setActiveEventStatus(event.id, true)
-
-      const qrData = `manso|${event.id}|${form.name.trim()}`
+      const qrData = `${window.location.origin}/registro?event=${event.id}`
       const url = await QRCode.toDataURL(qrData, {
         width: 300,
         margin: 2,
@@ -50,7 +53,7 @@ export default function EventCreator() {
 
       setQrCodeUrl(url)
       setCreatedEventName(form.name.trim())
-      setForm({ name: '', description: '', ticketPrice: '' })
+      setForm({ name: '', description: '', ticketPrice: '', startDate: '' })
     } catch (error) {
       setAlertModal({
         isOpen: true,
@@ -81,7 +84,7 @@ export default function EventCreator() {
           </div>
           <div className="text-center space-y-1">
             <p className="text-emerald-400 font-semibold text-lg">{createdEventName}</p>
-            <p className="text-sm text-gray-400">Evento activo — barra y entradas habilitadas</p>
+            <p className="text-sm text-gray-400">Evento en operación — compartí este QR para el registro público</p>
           </div>
         </div>
         <button
@@ -89,6 +92,12 @@ export default function EventCreator() {
           className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl transition-colors"
         >
           Descargar QR
+        </button>
+        <button
+          onClick={() => onCreated?.()}
+          className="w-full py-2 text-gray-500 hover:text-gray-300 text-sm transition-colors"
+        >
+          Listo
         </button>
       </div>
     )
@@ -121,6 +130,15 @@ export default function EventCreator() {
           />
         </div>
         <p className="text-xs text-gray-500 mt-1">Se aplica igual para regular e invitado. Dejá en 0 si la entrada es gratis.</p>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-2">Fecha y hora *</label>
+        <input
+          type="datetime-local"
+          value={form.startDate}
+          onChange={(e) => setForm(prev => ({ ...prev, startDate: e.target.value }))}
+          className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent [color-scheme:dark]"
+        />
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-2">Descripción</label>

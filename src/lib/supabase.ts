@@ -137,6 +137,7 @@ export interface Database {
           max_capacity: number | null
           start_date?: string
           end_date?: string
+          flyer_url?: string | null
           closed_at?: string
           created_at: string
           updated_at: string
@@ -152,6 +153,7 @@ export interface Database {
           max_capacity?: number | null
           start_date?: string
           end_date?: string
+          flyer_url?: string | null
           closed_at?: string
           created_at?: string
           updated_at?: string
@@ -167,9 +169,25 @@ export interface Database {
           max_capacity?: number | null
           start_date?: string
           end_date?: string
+          flyer_url?: string | null
           closed_at?: string
           created_at?: string
           updated_at?: string
+        }
+      }
+      venue_config: {
+        Row: {
+          id: number
+          alias_pago: string | null
+          cbu_pago: string | null
+          carta_activa: boolean | null
+          current_event_id: string | null
+        }
+        Update: {
+          alias_pago?: string | null
+          cbu_pago?: string | null
+          carta_activa?: boolean | null
+          current_event_id?: string | null
         }
       }
     }

@@ -9,13 +9,16 @@ import Entradas from './pages/Entradas'
 import RegistroEntrada from './pages/public/RegistroEntrada'
 import MiEntrada from './pages/public/MiEntrada'
 import Carta from './pages/public/Carta'
+import Inicio from './pages/public/Inicio'
 import Comunidad from './pages/admin/Comunidad'
+import VistasPublicas from './pages/admin/VistasPublicas'
 
 function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <Routes>
+          <Route path="/" element={<Inicio />} />
           <Route path="/login" element={<Login />} />
 
           {/* Rutas públicas */}
@@ -46,6 +49,14 @@ function App() {
               element={
                 <ProtectedRoute requiredRole="control">
                   <Comunidad />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="publico"
+              element={
+                <ProtectedRoute requiredRole="control">
+                  <VistasPublicas />
                 </ProtectedRoute>
               }
             />
