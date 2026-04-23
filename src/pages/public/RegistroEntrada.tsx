@@ -131,9 +131,9 @@ function EventoForm({ eventParam }: { eventParam: string }) {
   const navigate = useNavigate()
   const [activeEvent, setActiveEvent] = useState<ActiveEvent | null>(null)
   const [loadingEvent, setLoadingEvent] = useState(true)
+  const [capacityInfo, setCapacityInfo] = useState<{ max: number; current: number } | null>(null)
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
-  const [accepted, setAccepted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
@@ -142,14 +142,28 @@ function EventoForm({ eventParam }: { eventParam: string }) {
       setLoadingEvent(true)
       const { data, error } = await supabase
         .from('events')
-        .select('id, name, registrations_open')
+        .select('id, name, registrations_open, max_capacity')
         .eq('id', eventParam)
         .eq('is_active', true)
         .single()
 
       setLoadingEvent(false)
       if (error || !data || !data.registrations_open) return
+
       setActiveEvent({ id: data.id, name: data.name })
+
+      // Obtener conteo actual si tiene capacidad máxima
+      if (data.max_capacity !== null) {
+        const { count } = await supabase
+          .from('ticket_registrations')
+          .select('id', { count: 'exact', head: true })
+          .eq('event_id', data.id)
+
+        if (count !== null) {
+          setCapacityInfo({ max: data.max_capacity, current: count })
+        }
+      }
+
       const saved = localStorage.getItem(LS_KEY(data.id))
       if (saved) navigate('/mi-entrada', { replace: true })
     }
@@ -159,7 +173,7 @@ function EventoForm({ eventParam }: { eventParam: string }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!activeEvent || !accepted) return
+    if (!activeEvent) return
 
     setSubmitting(true)
     setError('')
@@ -238,6 +252,11 @@ function EventoForm({ eventParam }: { eventParam: string }) {
             <span className="w-1.5 h-1.5 rounded-full bg-white/70 animate-pulse" />
             <span className="text-white/80 text-xs font-semibold tracking-wide">Entrada disponible</span>
           </div>
+          {capacityInfo && (
+            <p className={`mt-3 text-xs font-medium ${capacityInfo.current >= capacityInfo.max ? 'text-red-400' : 'text-gray-400'}`}>
+              {capacityInfo.current} / {capacityInfo.max} lugares reservados
+            </p>
+          )}
         </div>
 
         {/* Card del formulario */}
@@ -276,27 +295,19 @@ function EventoForm({ eventParam }: { eventParam: string }) {
                   />
                 </div>
 
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={accepted}
-                    onChange={e => setAccepted(e.target.checked)}
-                    className="mt-0.5 accent-emerald-500 w-4 h-4 flex-shrink-0"
-                  />
-                  <span className="text-gray-300 text-xs leading-relaxed">
-                    Que Manso me avise cuando haya próximas fechas.
-                  </span>
-                </label>
-
               {error && <p className="text-red-400 text-sm text-center">{error}</p>}
 
+              {capacityInfo && capacityInfo.current >= capacityInfo.max ? (
+                <p className="text-center text-red-400 text-sm font-medium py-3">Evento completo</p>
+              ) : (
               <button
                 type="submit"
-                disabled={submitting || !accepted || !name.trim() || !email.trim()}
+                disabled={submitting || !name.trim() || !email.trim()}
                 className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-white/10 disabled:text-gray-600 text-white font-semibold py-4 rounded-2xl transition-all active:scale-95 text-sm"
               >
                 {submitting ? 'Generando tu entrada...' : 'Quiero mi entrada →'}
               </button>
+              )}
             </form>
           </div>
 

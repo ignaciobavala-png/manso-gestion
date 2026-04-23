@@ -241,7 +241,7 @@ export default function Home() {
 
               {/* Arqueo de Caja */}
               {activeEvent && (
-                <div className="border-t border-white/10 p-6 sm:p-8">
+                <div id="arqueo" className="border-t border-white/10 p-6 sm:p-8">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                     <div>
                       <h2 className="text-xl font-semibold text-white">Arqueo de Caja</h2>

@@ -172,6 +172,7 @@ export default function GestionEventos() {
                     <p className="text-gray-500 text-xs mt-0.5">
                       {e.start_date ? formatDateTime(e.start_date) : `Creado ${formatDate(e.created_at)}`}
                       {' · '}{regs} {regs === 1 ? 'registro' : 'registros'}
+                      {e.max_capacity !== null && ` / ${e.max_capacity}`}
                     </p>
                   </div>
 

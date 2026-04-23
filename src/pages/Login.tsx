@@ -52,15 +52,25 @@ export default function Login() {
   return (
     <Background backgroundImage="/fondo.png">
       <div className="min-h-screen flex flex-col items-center justify-center px-4 select-none">
+        <div className="w-full max-w-sm">
+          <div className="w-full mb-4">
+            <button
+              onClick={() => navigate('/')}
+              className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all text-lg"
+              aria-label="Volver al inicio"
+            >
+              ←
+            </button>
+          </div>
 
-        {/* Logo */}
-        <div className="mb-14 flex flex-col items-center gap-3">
-          <img src="/logo.png" alt="Manso" className="h-20 w-auto object-contain drop-shadow-lg" />
-          <img src="/manso-name-white.png" alt="MANSO" className="h-7 w-auto object-contain opacity-90" />
-        </div>
+          {/* Logo */}
+          <div className="mb-8 flex flex-col items-center gap-3">
+            <img src="/logo.png" alt="Manso" className="h-20 w-auto object-contain drop-shadow-lg" />
+            <img src="/manso-name-white.png" alt="MANSO" className="h-7 w-auto object-contain opacity-90" />
+          </div>
 
-        {/* Card */}
-        <div className="bg-black/50 backdrop-blur-md border border-white/15 rounded-3xl px-8 pt-8 pb-9 flex flex-col items-center gap-6 w-80 shadow-2xl">
+          {/* Card */}
+          <div className="bg-black/50 backdrop-blur-md border border-white/15 rounded-3xl px-8 pt-8 pb-9 flex flex-col items-center gap-6 w-80 mx-auto shadow-2xl">
 
           {/* Subtítulo */}
           <p className="text-gray-400 text-sm tracking-widest uppercase font-medium">Ingresá tu PIN</p>
@@ -115,6 +125,7 @@ export default function Login() {
             })}
           </div>
 
+        </div>
         </div>
       </div>
 
