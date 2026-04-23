@@ -352,13 +352,13 @@ export const useAppStore = create<AppState>((set, get) => ({
 
       if (error) throw error
 
-      // Seleccionar el nuevo evento como evento en operación
+      // Seleccionar el nuevo evento como evento en operación y sincronizar store
       await supabase
         .from('venue_config')
         .update({ current_event_id: data.id })
         .eq('id', 1)
 
-      set(state => ({ events: [...state.events, data] }))
+      await get().refreshData()
 
       return data
     } catch (error) {

@@ -9,6 +9,7 @@ export default function GestionEventos() {
   const [showCreator, setShowCreator] = useState(false)
   const [showHistorial, setShowHistorial] = useState(false)
   const [uploadingFor, setUploadingFor] = useState<string | null>(null)
+  const [uploadError, setUploadError] = useState<string | null>(null)
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({})
 
   const scrollToArqueo = () => {
@@ -36,16 +37,18 @@ export default function GestionEventos() {
   }, [events])
 
   const handleFlyerUpload = async (eventId: string, file: File) => {
+    if (uploadingFor) return
     setUploadingFor(eventId)
+    setUploadError(null)
     try {
       const ext = file.name.split('.').pop()
       const path = `${eventId}.${ext}`
 
-      const { error: uploadError } = await supabase.storage
+      const { error: storageError } = await supabase.storage
         .from('event-flyers')
         .upload(path, file, { upsert: true })
 
-      if (uploadError) throw uploadError
+      if (storageError) throw storageError
 
       const { data: urlData } = supabase.storage
         .from('event-flyers')
@@ -54,6 +57,7 @@ export default function GestionEventos() {
       await updateEventFlyer(eventId, urlData.publicUrl)
     } catch (err) {
       console.error('Error subiendo flyer:', err)
+      setUploadError('Error al subir el flyer. Intentá de nuevo.')
     } finally {
       setUploadingFor(null)
     }
@@ -86,6 +90,10 @@ export default function GestionEventos() {
         <div className="px-6 sm:px-8 pb-6 border-b border-gray-700">
           <EventCreator onCreated={() => setShowCreator(false)} />
         </div>
+      )}
+
+      {uploadError && (
+        <p className="mx-6 sm:mx-8 -mb-2 text-red-400 text-xs">{uploadError}</p>
       )}
 
       {/* Eventos abiertos */}

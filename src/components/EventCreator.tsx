@@ -8,7 +8,7 @@ interface Props {
 }
 
 export default function EventCreator({ onCreated }: Props) {
-  const { addEvent, setActiveEventStatus } = useAppStore()
+  const { addEvent } = useAppStore()
 
   const [form, setForm] = useState({ name: '', description: '', ticketPrice: '', startDate: '' })
   const [qrCodeUrl, setQrCodeUrl] = useState('')
@@ -43,8 +43,6 @@ export default function EventCreator({ onCreated }: Props) {
         max_capacity: null,
         start_date: new Date(form.startDate).toISOString(),
       })
-
-      await setActiveEventStatus(event.id, true)
 
       const qrData = `${window.location.origin}/registro?event=${event.id}`
       const url = await QRCode.toDataURL(qrData, {
