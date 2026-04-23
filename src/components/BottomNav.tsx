@@ -24,7 +24,7 @@ export default function BottomNav() {
   }
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-50 bg-gray-800 border-t border-gray-700">
+    <nav className="fixed bottom-0 inset-x-0 z-50 bg-black/95 border-t border-white/10 pb-[env(safe-area-inset-bottom,0px)]">
       <div className="max-w-7xl mx-auto px-4">
         <ul className="flex justify-around">
           {tabs.map((tab) => (

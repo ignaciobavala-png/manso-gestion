@@ -36,10 +36,10 @@ export default function RegistroEventos() {
   }
 
   return (
-    <section className="bg-gray-800/50 border border-gray-700 rounded-3xl overflow-hidden">
+    <div>
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full p-6 sm:p-8 flex items-center justify-between text-left hover:bg-gray-700/30 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
+        className="w-full p-6 sm:p-8 flex items-center justify-between text-left hover:bg-white/5 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
       >
         <div>
           <h2 className="text-xl font-semibold text-white">Registro de Eventos</h2>
@@ -66,7 +66,7 @@ export default function RegistroEventos() {
             const isConfirming = confirmingDelete === event.id
 
             return (
-              <div key={event.id} className="bg-gray-700/40 border border-gray-600 rounded-2xl p-5 space-y-4">
+              <div key={event.id} className="bg-neutral-900 border border-white/10 rounded-2xl p-5 space-y-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-white truncate">{event.name}</h3>
@@ -118,7 +118,7 @@ export default function RegistroEventos() {
                       <button
                         onClick={() => { setConfirmingDelete(null); setDeleteError(null) }}
                         disabled={deleting}
-                        className="flex-1 py-2 text-sm bg-gray-600 hover:bg-gray-500 disabled:opacity-50 text-white rounded-lg transition-colors"
+                        className="flex-1 py-2 text-sm bg-white/10 hover:bg-white/20 disabled:opacity-50 text-white rounded-lg transition-colors"
                       >
                         Cancelar
                       </button>
@@ -137,6 +137,6 @@ export default function RegistroEventos() {
           })}
         </div>
       )}
-    </section>
+    </div>
   )
 }

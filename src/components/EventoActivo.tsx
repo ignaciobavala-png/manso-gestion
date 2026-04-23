@@ -97,7 +97,7 @@ export default function EventoActivo() {
   const isFull = maxCap !== null && registrationCount !== null && registrationCount >= maxCap
 
   return (
-    <section className="bg-gray-800/50 border border-gray-700 rounded-3xl p-6 sm:p-8 space-y-6">
+    <div className="p-6 sm:p-8 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -122,15 +122,15 @@ export default function EventoActivo() {
           </div>
           <button
             onClick={downloadQR}
-            className="text-xs text-gray-400 hover:text-white transition-colors underline underline-offset-2"
+            className="w-full py-2.5 bg-white/10 hover:bg-white/20 text-white text-sm font-medium rounded-xl transition-colors active:scale-95"
           >
-            Descargar QR del evento
+            📷 Descargar QR del evento
           </button>
         </div>
       )}
 
       {/* Registros emitidos */}
-      <div className="bg-gray-700/50 rounded-2xl p-4 flex items-center justify-between">
+      <div className="bg-neutral-900 border border-white/10 rounded-2xl p-4 flex items-center justify-between">
         <div>
           <p className="text-gray-400 text-xs uppercase tracking-wider">QRs emitidos</p>
           <p className="text-white font-bold text-2xl mt-0.5">
@@ -159,12 +159,12 @@ export default function EventoActivo() {
             value={maxCapacity}
             onChange={e => { setMaxCapacity(e.target.value); setCapacitySaved(false) }}
             placeholder="Sin límite"
-            className="flex-1 bg-gray-700 border border-gray-600 rounded-xl px-4 py-2.5 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-emerald-500 transition-colors"
+            className="flex-1 bg-neutral-900/80 border border-white/20 rounded-xl px-4 py-2.5 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-emerald-500 transition-colors"
           />
           <button
             onClick={saveCapacity}
             disabled={savingCapacity}
-            className="px-4 py-2.5 bg-gray-600 hover:bg-gray-500 disabled:opacity-50 text-white text-sm font-medium rounded-xl transition-colors"
+            className="px-4 py-2.5 bg-white/10 hover:bg-white/20 disabled:opacity-50 text-white text-sm font-medium rounded-xl transition-colors"
           >
             {capacitySaved ? '✓' : 'Guardar'}
           </button>
@@ -187,6 +187,6 @@ export default function EventoActivo() {
           ? 'Pausar registro de nuevas entradas'
           : 'Reanudar registro de entradas'}
       </button>
-    </section>
+    </div>
   )
 }

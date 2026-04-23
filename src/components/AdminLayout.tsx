@@ -1,13 +1,14 @@
 import { Outlet } from 'react-router-dom'
 import BottomNav from './BottomNav'
+import Background from './Background'
 import { AppStoreInitializer } from '../store/useAppStoreInit'
 
 export default function AdminLayout() {
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100">
+    <Background>
       <AppStoreInitializer />
       <Outlet />
       <BottomNav />
-    </div>
+    </Background>
   )
 }

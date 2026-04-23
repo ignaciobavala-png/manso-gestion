@@ -55,15 +55,18 @@ function Cartelera() {
 
   return (
     <PublicLayout>
-      <div className="flex-1 flex flex-col px-5 pb-10">
-        <div className="flex items-center gap-3 mb-6">
-          <button
-            onClick={() => navigate('/')}
-            className="text-white/40 hover:text-white/70 transition-colors text-2xl leading-none"
-          >
-            ←
-          </button>
-          <h1 className="text-white font-bold text-2xl">Próximas fechas</h1>
+        <div className="flex-1 flex flex-col items-center px-5 pb-10">
+        {/* Header con back button */}
+        <div className="w-full max-w-lg mb-8 mt-4">
+          <div className="flex items-center">
+            <button
+              onClick={() => navigate('/')}
+              className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all text-lg"
+            >
+              ←
+            </button>
+          </div>
+          <h1 className="text-white font-bold text-2xl text-center -mt-10">Próximas fechas</h1>
         </div>
 
         {events.length === 0 ? (
@@ -124,11 +127,8 @@ function Cartelera() {
 
 // ─── Formulario de registro (con ?event=) ───────────────────────────────────
 
-export default function RegistroEntrada() {
+function EventoForm({ eventParam }: { eventParam: string }) {
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const eventParam = searchParams.get('event')
-
   const [activeEvent, setActiveEvent] = useState<ActiveEvent | null>(null)
   const [loadingEvent, setLoadingEvent] = useState(true)
   const [name, setName] = useState('')
@@ -138,13 +138,9 @@ export default function RegistroEntrada() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (!eventParam) {
-      setLoadingEvent(false)
-      return
-    }
-
     async function load() {
-      const { data } = await supabase
+      setLoadingEvent(true)
+      const { data, error } = await supabase
         .from('events')
         .select('id, name, registrations_open')
         .eq('id', eventParam)
@@ -152,7 +148,7 @@ export default function RegistroEntrada() {
         .single()
 
       setLoadingEvent(false)
-      if (!data || !data.registrations_open) return
+      if (error || !data || !data.registrations_open) return
       setActiveEvent({ id: data.id, name: data.name })
       const saved = localStorage.getItem(LS_KEY(data.id))
       if (saved) navigate('/mi-entrada', { replace: true })
@@ -200,26 +196,19 @@ export default function RegistroEntrada() {
     }
   }
 
-  // Sin ?event= → mostrar cartelera
-  if (!eventParam) return <Cartelera />
-
   if (loadingEvent) {
-    return (
-      <PublicLayout>
-        <div className="flex-1 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-emerald-400" />
-        </div>
-      </PublicLayout>
-    )
+    return <FormSkeleton />
   }
 
+  // Ya cargó pero no encontró el evento
   if (!activeEvent) {
     return (
       <PublicLayout>
-        <div className="px-5 pt-2">
-          <button onClick={() => navigate('/registro')} className="text-white/40 hover:text-white/70 transition-colors text-2xl leading-none">←</button>
-        </div>
-        <div className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-4 -mt-12">
+        <div className="flex-1 flex flex-col items-center px-5 pb-10 pt-2">
+          <div className="w-full max-w-lg">
+            <button onClick={() => navigate('/registro')} className="text-white/50 hover:text-white/80 transition-colors text-2xl leading-none">←</button>
+          </div>
+          <div className="flex-1 flex flex-col items-center justify-center text-center gap-4 -mt-12">
           <p className="text-4xl">🎵</p>
           <h2 className="text-2xl font-bold text-white">Este evento no está disponible</h2>
           <p className="text-gray-400 text-sm max-w-xs">El registro puede estar cerrado o el evento ya finalizó.</p>
@@ -229,6 +218,7 @@ export default function RegistroEntrada() {
           >
             Ver otros eventos →
           </button>
+          </div>
         </div>
       </PublicLayout>
     )
@@ -236,15 +226,17 @@ export default function RegistroEntrada() {
 
   return (
     <PublicLayout>
-      <div className="flex-1 flex flex-col px-5 pb-10">
-        <button onClick={() => navigate('/registro')} className="self-start text-white/40 hover:text-white/70 transition-colors text-2xl leading-none mb-4">←</button>
+      <div className="flex-1 flex flex-col items-center px-5 pb-10">
+        <div className="w-full max-w-sm mb-4 pt-2">
+          <button onClick={() => navigate('/registro')} className="text-white/50 hover:text-white/80 transition-colors text-2xl leading-none">←</button>
+        </div>
         {/* Nombre del evento */}
         <div className="text-center mb-7">
-          <p className="text-white/60 text-sm font-semibold uppercase tracking-[0.25em] mb-2">Esta noche</p>
+          <p className="text-white/70 text-sm font-semibold uppercase tracking-[0.25em] mb-2">Esta noche</p>
           <h2 className="text-3xl font-bold text-white">{activeEvent.name}</h2>
           <div className="mt-3 inline-flex items-center gap-2 bg-black/50 border border-white/15 rounded-full px-4 py-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-white/70 animate-pulse" />
-            <span className="text-white/70 text-xs font-semibold tracking-wide">Entrada disponible</span>
+            <span className="text-white/80 text-xs font-semibold tracking-wide">Entrada disponible</span>
           </div>
         </div>
 
@@ -258,39 +250,43 @@ export default function RegistroEntrada() {
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-3">
-                <input
-                  type="text"
-                  value={name}
-                  onChange={e => setName(e.target.value)}
-                  required
-                  autoComplete="name"
-                  placeholder="Tu nombre"
-                  className="w-full bg-white/15 border border-white/25 rounded-2xl px-4 py-3.5 text-white placeholder-gray-400 focus:outline-none focus:border-emerald-400 transition-colors text-sm"
-                />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  required
-                  autoComplete="email"
-                  placeholder="Tu email"
-                  className="w-full bg-white/15 border border-white/25 rounded-2xl px-4 py-3.5 text-white placeholder-gray-400 focus:outline-none focus:border-emerald-400 transition-colors text-sm"
-                />
-              </div>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-3">
+                  <label className="sr-only" htmlFor="reg-name">Nombre</label>
+                  <input
+                    id="reg-name"
+                    type="text"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    required
+                    autoComplete="name"
+                    placeholder="Tu nombre"
+                    className="w-full bg-white/15 border border-white/25 rounded-2xl px-4 py-3.5 text-white placeholder-gray-400 focus:outline-none focus:border-emerald-400 transition-colors text-sm"
+                  />
+                  <label className="sr-only" htmlFor="reg-email">Email</label>
+                  <input
+                    id="reg-email"
+                    type="email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    required
+                    autoComplete="email"
+                    placeholder="Tu email"
+                    className="w-full bg-white/15 border border-white/25 rounded-2xl px-4 py-3.5 text-white placeholder-gray-400 focus:outline-none focus:border-emerald-400 transition-colors text-sm"
+                  />
+                </div>
 
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={accepted}
-                  onChange={e => setAccepted(e.target.checked)}
-                  className="mt-0.5 accent-emerald-500 w-4 h-4 flex-shrink-0"
-                />
-                <span className="text-gray-300 text-xs leading-relaxed">
-                  Que Manso me avise cuando haya próximas fechas.
-                </span>
-              </label>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={accepted}
+                    onChange={e => setAccepted(e.target.checked)}
+                    className="mt-0.5 accent-emerald-500 w-4 h-4 flex-shrink-0"
+                  />
+                  <span className="text-gray-300 text-xs leading-relaxed">
+                    Que Manso me avise cuando haya próximas fechas.
+                  </span>
+                </label>
 
               {error && <p className="text-red-400 text-sm text-center">{error}</p>}
 
@@ -311,4 +307,37 @@ export default function RegistroEntrada() {
       </div>
     </PublicLayout>
   )
+}
+
+function FormSkeleton() {
+  return (
+    <PublicLayout>
+      <div className="flex-1 flex flex-col items-center px-5 pb-10">
+        <div className="w-full max-w-sm mb-4 pt-2">
+          <div className="w-10 h-10 rounded-xl bg-white/10" />
+        </div>
+        <div className="text-center mb-7">
+          <div className="h-4 w-24 bg-white/10 rounded-full mx-auto mb-2" />
+          <div className="h-8 w-48 bg-white/10 rounded-lg mx-auto" />
+        </div>
+        <div className="max-w-sm w-full mx-auto">
+          <div className="rounded-3xl p-6 space-y-5 border border-white/10 bg-neutral-900">
+            <div className="h-6 w-36 bg-white/10 rounded" />
+            <div className="h-4 w-56 bg-white/10 rounded" />
+            <div className="h-12 w-full bg-white/10 rounded-2xl" />
+            <div className="h-12 w-full bg-white/10 rounded-2xl" />
+            <div className="h-12 w-full bg-white/10 rounded-2xl" />
+          </div>
+        </div>
+      </div>
+    </PublicLayout>
+  )
+}
+
+export default function RegistroEntrada() {
+  const [searchParams] = useSearchParams()
+  const eventParam = searchParams.get('event')
+
+  if (!eventParam) return <Cartelera />
+  return <EventoForm key={eventParam} eventParam={eventParam} />
 }

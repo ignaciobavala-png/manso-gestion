@@ -35,10 +35,10 @@ export default function Ingresos() {
   const recentTickets = activeTicketSales.slice(-3).reverse()
 
   return (
-    <section className="bg-gray-800/50 border border-gray-700 rounded-3xl overflow-hidden">
+    <div>
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full p-6 sm:p-8 flex items-center justify-between text-left hover:bg-gray-700/30 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
+        className="w-full p-6 sm:p-8 flex items-center justify-between text-left hover:bg-white/5 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
       >
         <h2 className="text-xl font-semibold text-white">Ingresos</h2>
         <svg
@@ -91,7 +91,7 @@ export default function Ingresos() {
             </div>
 
             {/* Payment Method Breakdown */}
-            <div className="bg-gray-700/30 border border-gray-600 rounded-2xl p-4">
+            <div className="bg-neutral-900 border border-white/10 rounded-2xl p-4">
               <p className="text-sm font-medium text-gray-300 mb-3">Ventas por Método de Pago</p>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -120,7 +120,7 @@ export default function Ingresos() {
           </div>
 
           {/* Ticket Prices Info */}
-          <div className="bg-gray-700/30 border border-gray-600 rounded-2xl p-4">
+          <div className="bg-neutral-900 border border-white/10 rounded-2xl p-4">
             <p className="text-sm font-medium text-gray-300 mb-3">Precios de Entradas</p>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex items-center justify-between">
@@ -152,7 +152,7 @@ export default function Ingresos() {
                   }
 
                   return (
-                    <div key={sale.id} className="flex items-center justify-between p-3 bg-gray-700/30 rounded-xl">
+                    <div key={sale.id} className="flex items-center justify-between p-3 bg-neutral-900/60 rounded-xl">
                       <div className="flex items-center gap-3">
                         <div className={`w-8 h-8 ${paymentBubble[sale.payment_method]} rounded-full flex items-center justify-center`}>
                           <span className="text-sm">🍺</span>
@@ -178,7 +178,7 @@ export default function Ingresos() {
               <h3 className="text-sm font-medium text-gray-300 mb-3">Tickets Recientes (Entradas)</h3>
               <div className="space-y-2">
                 {recentTickets.length > 0 ? recentTickets.map((ticket) => (
-                  <div key={ticket.id} className="flex items-center justify-between p-3 bg-gray-700/30 rounded-xl">
+                  <div key={ticket.id} className="flex items-center justify-between p-3 bg-neutral-900/60 rounded-xl">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 bg-amber-900/30 rounded-full flex items-center justify-center">
                         <span className="text-sm">🎫</span>
@@ -198,6 +198,6 @@ export default function Ingresos() {
           </div>
         </div>
       )}
-    </section>
+    </div>
   )
 }

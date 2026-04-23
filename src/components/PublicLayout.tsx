@@ -1,3 +1,5 @@
+import Background from './Background'
+
 interface PublicLayoutProps {
   children: React.ReactNode
   /** Si true, muestra el header con logo grande (para páginas de bienvenida) */
@@ -6,19 +8,8 @@ interface PublicLayoutProps {
 
 export default function PublicLayout({ children, showHeader = true }: PublicLayoutProps) {
   return (
-    <div
-      className="min-h-screen flex flex-col"
-      style={{
-        backgroundImage: 'url(/fondo.png)',
-        backgroundRepeat: 'no-repeat',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }}
-    >
-      {/* Overlay oscuro sobre el patrón */}
-      <div className="fixed inset-0 bg-black/70 pointer-events-none" />
-
-      <div className="relative z-10 flex flex-col flex-1">
+    <Background>
+      <div className="flex flex-col flex-1 w-full min-h-screen">
         {showHeader && (
           <header className="flex flex-col items-center pt-12 pb-6 px-6">
             <img
@@ -37,6 +28,6 @@ export default function PublicLayout({ children, showHeader = true }: PublicLayo
           {children}
         </main>
       </div>
-    </div>
+    </Background>
   )
 }

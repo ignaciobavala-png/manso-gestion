@@ -95,10 +95,10 @@ export default function Home() {
 
   return (
     <Background>
-      <div className="min-h-screen bg-gray-950 text-gray-200 font-montserrat pb-20">
+      <div className="flex flex-col flex-grow pb-20">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-gray-800 bg-opacity-95 backdrop-blur-sm border-b border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <header className="sticky top-0 z-50 bg-black/95 border-b border-white/10">
+        <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between py-4">
             <div className="flex items-center gap-3">
               <img
@@ -117,7 +117,6 @@ export default function Home() {
               )}
             </div>
           </div>
-          {/* Tabs */}
           <div className="flex gap-1 pb-0">
             <button
               onClick={() => setActiveTab('operacion')}
@@ -143,189 +142,193 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
-        {activeTab === 'config' && (
-          <section className="bg-gray-800/50 border border-gray-700 rounded-3xl p-6 sm:p-8">
-            <Configuracion />
-          </section>
-        )}
-        {activeTab === 'operacion' && (<>
-        {/* Balance Card */}
-        <section className="bg-gray-800 bg-opacity-50 border border-gray-700 rounded-3xl p-6 sm:p-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <main className="flex flex-col flex-grow">
+        <div className="flex flex-col flex-grow bg-black border-b border-white/10">
+          {activeTab === 'config' && (
+            <div className="p-6 sm:p-8">
+              <Configuracion />
+            </div>
+          )}
+          {activeTab === 'operacion' && (
             <div>
-              <h2 className="text-lg sm:text-xl font-medium text-gray-400">Balance Total</h2>
-              <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-emerald-400 mt-2">
-                {formatCurrency(balance)}
-              </p>
-            </div>
-            <div className="text-sm text-gray-500">
-              Actualizado en tiempo real
-            </div>
-          </div>
-        </section>
+              {/* Balance Card */}
+              <div className="p-6 sm:p-8 border-b border-white/10">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div>
+                    <h2 className="text-lg sm:text-xl font-medium text-gray-400">Balance Total</h2>
+                    <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-emerald-400 mt-2">
+                      {formatCurrency(balance)}
+                    </p>
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    Actualizado en tiempo real
+                  </div>
+                </div>
+              </div>
 
-        {/* Gestión de eventos: crear, seleccionar, cerrar */}
-        <GestionEventos />
+              {/* Gestión de eventos: crear, seleccionar, cerrar */}
+              <GestionEventos />
 
-        {/* Gestión del evento activo — QR, pausa y capacidad */}
-        {activeEvent && <EventoActivo />}
+              {/* Gestión del evento activo — QR, pausa y capacidad */}
+              {activeEvent && <EventoActivo />}
 
-        {/* Stock Inicial Section */}
-        <section className="bg-gray-800/50 border border-gray-700 rounded-3xl overflow-hidden">
-          <button
-            onClick={() => setIsStockExpanded(!isStockExpanded)}
-            className="w-full p-6 sm:p-8 flex items-center justify-between text-left hover:bg-gray-700 hover:bg-opacity-30 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
-          >
-            <h2 className="text-xl font-semibold text-white">Stock Inicial</h2>
-            <svg
-              className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${isStockExpanded ? 'rotate-180' : ''}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-          
-          {isStockExpanded && (
-            <div className="px-6 sm:px-8 pb-6 sm:pb-8">
-              <div className="space-y-4">
-                {products.map((product) => (
-                  <div
-                    key={product.id}
-                    className="flex items-center justify-between p-4 bg-gray-700 bg-opacity-50 rounded-2xl border border-gray-600"
+              {/* Stock Inicial Section */}
+              <div className="border-t border-white/10">
+                <button
+                  onClick={() => setIsStockExpanded(!isStockExpanded)}
+                  className="w-full p-6 sm:p-8 flex items-center justify-between text-left hover:bg-white/5 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
+                >
+                  <h2 className="text-xl font-semibold text-white">Stock Inicial</h2>
+                  <svg
+                    className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${isStockExpanded ? 'rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    <div>
-                      <h3 className="font-medium text-white">{product.name}</h3>
-                      <p className="text-sm text-gray-400 mt-1">
-                        Precio: {formatCurrency(product.price)}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => handleStockChange(product.id, Math.max(0, stockValues[product.id] - 1))}
-                        className="w-8 h-8 flex items-center justify-center bg-gray-600 hover:bg-gray-500 rounded-lg transition-colors"
-                        aria-label={`Reducir stock de ${product.name}`}
-                      >
-                        <span className="text-lg">-</span>
-                      </button>
-                      <input
-                        type="number"
-                        min="0"
-                        value={stockValues[product.id]}
-                        onChange={(e) => handleStockChange(product.id, parseInt(e.target.value) || 0)}
-                        className="w-20 text-center bg-gray-700 border border-gray-600 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-white"
-                      />
-                      <button
-                        onClick={() => handleStockChange(product.id, stockValues[product.id] + 1)}
-                        className="w-8 h-8 flex items-center justify-center bg-gray-600 hover:bg-gray-500 rounded-lg transition-colors"
-                        aria-label={`Aumentar stock de ${product.name}`}
-                      >
-                        <span className="text-lg">+</span>
-                      </button>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                
+                {isStockExpanded && (
+                  <div className="px-6 sm:px-8 pb-6 sm:pb-8">
+                    <div className="space-y-4">
+                      {products.map((product) => (
+                        <div
+                          key={product.id}
+                          className="flex items-center justify-between p-4 bg-neutral-900 rounded-2xl border border-white/10"
+                        >
+                          <div>
+                            <h3 className="font-medium text-white">{product.name}</h3>
+                            <p className="text-sm text-gray-400 mt-1">
+                              Precio: {formatCurrency(product.price)}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={() => handleStockChange(product.id, Math.max(0, stockValues[product.id] - 1))}
+                              className="w-8 h-8 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+                              aria-label={`Reducir stock de ${product.name}`}
+                            >
+                              <span className="text-lg">-</span>
+                            </button>
+                            <input
+                              type="number"
+                              min="0"
+                              value={stockValues[product.id]}
+                              onChange={(e) => handleStockChange(product.id, parseInt(e.target.value) || 0)}
+                              className="w-20 text-center bg-neutral-900/80 border border-white/20 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-white"
+                            />
+                            <button
+                              onClick={() => handleStockChange(product.id, stockValues[product.id] + 1)}
+                              className="w-8 h-8 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+                              aria-label={`Aumentar stock de ${product.name}`}
+                            >
+                              <span className="text-lg">+</span>
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                ))}
+                )}
+              </div>
+
+              {/* Ingresos Section */}
+              <Ingresos />
+
+              {/* Registro de Eventos */}
+              <RegistroEventos />
+
+              {/* Arqueo de Caja */}
+              {activeEvent && (
+                <div className="border-t border-white/10 p-6 sm:p-8">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                    <div>
+                      <h2 className="text-xl font-semibold text-white">Arqueo de Caja</h2>
+                      <p className="text-sm text-gray-400 mt-1">Evento activo: <span className="text-emerald-400">{activeEvent.name}</span></p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                    <div className="bg-neutral-900 border border-white/10 rounded-2xl p-3 text-center">
+                      <p className="text-xs text-gray-400">Balance</p>
+                      <p className="text-lg font-bold text-emerald-400">{formatCurrency(balance)}</p>
+                    </div>
+                    <div className="bg-neutral-900 border border-white/10 rounded-2xl p-3 text-center">
+                      <p className="text-xs text-gray-400">Ventas barra</p>
+                      <p className="text-lg font-bold text-white">{eventSales.length}</p>
+                    </div>
+                    <div className="bg-neutral-900 border border-white/10 rounded-2xl p-3 text-center">
+                      <p className="text-xs text-gray-400">Entradas</p>
+                      <p className="text-lg font-bold text-white">{eventTicketSales.length}</p>
+                    </div>
+                    <div className="bg-neutral-900 border border-white/10 rounded-2xl p-3 text-center">
+                      <p className="text-xs text-gray-400">Recaudado</p>
+                      <p className="text-lg font-bold text-emerald-400">
+                        {formatCurrency(
+                          eventSales.reduce((s, v) => s + v.total, 0) +
+                          eventTicketSales.reduce((s, t) => s + t.price, 0)
+                        )}
+                      </p>
+                    </div>
+                  </div>
+
+                  {!showCloseConfirm ? (
+                    <button
+                      onClick={() => setShowCloseConfirm(true)}
+                      className="w-full py-3 bg-red-700 hover:bg-red-600 text-white font-semibold rounded-xl transition-colors"
+                    >
+                      Cerrar evento y hacer arqueo
+                    </button>
+                  ) : (
+                    <div className="bg-red-950/30 border border-red-700/50 rounded-2xl p-4 space-y-3">
+                      <p className="text-sm text-red-300 text-center">
+                        Esto cerrará el evento, reseteará el stock a 0 y limpiará la vista. Los datos quedan guardados en el historial.
+                      </p>
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => setShowCloseConfirm(false)}
+                          disabled={closing}
+                          className="flex-1 py-2 bg-gray-600 hover:bg-gray-500 disabled:opacity-50 text-white font-medium rounded-xl transition-colors"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          onClick={handleCloseEvent}
+                          disabled={closing}
+                          className="flex-1 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-semibold rounded-xl transition-colors"
+                        >
+                          {closing ? 'Cerrando...' : 'Confirmar cierre'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Quick Stats */}
+              <div className="border-t border-white/10 grid grid-cols-1 sm:grid-cols-3 gap-4 p-6 sm:p-8">
+                <div className="bg-neutral-900 border border-white/10 rounded-2xl p-4">
+                  <p className="text-sm text-gray-400">Productos</p>
+                  <p className="text-2xl font-bold mt-1 text-white">{products.length}</p>
+                </div>
+                <div className="bg-neutral-900 border border-white/10 rounded-2xl p-4">
+                  <p className="text-sm text-gray-400">Stock Total</p>
+                  <p className="text-2xl font-bold mt-1 text-white">
+                    {products.reduce((sum, product) => sum + stockValues[product.id], 0)}
+                  </p>
+                </div>
+                <div className="bg-neutral-900 border border-white/10 rounded-2xl p-4">
+                  <p className="text-sm text-gray-400">Valor Stock</p>
+                  <p className="text-2xl font-bold mt-1 text-emerald-400">
+                    {formatCurrency(products.reduce((sum, product) => sum + (stockValues[product.id] * product.price), 0))}
+                    </p>
+                </div>
               </div>
             </div>
           )}
-        </section>
-
-        {/* Ingresos Section */}
-        <Ingresos />
-
-        {/* Registro de Eventos */}
-        <RegistroEventos />
-
-        {/* Arqueo de Caja */}
-        {activeEvent && (
-          <section id="arqueo" className="bg-gray-800/50 border border-red-900/50 rounded-3xl p-6 sm:p-8">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-              <div>
-                <h2 className="text-xl font-semibold text-white">Arqueo de Caja</h2>
-                <p className="text-sm text-gray-400 mt-1">Evento activo: <span className="text-emerald-400">{activeEvent.name}</span></p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-              <div className="bg-gray-700/50 rounded-2xl p-3 text-center">
-                <p className="text-xs text-gray-400">Balance</p>
-                <p className="text-lg font-bold text-emerald-400">{formatCurrency(balance)}</p>
-              </div>
-              <div className="bg-gray-700/50 rounded-2xl p-3 text-center">
-                <p className="text-xs text-gray-400">Ventas barra</p>
-                <p className="text-lg font-bold text-white">{eventSales.length}</p>
-              </div>
-              <div className="bg-gray-700/50 rounded-2xl p-3 text-center">
-                <p className="text-xs text-gray-400">Entradas</p>
-                <p className="text-lg font-bold text-white">{eventTicketSales.length}</p>
-              </div>
-              <div className="bg-gray-700/50 rounded-2xl p-3 text-center">
-                <p className="text-xs text-gray-400">Recaudado</p>
-                <p className="text-lg font-bold text-emerald-400">
-                  {formatCurrency(
-                    eventSales.reduce((s, v) => s + v.total, 0) +
-                    eventTicketSales.reduce((s, t) => s + t.price, 0)
-                  )}
-                </p>
-              </div>
-            </div>
-
-            {!showCloseConfirm ? (
-              <button
-                onClick={() => setShowCloseConfirm(true)}
-                className="w-full py-3 bg-red-700 hover:bg-red-600 text-white font-semibold rounded-xl transition-colors"
-              >
-                Cerrar evento y hacer arqueo
-              </button>
-            ) : (
-              <div className="bg-red-950/50 border border-red-700 rounded-2xl p-4 space-y-3">
-                <p className="text-sm text-red-300 text-center">
-                  Esto cerrará el evento, reseteará el stock a 0 y limpiará la vista. Los datos quedan guardados en el historial.
-                </p>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setShowCloseConfirm(false)}
-                    disabled={closing}
-                    className="flex-1 py-2 bg-gray-600 hover:bg-gray-500 disabled:opacity-50 text-white font-medium rounded-xl transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={handleCloseEvent}
-                    disabled={closing}
-                    className="flex-1 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-semibold rounded-xl transition-colors"
-                  >
-                    {closing ? 'Cerrando...' : 'Confirmar cierre'}
-                  </button>
-                </div>
-              </div>
-            )}
-          </section>
-        )}
-
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-4">
-            <p className="text-sm text-gray-400">Productos</p>
-            <p className="text-2xl font-bold mt-1 text-white">{products.length}</p>
-          </div>
-          <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-4">
-            <p className="text-sm text-gray-400">Stock Total</p>
-            <p className="text-2xl font-bold mt-1 text-white">
-              {products.reduce((sum, product) => sum + stockValues[product.id], 0)}
-            </p>
-          </div>
-          <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-4">
-            <p className="text-sm text-gray-400">Valor Stock</p>
-            <p className="text-2xl font-bold mt-1 text-emerald-400">
-              {formatCurrency(products.reduce((sum, product) => sum + (stockValues[product.id] * product.price), 0))}
-            </p>
-          </div>
-         </div>
-        </>)}
-       </main>
+        </div>
+      </main>
 
         <AlertModal
           isOpen={alertModal.isOpen}

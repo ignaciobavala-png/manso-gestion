@@ -39,7 +39,18 @@ export default function MiEntrada() {
 
   useEffect(() => {
     // Intentar encontrar el ticket del evento activo primero
-    supabase.from('active_event').select('id').single().then(({ data }) => {
+    supabase.from('active_event').select('id').single().then(({ data, error }) => {
+      if (error) {
+        // Si no hay fila en active_event, buscar cualquier ticket guardado
+        const saved = findAnyTicket()
+        if (!saved) {
+          navigate('/registro', { replace: true })
+          return
+        }
+        setTicket(saved)
+        return
+      }
+
       let saved: TicketData | null = null
 
       if (data?.id) {
@@ -125,15 +136,25 @@ export default function MiEntrada() {
     }
   }
 
-  if (!ticket) return null
+  if (!ticket) {
+    return (
+      <PublicLayout showHeader={false}>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-emerald-400" />
+        </div>
+      </PublicLayout>
+    )
+  }
 
   return (
     <PublicLayout>
-      <div className="px-5 pt-2">
-        <button onClick={() => navigate('/')} className="text-white/40 hover:text-white/70 transition-colors text-2xl leading-none">←</button>
-      </div>
       <div className="flex-1 flex flex-col items-center justify-center px-5 pb-10 -mt-4">
         <div className="w-full max-w-sm space-y-4">
+
+          {/* Back button */}
+          <div className="flex">
+            <button onClick={() => navigate('/')} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all text-lg">←</button>
+          </div>
 
           {/* Tarjeta de entrada */}
           <div className="bg-black/60 backdrop-blur-md border border-white/10 rounded-3xl overflow-hidden">

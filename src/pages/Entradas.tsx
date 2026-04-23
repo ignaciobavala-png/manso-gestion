@@ -286,10 +286,10 @@ export default function Entradas(): React.JSX.Element {
 
   return (
     <Background>
-      <div className="min-h-screen bg-gray-950 text-gray-200 font-montserrat pb-20">
+      <div className="flex flex-col flex-grow pb-20">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-gray-800/95 backdrop-blur-sm border-b border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <header className="sticky top-0 z-50 bg-black/95 border-b border-white/10">
+        <div className="px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <img 
@@ -312,281 +312,283 @@ export default function Entradas(): React.JSX.Element {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
-        {/* QR Scanner Section */}
-        <section className="bg-gray-800/50 border border-gray-700 rounded-3xl p-6 sm:p-8">
-          <h2 className="text-xl font-semibold mb-6 text-white">Escanear QR</h2>
+      <main className="flex flex-col flex-grow">
+        <div className="flex flex-col flex-grow bg-black border-b border-white/10">
+          {/* QR Scanner Section */}
+          <div className="p-6 sm:p-8">
+            <h2 className="text-xl font-semibold mb-6 text-white">Escanear QR</h2>
 
-          {/* Estado: validando ticket */}
-          {validating && (
-            <div className="flex flex-col items-center justify-center py-8 gap-3">
-              <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-emerald-500" />
-              <p className="text-gray-400 text-sm">Validando ticket...</p>
-            </div>
-          )}
-
-          {/* Estado: confirmar ticket de registro público */}
-          {!validating && !showSuccess && mansoTicketPending && (
-            <div className="space-y-4">
-              <div className="bg-emerald-900/20 border border-emerald-700 rounded-2xl p-4 text-center">
-                <p className="text-xs text-emerald-500 mb-1 uppercase tracking-wider">Entrada Digital</p>
-                <p className="text-white font-semibold text-lg">{mansoTicketPending.name}</p>
-                <p className="text-emerald-400 text-xs mt-1">Token válido — sin uso previo</p>
+            {/* Estado: validando ticket */}
+            {validating && (
+              <div className="flex flex-col items-center justify-center py-8 gap-3">
+                <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-emerald-500" />
+                <p className="text-gray-400 text-sm">Validando ticket...</p>
               </div>
-              <div className="flex gap-3 pt-2">
-                <button
-                  onClick={() => setMansoTicketPending(null)}
-                  disabled={confirming}
-                  className="flex-1 py-3 bg-gray-600 hover:bg-gray-500 disabled:opacity-50 text-white font-medium rounded-xl transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleConfirmMansoTicket}
-                  disabled={confirming}
-                  className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold rounded-xl transition-colors"
-                >
-                  {confirming ? 'Registrando...' : 'Confirmar ingreso'}
-                </button>
-              </div>
-            </div>
-          )}
+            )}
 
-          {/* Estado: éxito */}
-          {showSuccess && (
-            <div className="flex flex-col items-center justify-center py-8 space-y-3">
-              <div className="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <p className="text-emerald-400 font-semibold text-lg">Entrada registrada</p>
-            </div>
-          )}
-
-          {/* Estado: confirmar QR detectado */}
-          {!showSuccess && pendingQr && (
-            <div className="space-y-4">
-              {isMansQr(pendingQr.rawData) ? (
-                <div className="bg-emerald-900/20 border border-emerald-700 rounded-2xl p-4">
-                  <p className="text-xs text-emerald-500 mb-1">QR de Manso</p>
-                  <p className="text-sm text-emerald-300 font-medium">{getMansEventName(pendingQr.rawData)}</p>
+            {/* Estado: confirmar ticket de registro público */}
+            {!validating && !showSuccess && mansoTicketPending && (
+              <div className="space-y-4">
+                <div className="bg-emerald-900/20 border border-emerald-700 rounded-2xl p-4 text-center">
+                  <p className="text-xs text-emerald-500 mb-1 uppercase tracking-wider">Entrada Digital</p>
+                  <p className="text-white font-semibold text-lg">{mansoTicketPending.name}</p>
+                  <p className="text-emerald-400 text-xs mt-1">Token válido — sin uso previo</p>
                 </div>
-              ) : (
-                <div className="bg-gray-700/50 border border-gray-600 rounded-2xl p-4">
-                  <p className="text-xs text-gray-500 mb-1">Datos del QR</p>
-                  <p className="text-sm text-gray-400 break-all font-mono">{pendingQr.rawData}</p>
-                </div>
-              )}
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Nombre</label>
-                <input
-                  type="text"
-                  value={pendingQr.name}
-                  onChange={(e) => setPendingQr({ ...pendingQr, name: e.target.value })}
-                  placeholder="Nombre del asistente"
-                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                  autoFocus
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Tipo de entrada</label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="flex gap-3 pt-2">
                   <button
-                    onClick={() => setPendingType('regular')}
-                    className={`py-3 rounded-xl border-2 font-medium transition-all ${
-                      pendingType === 'regular'
-                        ? 'bg-emerald-600/20 border-emerald-500 text-emerald-400'
-                        : 'bg-gray-700/50 border-gray-600 text-gray-300'
-                    }`}
+                    onClick={() => setMansoTicketPending(null)}
+                    disabled={confirming}
+                    className="flex-1 py-3 bg-gray-600 hover:bg-gray-500 disabled:opacity-50 text-white font-medium rounded-xl transition-colors"
                   >
-                    Regular
+                    Cancelar
                   </button>
                   <button
-                    onClick={() => setPendingType('invitado')}
-                    className={`py-3 rounded-xl border-2 font-medium transition-all ${
-                      pendingType === 'invitado'
-                        ? 'bg-amber-600/20 border-amber-500 text-amber-400'
-                        : 'bg-gray-700/50 border-gray-600 text-gray-300'
-                    }`}
+                    onClick={handleConfirmMansoTicket}
+                    disabled={confirming}
+                    className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold rounded-xl transition-colors"
                   >
-                    Invitado
+                    {confirming ? 'Registrando...' : 'Confirmar ingreso'}
                   </button>
                 </div>
               </div>
+            )}
 
-              <div className="flex gap-3 pt-2">
-                <button
-                  onClick={() => setPendingQr(null)}
-                  disabled={confirming}
-                  className="flex-1 py-3 bg-gray-600 hover:bg-gray-500 disabled:opacity-50 text-white font-medium rounded-xl transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleConfirmQr}
-                  disabled={confirming}
-                  className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold rounded-xl transition-colors"
-                >
-                  {confirming ? 'Registrando...' : 'Confirmar entrada'}
-                </button>
+            {/* Estado: éxito */}
+            {showSuccess && (
+              <div className="flex flex-col items-center justify-center py-8 space-y-3">
+                <div className="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <p className="text-emerald-400 font-semibold text-lg">Entrada registrada</p>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Estado: scanner / idle */}
-          {!showSuccess && !pendingQr && !mansoTicketPending && !validating && (
-            <div className="flex flex-col items-center space-y-6">
-              <div className="w-full aspect-square max-w-xs bg-gray-700/50 border-2 border-dashed border-gray-600 rounded-2xl overflow-hidden">
-                {/* El video siempre está en el DOM para que videoRef.current esté disponible al iniciar */}
-                <video
-                  ref={videoRef}
-                  className={`w-full h-full object-cover ${isScanning ? 'block' : 'hidden'}`}
-                  playsInline
-                  muted
-                />
-                {!isScanning && cameraError ? (
-                  <div className="flex flex-col items-center justify-center h-full p-4 text-center">
-                    <svg className="w-10 h-10 text-red-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                    </svg>
-                    <p className="text-red-400 text-sm">{cameraError}</p>
+            {/* Estado: confirmar QR detectado */}
+            {!showSuccess && pendingQr && (
+              <div className="space-y-4">
+                {isMansQr(pendingQr.rawData) ? (
+                  <div className="bg-emerald-900/20 border border-emerald-700 rounded-2xl p-4">
+                    <p className="text-xs text-emerald-500 mb-1">QR de Manso</p>
+                    <p className="text-sm text-emerald-300 font-medium">{getMansEventName(pendingQr.rawData)}</p>
                   </div>
-                ) : !isScanning ? (
-                  <div className="flex flex-col items-center justify-center h-full">
-                    <svg className="w-12 h-12 text-gray-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-                    </svg>
-                    <p className="text-gray-500 text-sm">Listo para escanear</p>
-                  </div>
-                ) : null}
-              </div>
-
-              <div className="flex flex-col gap-3 w-full max-w-xs">
-                {!isScanning ? (
-                  <button
-                    onClick={handleScanQR}
-                    className="w-full min-h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl transition-colors"
-                  >
-                    Iniciar Escáner
-                  </button>
                 ) : (
-                  <button
-                    onClick={stopScanning}
-                    className="w-full min-h-12 bg-red-600 hover:bg-red-700 text-white font-medium rounded-xl transition-colors"
-                  >
-                    Detener Escáner
-                  </button>
+                  <div className="bg-neutral-900 border border-white/10 rounded-2xl p-4">
+                    <p className="text-xs text-gray-500 mb-1">Datos del QR</p>
+                    <p className="text-sm text-gray-400 break-all font-mono">{pendingQr.rawData}</p>
+                  </div>
                 )}
 
-                {!showInvitadoInput ? (
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Nombre</label>
+                  <input
+                    type="text"
+                    value={pendingQr.name}
+                    onChange={(e) => setPendingQr({ ...pendingQr, name: e.target.value })}
+                    placeholder="Nombre del asistente"
+                    className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    autoFocus
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Tipo de entrada</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={() => setPendingType('regular')}
+                      className={`py-3 rounded-xl border-2 font-medium transition-all ${
+                        pendingType === 'regular'
+                          ? 'bg-emerald-600/20 border-emerald-500 text-emerald-400'
+                          : 'bg-neutral-900/60 border-white/10 text-gray-300'
+                      }`}
+                    >
+                      Regular
+                    </button>
+                    <button
+                      onClick={() => setPendingType('invitado')}
+                      className={`py-3 rounded-xl border-2 font-medium transition-all ${
+                        pendingType === 'invitado'
+                          ? 'bg-amber-600/20 border-amber-500 text-amber-400'
+                          : 'bg-neutral-900/60 border-white/10 text-gray-300'
+                      }`}
+                    >
+                      Invitado
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-2">
                   <button
-                    onClick={() => setShowInvitadoInput(true)}
-                    className="w-full min-h-12 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-xl transition-colors"
+                    onClick={() => setPendingQr(null)}
+                    disabled={confirming}
+                    className="flex-1 py-3 bg-gray-600 hover:bg-gray-500 disabled:opacity-50 text-white font-medium rounded-xl transition-colors"
                   >
-                    Agregar Invitado Manual
+                    Cancelar
                   </button>
-                ) : (
-                  <div className="space-y-3">
-                    <input
-                      type="text"
-                      value={invitadoName}
-                      onChange={(e) => setInvitadoName(e.target.value)}
-                      placeholder="Nombre del invitado"
-                      className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                      autoFocus
-                      onKeyDown={(e) => e.key === 'Enter' && handleAddInvitado()}
-                    />
-                    <div className="flex gap-2">
-                      <button
-                        onClick={handleAddInvitado}
-                        disabled={submittingInvitado}
-                        className="flex-1 min-h-10 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-medium rounded-xl transition-colors"
-                      >
-                        Confirmar
-                      </button>
-                      <button
-                        onClick={() => { setShowInvitadoInput(false); setInvitadoName('') }}
-                        className="flex-1 min-h-10 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-xl transition-colors"
-                      >
-                        Cancelar
-                      </button>
+                  <button
+                    onClick={handleConfirmQr}
+                    disabled={confirming}
+                    className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold rounded-xl transition-colors"
+                  >
+                    {confirming ? 'Registrando...' : 'Confirmar entrada'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Estado: scanner / idle */}
+            {!showSuccess && !pendingQr && !mansoTicketPending && !validating && (
+              <div className="flex flex-col items-center space-y-6">
+                <div className="w-full aspect-square max-w-xs bg-neutral-900 border-2 border-dashed border-white/10 rounded-2xl overflow-hidden">
+                  {/* El video siempre está en el DOM para que videoRef.current esté disponible al iniciar */}
+                  <video
+                    ref={videoRef}
+                    className={`w-full h-full object-cover ${isScanning ? 'block' : 'hidden'}`}
+                    playsInline
+                    muted
+                  />
+                  {!isScanning && cameraError ? (
+                    <div className="flex flex-col items-center justify-center h-full p-4 text-center">
+                      <svg className="w-10 h-10 text-red-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                      </svg>
+                      <p className="text-red-400 text-sm">{cameraError}</p>
                     </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </section>
-
-        {/* Invitados Section */}
-        <section className="bg-gray-800/50 border border-gray-700 rounded-3xl p-6 sm:p-8">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-white">Últimos Invitados</h2>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-400">
-                Total: {eventGuests.length}
-              </span>
-              <span className="text-sm text-amber-400">
-                Invitados: {eventGuests.filter(g => g.type === 'invitado').length}
-              </span>
-            </div>
-          </div>
-          
-          <div className="space-y-3">
-            {eventGuests.slice(0, 10).map((guest) => (
-              <div
-                key={guest.id}
-                className="flex items-center justify-between p-4 bg-gray-700/50 rounded-2xl border border-gray-600"
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 flex items-center justify-center rounded-full ${
-                    guest.type === 'invitado' ? 'bg-amber-900/30 text-amber-400' : 'bg-emerald-900/30 text-emerald-400'
-                  }`}>
-                    <span className="text-lg">{guest.type === 'invitado' ? '👥' : '👤'}</span>
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-white">{guest.name}</h3>
-                    <p className="text-sm text-gray-400">{new Date(guest.created_at).toLocaleString()}</p>
-                  </div>
+                  ) : !isScanning ? (
+                    <div className="flex flex-col items-center justify-center h-full">
+                      <svg className="w-12 h-12 text-gray-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                      </svg>
+                      <p className="text-gray-500 text-sm">Listo para escanear</p>
+                    </div>
+                  ) : null}
                 </div>
-                <span className={`px-3 py-1 text-sm font-medium rounded-full ${
-                  guest.type === 'invitado' 
-                    ? 'bg-amber-900/30 text-amber-400' 
-                    : 'bg-emerald-900/30 text-emerald-400'
-                }`}>
-                  {guest.type}
+
+                <div className="flex flex-col gap-3 w-full max-w-xs">
+                  {!isScanning ? (
+                    <button
+                      onClick={handleScanQR}
+                      className="w-full min-h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl transition-colors"
+                    >
+                      Iniciar Escáner
+                    </button>
+                  ) : (
+                    <button
+                      onClick={stopScanning}
+                      className="w-full min-h-12 bg-red-600 hover:bg-red-700 text-white font-medium rounded-xl transition-colors"
+                    >
+                      Detener Escáner
+                    </button>
+                  )}
+
+                  {!showInvitadoInput ? (
+                    <button
+                      onClick={() => setShowInvitadoInput(true)}
+                      className="w-full min-h-12 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-xl transition-colors"
+                    >
+                      Agregar Invitado Manual
+                    </button>
+                  ) : (
+                    <div className="space-y-3">
+                      <input
+                        type="text"
+                        value={invitadoName}
+                        onChange={(e) => setInvitadoName(e.target.value)}
+                        placeholder="Nombre del invitado"
+                        className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                        autoFocus
+                        onKeyDown={(e) => e.key === 'Enter' && handleAddInvitado()}
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleAddInvitado}
+                          disabled={submittingInvitado}
+                          className="flex-1 min-h-10 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-medium rounded-xl transition-colors"
+                        >
+                          Confirmar
+                        </button>
+                        <button
+                          onClick={() => { setShowInvitadoInput(false); setInvitadoName('') }}
+                          className="flex-1 min-h-10 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl transition-colors"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Invitados Section */}
+          <div className="p-6 sm:p-8 border-t border-white/10">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-white">Últimos Invitados</h2>
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-gray-400">
+                  Total: {eventGuests.length}
+                </span>
+                <span className="text-sm text-amber-400">
+                  Invitados: {eventGuests.filter(g => g.type === 'invitado').length}
                 </span>
               </div>
-            ))}
-          </div>
-
-          {eventGuests.length === 0 && (
-            <div className="text-center py-8">
-              <p className="text-gray-400">No hay invitados registrados aún</p>
             </div>
-          )}
+            
+            <div className="space-y-3">
+              {eventGuests.slice(0, 10).map((guest) => (
+                <div
+                  key={guest.id}
+                  className="flex items-center justify-between p-4 bg-neutral-900 rounded-2xl border border-white/10"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 flex items-center justify-center rounded-full ${
+                      guest.type === 'invitado' ? 'bg-amber-900/30 text-amber-400' : 'bg-emerald-900/30 text-emerald-400'
+                    }`}>
+                      <span className="text-lg">{guest.type === 'invitado' ? '👥' : '👤'}</span>
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-white">{guest.name}</h3>
+                      <p className="text-sm text-gray-400">{new Date(guest.created_at).toLocaleString()}</p>
+                    </div>
+                  </div>
+                  <span className={`px-3 py-1 text-sm font-medium rounded-full ${
+                    guest.type === 'invitado' 
+                      ? 'bg-amber-900/30 text-amber-400' 
+                      : 'bg-emerald-900/30 text-emerald-400'
+                  }`}>
+                    {guest.type}
+                  </span>
+                </div>
+              ))}
+            </div>
 
-          <div className="mt-6 pt-6 border-t border-gray-700">
-            <p className="text-sm text-gray-400 text-center">
-              Mostrando los últimos {Math.min(10, eventGuests.length)} invitados
-            </p>
-          </div>
-        </section>
+            {eventGuests.length === 0 && (
+              <div className="text-center py-8">
+                <p className="text-gray-400">No hay invitados registrados aún</p>
+              </div>
+            )}
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-4">
-            <p className="text-sm text-gray-400">Entradas Hoy</p>
-            <p className="text-2xl font-bold mt-1 text-white">{eventGuests.length}</p>
+            <div className="mt-6 pt-6 border-t border-white/10">
+              <p className="text-sm text-gray-400 text-center">
+                Mostrando los últimos {Math.min(10, eventGuests.length)} invitados
+              </p>
+            </div>
           </div>
-          <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-4">
-            <p className="text-sm text-gray-400">Invitados Activos</p>
-            <p className="text-2xl font-bold mt-1 text-amber-400">
-              {eventGuests.filter(g => g.type === 'invitado').length}
-            </p>
+
+          {/* Stats */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-6 sm:p-8 border-t border-white/10">
+            <div className="bg-neutral-900 border border-white/10 rounded-2xl p-4">
+              <p className="text-sm text-gray-400">Entradas Hoy</p>
+              <p className="text-2xl font-bold mt-1 text-white">{eventGuests.length}</p>
+            </div>
+            <div className="bg-neutral-900 border border-white/10 rounded-2xl p-4">
+              <p className="text-sm text-gray-400">Invitados Activos</p>
+              <p className="text-2xl font-bold mt-1 text-amber-400">
+                {eventGuests.filter(g => g.type === 'invitado').length}
+              </p>
+            </div>
           </div>
         </div>
       </main>

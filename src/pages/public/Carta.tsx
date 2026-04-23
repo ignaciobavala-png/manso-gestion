@@ -26,14 +26,23 @@ export default function Carta() {
   const navigate = useNavigate()
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     supabase
       .from('products')
       .select('id, name, price, category')
       .order('name')
-      .then(({ data }) => {
-        if (data) setProducts(data as Product[])
+      .then(({ data, error: fetchError }) => {
+        if (fetchError) {
+          setError('No pudimos cargar la carta. Verificá tu conexión e intentá de nuevo.')
+        } else if (data) {
+          setProducts(data as Product[])
+        }
+        setLoading(false)
+      })
+      .catch(() => {
+        setError('No pudimos cargar la carta. Verificá tu conexión e intentá de nuevo.')
         setLoading(false)
       })
   }, [])
@@ -54,13 +63,31 @@ export default function Carta() {
     )
   }
 
+  if (error) {
+    return (
+      <PublicLayout>
+        <div className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-4 -mt-12">
+          <p className="text-4xl">😕</p>
+          <h2 className="text-xl font-bold text-white">Algo salió mal</h2>
+          <p className="text-gray-300 text-sm max-w-xs">{error}</p>
+          <button
+            onClick={() => navigate(0)}
+            className="text-emerald-400 text-sm font-semibold hover:text-emerald-300 transition-colors"
+          >
+            Intentar de nuevo →
+          </button>
+        </div>
+      </PublicLayout>
+    )
+  }
+
   return (
     <PublicLayout>
-      <div className="flex-1 flex flex-col pb-12">
-        <div className="px-5 -mt-2 mb-4">
+      <div className="flex-1 flex flex-col pb-12 items-center">
+        <div className="w-full max-w-md px-8">
           <button
             onClick={() => navigate('/')}
-            className="text-white/40 hover:text-white/70 transition-colors text-2xl leading-none"
+            className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all text-lg mb-6"
           >
             ←
           </button>
@@ -70,7 +97,7 @@ export default function Carta() {
           Carta digital
         </p>
 
-        <div className="px-4 space-y-10">
+        <div className="px-8 space-y-10 max-w-md mx-auto w-full">
           {Object.entries(grouped).map(([cat, items]) => (
             <div key={cat}>
               <div className="flex items-center gap-3 mb-5">
@@ -85,10 +112,12 @@ export default function Carta() {
                 {items.map(product => (
                   <div
                     key={product.id}
-                    className="bg-black/50 backdrop-blur-md border border-white/10 rounded-2xl px-6 py-5 flex items-center justify-between"
+                    className="border border-white/10 rounded-2xl px-6 py-5 bg-neutral-900"
                   >
-                    <p className="text-white font-semibold text-base">{product.name}</p>
-                    <p className="text-emerald-400 text-xl font-bold">{formatPrice(product.price)}</p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-white font-semibold text-base">{product.name}</p>
+                      <p className="text-emerald-400 text-xl font-bold">{formatPrice(product.price)}</p>
+                    </div>
                   </div>
                 ))}
               </div>

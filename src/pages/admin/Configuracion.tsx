@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
-import { supabase } from '../../lib/supabase'
 
 type PinStep = 'idle' | 'enter_new' | 'confirm_1' | 'confirm_2' | 'success' | 'error'
 
@@ -29,36 +28,6 @@ export default function Configuracion() {
   const [flow, setFlow] = useState<PinFlow>({ target: null, step: 'idle', newPin: '', message: '' })
   const [pin, setPin] = useState('')
   const [pinLoading, setPinLoading] = useState(false)
-
-  // ── Datos de pago ─────────────────────────────────────────────────────────
-  const [alias, setAlias] = useState('')
-  const [cbu, setCbu] = useState('')
-  const [paymentLoading, setPaymentLoading] = useState(false)
-  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'saved' | 'error'>('idle')
-
-  useEffect(() => {
-    supabase
-      .from('venue_config')
-      .select('alias_pago, cbu_pago')
-      .single()
-      .then(({ data }) => {
-        if (data) {
-          setAlias(data.alias_pago ?? '')
-          setCbu(data.cbu_pago ?? '')
-        }
-      })
-  }, [])
-
-  const savePaymentData = async () => {
-    setPaymentLoading(true)
-    setPaymentStatus('idle')
-    const { error } = await supabase
-      .from('venue_config')
-      .update({ alias_pago: alias.trim() || null, cbu_pago: cbu.trim() || null })
-      .eq('id', 1)
-    setPaymentLoading(false)
-    setPaymentStatus(error ? 'error' : 'saved')
-  }
 
   // ── PIN handlers ──────────────────────────────────────────────────────────
   const resetPin = () => {
@@ -139,7 +108,7 @@ export default function Configuracion() {
 
         <div className="flex items-center gap-2 mb-5">
           {[1, 2, 3].map(s => (
-            <div key={s} className={`h-1 w-8 rounded-full transition-colors ${s <= progressStep ? 'bg-emerald-500' : 'bg-gray-700'}`} />
+            <div key={s} className={`h-1 w-8 rounded-full transition-colors ${s <= progressStep ? 'bg-emerald-500' : 'bg-white/20'}`} />
           ))}
         </div>
 
@@ -160,7 +129,7 @@ export default function Configuracion() {
                 key={i}
                 onClick={() => handleKey(key)}
                 disabled={pinLoading}
-                className={`h-14 rounded-2xl text-xl font-medium transition-all duration-100 active:scale-95 bg-gray-700 active:bg-gray-600 ${key === '⌫' ? 'text-gray-400' : 'text-white'} ${pinLoading ? 'opacity-40 pointer-events-none' : ''}`}
+                className={`h-14 rounded-2xl text-xl font-medium transition-all duration-100 active:scale-95 bg-white/10 hover:bg-white/20 ${key === '⌫' ? 'text-gray-400' : 'text-white'} ${pinLoading ? 'opacity-40 pointer-events-none' : ''}`}
               >
                 {key}
               </button>
@@ -203,61 +172,14 @@ export default function Configuracion() {
   return (
     <div className="space-y-6">
 
-      {/* Datos de pago para /carta */}
-      <div className="space-y-3">
-        <p className="text-gray-500 text-xs uppercase tracking-widest">Datos de pago — carta digital</p>
-        <p className="text-gray-600 text-xs leading-relaxed">
-          Estos datos aparecen en <span className="text-gray-400">/carta</span> cuando un cliente confirma su pedido. Le sirven para hacer la transferencia antes de pasar a buscar su pedido a la barra.
-        </p>
-
-        <div className="space-y-2">
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Alias</label>
-            <input
-              type="text"
-              value={alias}
-              onChange={e => { setAlias(e.target.value); setPaymentStatus('idle') }}
-              placeholder="ej: manso.club"
-              className="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-emerald-500 transition-colors"
-            />
-          </div>
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">CBU / CVU <span className="text-gray-600">(opcional)</span></label>
-            <input
-              type="text"
-              value={cbu}
-              onChange={e => { setCbu(e.target.value); setPaymentStatus('idle') }}
-              placeholder="22 dígitos"
-              className="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-emerald-500 transition-colors"
-            />
-          </div>
-        </div>
-
-        <button
-          onClick={savePaymentData}
-          disabled={paymentLoading}
-          className="w-full bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 text-white font-semibold py-3 rounded-xl text-sm transition-colors active:scale-95"
-        >
-          {paymentLoading ? 'Guardando...' : 'Guardar datos de pago'}
-        </button>
-
-        {paymentStatus === 'saved' && (
-          <p className="text-emerald-400 text-xs text-center">Guardado. Ya se ve en /carta.</p>
-        )}
-        {paymentStatus === 'error' && (
-          <p className="text-red-400 text-xs text-center">Error al guardar. Intentá de nuevo.</p>
-        )}
-      </div>
-
-      {/* Divider */}
-      <div className="border-t border-gray-700" />
+      <div className="border-t border-white/10" />
 
       {/* PINs */}
       <div className="space-y-3">
         <p className="text-gray-500 text-xs uppercase tracking-widest">PINs de acceso</p>
         <button
           onClick={() => startFlow('control')}
-          className="w-full flex items-center justify-between bg-gray-700 hover:bg-gray-600 rounded-xl px-4 py-3.5 transition-colors"
+          className="w-full flex items-center justify-between bg-white/10 hover:bg-white/20 rounded-xl px-4 py-3.5 transition-colors"
         >
           <div className="text-left">
             <p className="text-white text-sm font-medium">Tu PIN (Control)</p>
@@ -267,7 +189,7 @@ export default function Configuracion() {
         </button>
         <button
           onClick={() => startFlow('empleado')}
-          className="w-full flex items-center justify-between bg-gray-700 hover:bg-gray-600 rounded-xl px-4 py-3.5 transition-colors"
+          className="w-full flex items-center justify-between bg-white/10 hover:bg-white/20 rounded-xl px-4 py-3.5 transition-colors"
         >
           <div className="text-left">
             <p className="text-white text-sm font-medium">PIN de empleados</p>

@@ -112,7 +112,7 @@ export default function EventCreator({ onCreated }: Props) {
           value={form.name}
           onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
           placeholder="Ej: Fiesta de verano"
-          className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+          className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
           onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
         />
       </div>
@@ -126,7 +126,7 @@ export default function EventCreator({ onCreated }: Props) {
             value={form.ticketPrice}
             onChange={(e) => setForm(prev => ({ ...prev, ticketPrice: e.target.value }))}
             placeholder="0"
-            className="w-full pl-8 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+            className="w-full pl-8 pr-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
           />
         </div>
         <p className="text-xs text-gray-500 mt-1">Se aplica igual para regular e invitado. Dejá en 0 si la entrada es gratis.</p>
@@ -137,7 +137,7 @@ export default function EventCreator({ onCreated }: Props) {
           type="datetime-local"
           value={form.startDate}
           onChange={(e) => setForm(prev => ({ ...prev, startDate: e.target.value }))}
-          className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent [color-scheme:dark]"
+          className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent [color-scheme:dark]"
         />
       </div>
       <div>
@@ -147,7 +147,7 @@ export default function EventCreator({ onCreated }: Props) {
           onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
           rows={2}
           placeholder="Opcional"
-          className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
+          className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
         />
       </div>
       <button

@@ -73,7 +73,7 @@ export default function GestionEventos() {
     })
 
   return (
-    <section className="bg-gray-800/50 border border-gray-700 rounded-3xl overflow-hidden">
+    <div>
       {/* Header */}
       <div className="p-6 sm:p-8 pb-4 flex items-center justify-between">
         <h2 className="text-xl font-semibold text-white">Eventos</h2>
@@ -87,7 +87,7 @@ export default function GestionEventos() {
 
       {/* Formulario nuevo evento */}
       {showCreator && (
-        <div className="px-6 sm:px-8 pb-6 border-b border-gray-700">
+        <div className="px-6 sm:px-8 pb-6 border-b border-white/10">
           <EventCreator onCreated={() => setShowCreator(false)} />
         </div>
       )}
@@ -115,14 +115,14 @@ export default function GestionEventos() {
               className={`rounded-2xl border overflow-hidden transition-colors ${
                 isCurrent
                   ? 'bg-emerald-900/30 border-emerald-700'
-                  : 'bg-gray-700/40 border-gray-600'
+                  : 'bg-neutral-900 border border-white/10'
               }`}
             >
-              <div className="flex gap-3 p-4">
+              <div className="flex gap-4 p-4">
                 {/* Flyer thumbnail */}
-                <div className="flex-shrink-0">
+                <div className="flex-shrink-0 flex flex-col items-center gap-1.5">
                   <div
-                    className="w-14 rounded-xl overflow-hidden bg-gray-700 border border-gray-600 cursor-pointer relative group"
+                    className="w-20 rounded-xl overflow-hidden bg-neutral-900/80 border border-white/20 cursor-pointer relative"
                     style={{ aspectRatio: '4/5' }}
                     onClick={() => fileInputRefs.current[e.id]?.click()}
                   >
@@ -133,16 +133,18 @@ export default function GestionEventos() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-500 text-lg">
+                      <div className="w-full h-full flex items-center justify-center text-gray-500 text-2xl">
                         🖼
                       </div>
                     )}
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <span className="text-white text-[10px] font-medium text-center leading-tight px-1">
-                        {isUploading ? '...' : e.flyer_url ? 'Cambiar' : 'Subir'}
-                      </span>
-                    </div>
                   </div>
+                  <button
+                    onClick={() => fileInputRefs.current[e.id]?.click()}
+                    disabled={isUploading}
+                    className="text-[11px] text-emerald-400 hover:text-emerald-300 font-medium transition-colors disabled:opacity-50"
+                  >
+                    {isUploading ? 'Subiendo...' : e.flyer_url ? 'Cambiar foto' : 'Subir foto'}
+                  </button>
                   <input
                     ref={el => { fileInputRefs.current[e.id] = el }}
                     type="file"
@@ -200,10 +202,10 @@ export default function GestionEventos() {
 
       {/* Historial de eventos cerrados */}
       {closedEvents.length > 0 && (
-        <div className="border-t border-gray-700">
+        <div className="border-t border-white/10">
           <button
             onClick={() => setShowHistorial(v => !v)}
-            className="w-full px-6 sm:px-8 py-3 flex items-center justify-between text-left hover:bg-gray-700/30 transition-colors"
+            className="w-full px-6 sm:px-8 py-3 flex items-center justify-between text-left hover:bg-white/5 transition-colors"
           >
             <span className="text-xs text-gray-500 uppercase tracking-wider">
               Historial ({closedEvents.length})
@@ -214,7 +216,7 @@ export default function GestionEventos() {
           {showHistorial && (
             <div className="px-6 sm:px-8 pb-4 space-y-2">
               {closedEvents.map(e => (
-                <div key={e.id} className="flex items-center justify-between py-2 border-b border-gray-700/50 last:border-0">
+                <div key={e.id} className="flex items-center justify-between py-2 border-b border-white/10 last:border-0">
                   <p className="text-gray-400 text-sm truncate">{e.name}</p>
                   <p className="text-gray-600 text-xs flex-shrink-0 ml-3">
                     {e.closed_at ? `Cerrado ${formatDate(e.closed_at)}` : 'Sin cerrar'}
@@ -225,7 +227,6 @@ export default function GestionEventos() {
           )}
         </div>
       )}
-
-    </section>
+    </div>
   )
 }

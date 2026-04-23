@@ -18,7 +18,7 @@ const PAGES = [
     label: 'Carta',
     description: 'Menú público con info de transferencia',
     path: '/carta',
-    icon: '📄',
+    icon: '🍻',
   },
 ]
 
@@ -31,7 +31,7 @@ export default function VistasPublicas() {
 
   return (
     <Background>
-      <div className="max-w-4xl mx-auto px-4 py-6 pb-24">
+      <div className="max-w-4xl mx-auto px-4 py-6 pb-24 w-full">
         <div className="flex items-center gap-3 mb-6">
           <button
             onClick={() => navigate('/admin/home')}
@@ -50,7 +50,7 @@ export default function VistasPublicas() {
             <button
               key={page.path}
               onClick={() => open(page.path)}
-              className="w-full bg-gray-800 hover:bg-gray-750 border border-gray-700 hover:border-emerald-600 rounded-2xl px-5 py-4 flex items-center gap-4 transition-colors text-left"
+              className="w-full bg-black/50 hover:bg-white/10 border border-white/10 hover:border-emerald-600 rounded-2xl px-5 py-4 flex items-center gap-4 transition-colors text-left"
             >
               <span className="text-3xl">{page.icon}</span>
               <div className="flex-1 min-w-0">

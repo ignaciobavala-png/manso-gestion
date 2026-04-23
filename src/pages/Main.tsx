@@ -11,7 +11,7 @@ export default function Main({ setCurrentPage }: MainProps): React.JSX.Element {
 
   return (
     <Background backgroundImage="/fondo.png">
-      <main className="w-full max-w-md px-4 mx-auto flex flex-col items-center justify-center h-screen">
+      <main className="flex flex-col flex-grow items-center justify-center px-4">
         <div className="flex justify-center items-center mb-12 gap-4">
           <img 
             src="/logo.png" 
@@ -28,7 +28,7 @@ export default function Main({ setCurrentPage }: MainProps): React.JSX.Element {
         <div className="space-y-4">
           <button
             onClick={() => handleNavigation('home')}
-            className="w-full bg-gray-700 hover:bg-gray-600 text-white font-medium py-6 px-8 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-900 border border-gray-600"
+            className="w-full bg-black/50 backdrop-blur-md border border-white/10 hover:bg-white/10 text-white font-medium py-6 px-8 rounded-2xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
           >
             Control
           </button>

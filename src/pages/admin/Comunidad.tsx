@@ -72,7 +72,7 @@ export default function Comunidad() {
 
   return (
     <Background>
-      <div className="max-w-4xl mx-auto px-4 py-6 pb-24">
+      <div className="max-w-4xl mx-auto px-4 py-6 pb-24 w-full">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
           <button onClick={() => navigate('/admin/home')} className="text-gray-400 hover:text-white transition-colors">
@@ -89,7 +89,7 @@ export default function Comunidad() {
           <select
             value={selectedEvent}
             onChange={e => setSelectedEvent(e.target.value)}
-            className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-emerald-500"
+            className="flex-1 bg-black/40 border border-white/20 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-emerald-500"
           >
             <option value="todos">Todos los eventos ({rows.length})</option>
             {events.map(e => (
@@ -120,7 +120,7 @@ export default function Comunidad() {
         ) : (
           <div className="space-y-2">
             {filtered.map(r => (
-              <div key={r.id} className="bg-gray-800 rounded-2xl px-4 py-3">
+              <div key={r.id} className="bg-neutral-900 border border-white/10 rounded-2xl px-4 py-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="text-white font-medium text-sm truncate">{r.name}</p>
@@ -131,7 +131,7 @@ export default function Comunidad() {
                     <span className={`inline-block text-xs px-2 py-0.5 rounded-full ${
                       r.used_at
                         ? 'bg-emerald-900/50 text-emerald-400'
-                        : 'bg-gray-700 text-gray-400'
+                        : 'bg-white/10 text-gray-400'
                     }`}>
                       {r.used_at ? 'Ingresó' : 'Pendiente'}
                     </span>
