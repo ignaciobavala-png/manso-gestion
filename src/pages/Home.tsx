@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import Ingresos from '../components/Ingresos'
 import RegistroEventos from '../components/RegistroEventos'
-import EventCreator from '../components/EventCreator'
 import EventoActivo from '../components/EventoActivo'
+import GestionEventos from '../components/GestionEventos'
 import AlertModal from '../components/AlertModal'
 import Background from '../components/Background'
 import Configuracion from './admin/Configuracion'
@@ -18,14 +18,11 @@ export default function Home() {
     updateProduct,
     activeEvent,
     closeEvent,
-    selectOperatingEvent,
-    events,
     sales,
     ticketSales,
     isInitialized
   } = useAppStore()
   const [isStockExpanded, setIsStockExpanded] = useState(false)
-  const [showEventCreator, setShowEventCreator] = useState(false)
   const [stockValues, setStockValues] = useState<Record<string, number>>({})
   const [showCloseConfirm, setShowCloseConfirm] = useState(false)
   const [closing, setClosing] = useState(false)
@@ -168,61 +165,11 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Selector de evento en operación */}
-        {(() => {
-          const openEvents = events.filter(e => e.is_active && !e.closed_at)
-          if (openEvents.length <= 1) return null
-          return (
-            <section className="bg-gray-800/50 border border-emerald-800/40 rounded-3xl p-5">
-              <p className="text-xs text-gray-400 uppercase tracking-wider mb-3">Evento en operación</p>
-              <div className="flex flex-col gap-2">
-                {openEvents.map(e => (
-                  <button
-                    key={e.id}
-                    onClick={() => selectOperatingEvent(e.id)}
-                    className={`w-full text-left px-4 py-3 rounded-2xl text-sm font-medium transition-colors ${
-                      activeEvent?.id === e.id
-                        ? 'bg-emerald-700 text-white'
-                        : 'bg-gray-700/60 text-gray-300 hover:bg-gray-700'
-                    }`}
-                  >
-                    {e.name}
-                    {activeEvent?.id === e.id && (
-                      <span className="ml-2 text-xs text-emerald-300">← en operación</span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </section>
-          )
-        })()}
+        {/* Gestión de eventos: crear, seleccionar, cerrar */}
+        <GestionEventos />
 
         {/* Gestión del evento activo — QR, pausa y capacidad */}
         {activeEvent && <EventoActivo />}
-
-        {/* Event Creator Section — siempre visible para crear nuevos eventos */}
-        <section className="bg-gray-800/50 border border-gray-700 rounded-3xl overflow-hidden">
-            <button
-              onClick={() => setShowEventCreator(!showEventCreator)}
-              className="w-full p-6 sm:p-8 flex items-center justify-between text-left hover:bg-gray-700 hover:bg-opacity-30 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
-            >
-              <h2 className="text-xl font-semibold text-white">Crear Evento</h2>
-              <svg
-                className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${showEventCreator ? 'rotate-180' : ''}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-
-            {showEventCreator && (
-              <div className="px-6 sm:px-8 pb-6 sm:pb-8">
-                <EventCreator />
-              </div>
-            )}
-          </section>
 
         {/* Stock Inicial Section */}
         <section className="bg-gray-800/50 border border-gray-700 rounded-3xl overflow-hidden">

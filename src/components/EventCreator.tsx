@@ -3,7 +3,11 @@ import QRCode from 'qrcode'
 import { useAppStore } from '../store/useAppStore'
 import AlertModal from '../components/AlertModal'
 
-export default function EventCreator() {
+interface Props {
+  onCreated?: () => void
+}
+
+export default function EventCreator({ onCreated }: Props) {
   const { addEvent, setActiveEventStatus } = useAppStore()
 
   const [form, setForm] = useState({ name: '', description: '', ticketPrice: '' })
@@ -51,6 +55,7 @@ export default function EventCreator() {
       setQrCodeUrl(url)
       setCreatedEventName(form.name.trim())
       setForm({ name: '', description: '', ticketPrice: '' })
+      onCreated?.()
     } catch (error) {
       setAlertModal({
         isOpen: true,
