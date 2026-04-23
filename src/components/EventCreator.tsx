@@ -45,7 +45,7 @@ export default function EventCreator({ onCreated }: Props) {
 
       await setActiveEventStatus(event.id, true)
 
-      const qrData = `manso|${event.id}|${form.name.trim()}`
+      const qrData = `${window.location.origin}/registro?event=${event.id}`
       const url = await QRCode.toDataURL(qrData, {
         width: 300,
         margin: 2,
@@ -55,7 +55,6 @@ export default function EventCreator({ onCreated }: Props) {
       setQrCodeUrl(url)
       setCreatedEventName(form.name.trim())
       setForm({ name: '', description: '', ticketPrice: '' })
-      onCreated?.()
     } catch (error) {
       setAlertModal({
         isOpen: true,
@@ -86,7 +85,7 @@ export default function EventCreator({ onCreated }: Props) {
           </div>
           <div className="text-center space-y-1">
             <p className="text-emerald-400 font-semibold text-lg">{createdEventName}</p>
-            <p className="text-sm text-gray-400">Evento activo — barra y entradas habilitadas</p>
+            <p className="text-sm text-gray-400">Evento en operación — compartí este QR para el registro público</p>
           </div>
         </div>
         <button
@@ -94,6 +93,12 @@ export default function EventCreator({ onCreated }: Props) {
           className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl transition-colors"
         >
           Descargar QR
+        </button>
+        <button
+          onClick={() => onCreated?.()}
+          className="w-full py-2 text-gray-500 hover:text-gray-300 text-sm transition-colors"
+        >
+          Listo
         </button>
       </div>
     )
