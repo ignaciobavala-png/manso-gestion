@@ -3,12 +3,126 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import PublicLayout from '../../components/PublicLayout'
 
+interface EventCard {
+  id: string
+  name: string
+  start_date: string | null
+  flyer_url: string | null
+}
+
 interface ActiveEvent {
   id: string
   name: string
 }
 
 const LS_KEY = (eventId: string) => `manso_ticket_${eventId}`
+
+// ─── Cartelera (sin ?event=) ────────────────────────────────────────────────
+
+function Cartelera() {
+  const navigate = useNavigate()
+  const [events, setEvents] = useState<EventCard[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    supabase
+      .from('events')
+      .select('id, name, start_date, flyer_url')
+      .eq('is_active', true)
+      .eq('registrations_open', true)
+      .order('start_date', { ascending: true })
+      .then(({ data }) => {
+        setEvents(data ?? [])
+        setLoading(false)
+      })
+  }, [])
+
+  const formatDate = (iso: string) =>
+    new Date(iso).toLocaleString('es-AR', {
+      weekday: 'long', day: 'numeric', month: 'long',
+      hour: '2-digit', minute: '2-digit'
+    })
+
+  if (loading) {
+    return (
+      <PublicLayout>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-emerald-400" />
+        </div>
+      </PublicLayout>
+    )
+  }
+
+  return (
+    <PublicLayout>
+      <div className="flex-1 flex flex-col px-5 pb-10">
+        <div className="flex items-center gap-3 mb-6">
+          <button
+            onClick={() => navigate('/')}
+            className="text-white/40 hover:text-white/70 transition-colors text-2xl leading-none"
+          >
+            ←
+          </button>
+          <h1 className="text-white font-bold text-2xl">Próximas fechas</h1>
+        </div>
+
+        {events.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-center gap-4 -mt-12">
+            <p className="text-4xl">🎵</p>
+            <h2 className="text-xl font-bold text-white">No hay eventos próximos</h2>
+            <p className="text-gray-400 text-sm max-w-xs">
+              Seguinos en redes para enterarte de la próxima fecha.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-4 max-w-lg mx-auto w-full">
+            {events.map(event => (
+              <button
+                key={event.id}
+                onClick={() => navigate(`/registro?event=${event.id}`)}
+                className="group flex flex-col rounded-2xl overflow-hidden border border-white/10 bg-black/40 backdrop-blur-sm hover:border-emerald-500/50 transition-all active:scale-95 text-left"
+              >
+                {/* Flyer — portrait 4:5 */}
+                <div className="w-full relative" style={{ paddingBottom: '125%' }}>
+                  {event.flyer_url ? (
+                    <img
+                      src={event.flyer_url}
+                      alt={event.name}
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-800/80 gap-2">
+                      <span className="text-4xl">🎶</span>
+                    </div>
+                  )}
+                  {/* Gradient overlay for text legibility */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                </div>
+
+                {/* Info */}
+                <div className="p-3 space-y-0.5">
+                  <p className="text-white font-semibold text-sm leading-tight line-clamp-2 group-hover:text-emerald-300 transition-colors">
+                    {event.name}
+                  </p>
+                  {event.start_date && (
+                    <p className="text-gray-400 text-xs leading-tight capitalize">
+                      {formatDate(event.start_date)}
+                    </p>
+                  )}
+                  <p className="text-emerald-400 text-xs font-semibold mt-1">
+                    Reservar lugar →
+                  </p>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </PublicLayout>
+  )
+}
+
+// ─── Formulario de registro (con ?event=) ───────────────────────────────────
 
 export default function RegistroEntrada() {
   const navigate = useNavigate()
@@ -24,33 +138,22 @@ export default function RegistroEntrada() {
   const [error, setError] = useState('')
 
   useEffect(() => {
+    if (!eventParam) {
+      setLoadingEvent(false)
+      return
+    }
+
     async function load() {
-      // Si hay ?event= en la URL, buscar ese evento específico
-      if (eventParam) {
-        const { data } = await supabase
-          .from('events')
-          .select('id, name, registrations_open')
-          .eq('id', eventParam)
-          .eq('is_active', true)
-          .single()
-
-        setLoadingEvent(false)
-        if (!data || !data.registrations_open) return
-        setActiveEvent({ id: data.id, name: data.name })
-        const saved = localStorage.getItem(LS_KEY(data.id))
-        if (saved) navigate('/mi-entrada', { replace: true })
-        return
-      }
-
-      // Sin param: usar el evento en operación (active_event view)
       const { data } = await supabase
-        .from('active_event')
-        .select('id, name')
+        .from('events')
+        .select('id, name, registrations_open')
+        .eq('id', eventParam)
+        .eq('is_active', true)
         .single()
 
       setLoadingEvent(false)
-      if (!data) return
-      setActiveEvent(data as ActiveEvent)
+      if (!data || !data.registrations_open) return
+      setActiveEvent({ id: data.id, name: data.name })
       const saved = localStorage.getItem(LS_KEY(data.id))
       if (saved) navigate('/mi-entrada', { replace: true })
     }
@@ -97,6 +200,9 @@ export default function RegistroEntrada() {
     }
   }
 
+  // Sin ?event= → mostrar cartelera
+  if (!eventParam) return <Cartelera />
+
   if (loadingEvent) {
     return (
       <PublicLayout>
@@ -111,12 +217,18 @@ export default function RegistroEntrada() {
     return (
       <PublicLayout>
         <div className="px-5 pt-2">
-          <button onClick={() => navigate('/')} className="text-white/40 hover:text-white/70 transition-colors text-2xl leading-none">←</button>
+          <button onClick={() => navigate('/registro')} className="text-white/40 hover:text-white/70 transition-colors text-2xl leading-none">←</button>
         </div>
         <div className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-4 -mt-12">
           <p className="text-4xl">🎵</p>
-          <h2 className="text-2xl font-bold text-white">No hay evento esta noche</h2>
-          <p className="text-gray-400 text-sm max-w-xs">Seguinos en redes para enterarte de la próxima fecha.</p>
+          <h2 className="text-2xl font-bold text-white">Este evento no está disponible</h2>
+          <p className="text-gray-400 text-sm max-w-xs">El registro puede estar cerrado o el evento ya finalizó.</p>
+          <button
+            onClick={() => navigate('/registro')}
+            className="text-emerald-400 text-sm font-semibold hover:text-emerald-300 transition-colors"
+          >
+            Ver otros eventos →
+          </button>
         </div>
       </PublicLayout>
     )
@@ -125,7 +237,7 @@ export default function RegistroEntrada() {
   return (
     <PublicLayout>
       <div className="flex-1 flex flex-col px-5 pb-10">
-        <button onClick={() => navigate('/')} className="self-start text-white/40 hover:text-white/70 transition-colors text-2xl leading-none mb-4">←</button>
+        <button onClick={() => navigate('/registro')} className="self-start text-white/40 hover:text-white/70 transition-colors text-2xl leading-none mb-4">←</button>
         {/* Nombre del evento */}
         <div className="text-center mb-7">
           <p className="text-white/60 text-sm font-semibold uppercase tracking-[0.25em] mb-2">Esta noche</p>

@@ -10,7 +10,7 @@ interface Props {
 export default function EventCreator({ onCreated }: Props) {
   const { addEvent, setActiveEventStatus } = useAppStore()
 
-  const [form, setForm] = useState({ name: '', description: '', ticketPrice: '' })
+  const [form, setForm] = useState({ name: '', description: '', ticketPrice: '', startDate: '' })
   const [qrCodeUrl, setQrCodeUrl] = useState('')
   const [createdEventName, setCreatedEventName] = useState('')
   const [saving, setSaving] = useState(false)
@@ -22,11 +22,11 @@ export default function EventCreator({ onCreated }: Props) {
 
   const handleCreate = async () => {
     if (!form.name.trim()) {
-      setAlertModal({
-        isOpen: true,
-        message: 'El nombre del evento es obligatorio',
-        type: 'warning'
-      })
+      setAlertModal({ isOpen: true, message: 'El nombre del evento es obligatorio', type: 'warning' })
+      return
+    }
+    if (!form.startDate) {
+      setAlertModal({ isOpen: true, message: 'La fecha del evento es obligatoria', type: 'warning' })
       return
     }
 
@@ -41,6 +41,7 @@ export default function EventCreator({ onCreated }: Props) {
         is_active: true,
         registrations_open: true,
         max_capacity: null,
+        start_date: new Date(form.startDate).toISOString(),
       })
 
       await setActiveEventStatus(event.id, true)
@@ -54,7 +55,7 @@ export default function EventCreator({ onCreated }: Props) {
 
       setQrCodeUrl(url)
       setCreatedEventName(form.name.trim())
-      setForm({ name: '', description: '', ticketPrice: '' })
+      setForm({ name: '', description: '', ticketPrice: '', startDate: '' })
     } catch (error) {
       setAlertModal({
         isOpen: true,
@@ -131,6 +132,15 @@ export default function EventCreator({ onCreated }: Props) {
           />
         </div>
         <p className="text-xs text-gray-500 mt-1">Se aplica igual para regular e invitado. Dejá en 0 si la entrada es gratis.</p>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-2">Fecha y hora *</label>
+        <input
+          type="datetime-local"
+          value={form.startDate}
+          onChange={(e) => setForm(prev => ({ ...prev, startDate: e.target.value }))}
+          className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent [color-scheme:dark]"
+        />
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-2">Descripción</label>

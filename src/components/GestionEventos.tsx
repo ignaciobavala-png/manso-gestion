@@ -1,13 +1,15 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAppStore } from '../store/useAppStore'
 import EventCreator from './EventCreator'
 
 export default function GestionEventos() {
-  const { events, activeEvent, selectOperatingEvent } = useAppStore()
+  const { events, activeEvent, selectOperatingEvent, updateEventFlyer } = useAppStore()
   const [regCounts, setRegCounts] = useState<Record<string, number>>({})
   const [showCreator, setShowCreator] = useState(false)
   const [showHistorial, setShowHistorial] = useState(false)
+  const [uploadingFor, setUploadingFor] = useState<string | null>(null)
+  const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({})
 
   const scrollToArqueo = () => {
     document.getElementById('arqueo')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -33,8 +35,38 @@ export default function GestionEventos() {
       })
   }, [events])
 
+  const handleFlyerUpload = async (eventId: string, file: File) => {
+    setUploadingFor(eventId)
+    try {
+      const ext = file.name.split('.').pop()
+      const path = `${eventId}.${ext}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('event-flyers')
+        .upload(path, file, { upsert: true })
+
+      if (uploadError) throw uploadError
+
+      const { data: urlData } = supabase.storage
+        .from('event-flyers')
+        .getPublicUrl(path)
+
+      await updateEventFlyer(eventId, urlData.publicUrl)
+    } catch (err) {
+      console.error('Error subiendo flyer:', err)
+    } finally {
+      setUploadingFor(null)
+    }
+  }
+
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' })
+
+  const formatDateTime = (iso: string) =>
+    new Date(iso).toLocaleString('es-AR', {
+      day: '2-digit', month: '2-digit', year: '2-digit',
+      hour: '2-digit', minute: '2-digit'
+    })
 
   return (
     <section className="bg-gray-800/50 border border-gray-700 rounded-3xl overflow-hidden">
@@ -57,7 +89,7 @@ export default function GestionEventos() {
       )}
 
       {/* Eventos abiertos */}
-      <div className="px-6 sm:px-8 py-4 space-y-3">
+      <div className="px-6 sm:px-8 py-4 space-y-4">
         {openEvents.length === 0 && !showCreator && (
           <p className="text-gray-500 text-sm text-center py-4">
             No hay eventos abiertos. Creá uno para empezar.
@@ -67,49 +99,90 @@ export default function GestionEventos() {
         {openEvents.map(e => {
           const isCurrent = activeEvent?.id === e.id
           const regs = regCounts[e.id] ?? 0
+          const isUploading = uploadingFor === e.id
 
           return (
             <div
               key={e.id}
-              className={`rounded-2xl border px-4 py-4 transition-colors ${
+              className={`rounded-2xl border overflow-hidden transition-colors ${
                 isCurrent
                   ? 'bg-emerald-900/30 border-emerald-700'
                   : 'bg-gray-700/40 border-gray-600'
               }`}
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-white font-semibold text-sm truncate">{e.name}</p>
-                    {isCurrent && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-700 text-emerald-100 uppercase tracking-wide whitespace-nowrap">
-                        En operación
-                      </span>
+              <div className="flex gap-3 p-4">
+                {/* Flyer thumbnail */}
+                <div className="flex-shrink-0">
+                  <div
+                    className="w-14 rounded-xl overflow-hidden bg-gray-700 border border-gray-600 cursor-pointer relative group"
+                    style={{ aspectRatio: '4/5' }}
+                    onClick={() => fileInputRefs.current[e.id]?.click()}
+                  >
+                    {e.flyer_url ? (
+                      <img
+                        src={e.flyer_url}
+                        alt="Flyer"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-500 text-lg">
+                        🖼
+                      </div>
                     )}
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <span className="text-white text-[10px] font-medium text-center leading-tight px-1">
+                        {isUploading ? '...' : e.flyer_url ? 'Cambiar' : 'Subir'}
+                      </span>
+                    </div>
                   </div>
-                  <p className="text-gray-500 text-xs mt-0.5">
-                    {regs} {regs === 1 ? 'entrada registrada' : 'entradas registradas'}
-                    {' · '} creado {formatDate(e.created_at)}
-                  </p>
+                  <input
+                    ref={el => { fileInputRefs.current[e.id] = el }}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={ev => {
+                      const file = ev.target.files?.[0]
+                      if (file) handleFlyerUpload(e.id, file)
+                      ev.target.value = ''
+                    }}
+                  />
                 </div>
 
-                <div className="flex gap-2 flex-shrink-0">
-                  {!isCurrent && (
-                    <button
-                      onClick={() => selectOperatingEvent(e.id)}
-                      className="text-xs px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white font-medium rounded-xl transition-colors whitespace-nowrap"
-                    >
-                      Operar
-                    </button>
-                  )}
-                  {isCurrent && (
-                    <button
-                      onClick={scrollToArqueo}
-                      className="text-xs px-3 py-1.5 bg-red-900/60 hover:bg-red-800 text-red-300 font-medium rounded-xl transition-colors whitespace-nowrap"
-                    >
-                      Arqueo ↓
-                    </button>
-                  )}
+                {/* Info + botones */}
+                <div className="flex-1 min-w-0 flex flex-col justify-between gap-2">
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-white font-semibold text-sm truncate">{e.name}</p>
+                      {isCurrent && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-700 text-emerald-100 uppercase tracking-wide whitespace-nowrap">
+                          En operación
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-gray-500 text-xs mt-0.5">
+                      {e.start_date ? formatDateTime(e.start_date) : `Creado ${formatDate(e.created_at)}`}
+                      {' · '}{regs} {regs === 1 ? 'registro' : 'registros'}
+                    </p>
+                  </div>
+
+                  <div className="flex gap-2">
+                    {!isCurrent && (
+                      <button
+                        onClick={() => selectOperatingEvent(e.id)}
+                        className="text-xs px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white font-medium rounded-xl transition-colors whitespace-nowrap"
+                      >
+                        Operar
+                      </button>
+                    )}
+                    {isCurrent && (
+                      <button
+                        onClick={scrollToArqueo}
+                        className="text-xs px-3 py-1.5 bg-red-900/60 hover:bg-red-800 text-red-300 font-medium rounded-xl transition-colors whitespace-nowrap"
+                      >
+                        Arqueo ↓
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

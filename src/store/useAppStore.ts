@@ -52,6 +52,7 @@ interface AppState {
   selectOperatingEvent: (eventId: string) => Promise<void>
   closeEvent: (eventId: string) => Promise<void>
   deleteEvent: (eventId: string) => Promise<void>
+  updateEventFlyer: (eventId: string, flyerUrl: string) => Promise<void>
   
   // Utilidades
   getTicketPrices: () => { regular: number; invitado: number }
@@ -440,6 +441,19 @@ export const useAppStore = create<AppState>((set, get) => ({
       console.error('Error deleting event:', error)
       throw error
     }
+  },
+
+  updateEventFlyer: async (eventId, flyerUrl) => {
+    const { error } = await supabase
+      .from('events')
+      .update({ flyer_url: flyerUrl })
+      .eq('id', eventId)
+
+    if (error) throw error
+
+    set(state => ({
+      events: state.events.map(e => e.id === eventId ? { ...e, flyer_url: flyerUrl } : e)
+    }))
   },
   
   // Utilidades
