@@ -129,6 +129,9 @@ export default function MiEntrada() {
 
   return (
     <PublicLayout>
+      <div className="px-5 pt-2">
+        <button onClick={() => navigate('/')} className="text-white/40 hover:text-white/70 transition-colors text-2xl leading-none">←</button>
+      </div>
       <div className="flex-1 flex flex-col items-center justify-center px-5 pb-10 -mt-4">
         <div className="w-full max-w-sm space-y-4">
 

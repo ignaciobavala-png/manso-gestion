@@ -89,6 +89,9 @@ export default function RegistroEntrada() {
   if (!activeEvent) {
     return (
       <PublicLayout>
+        <div className="px-5 pt-2">
+          <button onClick={() => navigate('/')} className="text-white/40 hover:text-white/70 transition-colors text-2xl leading-none">←</button>
+        </div>
         <div className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-4 -mt-12">
           <p className="text-4xl">🎵</p>
           <h2 className="text-2xl font-bold text-white">No hay evento esta noche</h2>
@@ -101,6 +104,7 @@ export default function RegistroEntrada() {
   return (
     <PublicLayout>
       <div className="flex-1 flex flex-col px-5 pb-10">
+        <button onClick={() => navigate('/')} className="self-start text-white/40 hover:text-white/70 transition-colors text-2xl leading-none mb-4">←</button>
         {/* Nombre del evento */}
         <div className="text-center mb-7">
           <p className="text-white/60 text-sm font-semibold uppercase tracking-[0.25em] mb-2">Esta noche</p>

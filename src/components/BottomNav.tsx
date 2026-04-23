@@ -11,6 +11,7 @@ export default function BottomNav() {
       ? [
           { path: '/admin/home', label: 'Control', icon: '📊' },
           { path: '/admin/comunidad', label: 'Comunidad', icon: '👥' },
+          { path: '/admin/publico', label: 'Público', icon: '🌐' },
         ]
       : []),
     { path: '/admin/barra', label: 'Barra', icon: '🍺' },
