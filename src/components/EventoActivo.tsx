@@ -21,7 +21,7 @@ export default function EventoActivo() {
   // Generar QR del evento
   useEffect(() => {
     if (!activeEvent) return
-    QRCode.toDataURL(`manso|${activeEvent.id}|${activeEvent.name}`, {
+    QRCode.toDataURL(`${window.location.origin}/registro?event=${activeEvent.id}`, {
       width: 220,
       margin: 2,
       color: { dark: '#000000', light: '#FFFFFF' },

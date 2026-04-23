@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import PublicLayout from '../../components/PublicLayout'
 
@@ -12,6 +12,9 @@ const LS_KEY = (eventId: string) => `manso_ticket_${eventId}`
 
 export default function RegistroEntrada() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const eventParam = searchParams.get('event')
+
   const [activeEvent, setActiveEvent] = useState<ActiveEvent | null>(null)
   const [loadingEvent, setLoadingEvent] = useState(true)
   const [name, setName] = useState('')
@@ -21,21 +24,39 @@ export default function RegistroEntrada() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    supabase
-      .from('active_event')
-      .select('id, name')
-      .single()
-      .then(({ data }) => {
-        setLoadingEvent(false)
-        if (!data) return
-        setActiveEvent(data as ActiveEvent)
+    async function load() {
+      // Si hay ?event= en la URL, buscar ese evento específico
+      if (eventParam) {
+        const { data } = await supabase
+          .from('events')
+          .select('id, name, registrations_open')
+          .eq('id', eventParam)
+          .eq('is_active', true)
+          .single()
 
+        setLoadingEvent(false)
+        if (!data || !data.registrations_open) return
+        setActiveEvent({ id: data.id, name: data.name })
         const saved = localStorage.getItem(LS_KEY(data.id))
-        if (saved) {
-          navigate('/mi-entrada', { replace: true })
-        }
-      })
-  }, [navigate])
+        if (saved) navigate('/mi-entrada', { replace: true })
+        return
+      }
+
+      // Sin param: usar el evento en operación (active_event view)
+      const { data } = await supabase
+        .from('active_event')
+        .select('id, name')
+        .single()
+
+      setLoadingEvent(false)
+      if (!data) return
+      setActiveEvent(data as ActiveEvent)
+      const saved = localStorage.getItem(LS_KEY(data.id))
+      if (saved) navigate('/mi-entrada', { replace: true })
+    }
+
+    load()
+  }, [navigate, eventParam])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

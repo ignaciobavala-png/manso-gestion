@@ -173,6 +173,22 @@ export interface Database {
         }
       }
     }
+      venue_config: {
+        Row: {
+          id: number
+          alias_pago: string | null
+          cbu_pago: string | null
+          carta_activa: boolean | null
+          current_event_id: string | null
+        }
+        Update: {
+          alias_pago?: string | null
+          cbu_pago?: string | null
+          carta_activa?: boolean | null
+          current_event_id?: string | null
+        }
+      }
+    }
     Views: {
       active_event: {
         Row: {

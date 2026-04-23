@@ -49,6 +49,7 @@ interface AppState {
   // Acciones de eventos
   addEvent: (event: Omit<Event, 'id' | 'created_at' | 'updated_at' | 'closed_at'>) => Promise<Event>
   setActiveEventStatus: (eventId: string, isActive: boolean) => Promise<void>
+  selectOperatingEvent: (eventId: string) => Promise<void>
   closeEvent: (eventId: string) => Promise<void>
   deleteEvent: (eventId: string) => Promise<void>
   
@@ -344,37 +345,29 @@ export const useAppStore = create<AppState>((set, get) => ({
     try {
       const { data, error } = await supabase
         .from('events')
-        .insert([{
-          ...eventData,
-          is_active: true
-        }])
+        .insert([{ ...eventData, is_active: true }])
         .select()
         .single()
-      
+
       if (error) throw error
-      
-      set(state => ({
-        events: [...state.events, data]
-      }))
-      
+
+      // Seleccionar el nuevo evento como evento en operación
+      await supabase
+        .from('venue_config')
+        .update({ current_event_id: data.id })
+        .eq('id', 1)
+
+      set(state => ({ events: [...state.events, data] }))
+
       return data
     } catch (error) {
       console.error('Error adding event:', error)
       throw error
     }
   },
-  
+
   setActiveEventStatus: async (eventId, isActive) => {
     try {
-      // Si estamos activando un evento, primero desactivar todos los demás
-      if (isActive) {
-        const { error: deactivateError } = await supabase
-          .from('events')
-          .update({ is_active: false })
-          .neq('id', eventId)
-        if (deactivateError) throw deactivateError
-      }
-
       const { error } = await supabase
         .from('events')
         .update({ is_active: isActive })
@@ -382,27 +375,45 @@ export const useAppStore = create<AppState>((set, get) => ({
 
       if (error) throw error
 
-      // Refrescar datos para actualizar activeEvent
       await get().refreshData()
     } catch (error) {
       console.error('Error setting active event status:', error)
       throw error
     }
   },
-  
-  closeEvent: async (eventId) => {
+
+  selectOperatingEvent: async (eventId) => {
     try {
       const { error } = await supabase
+        .from('venue_config')
+        .update({ current_event_id: eventId })
+        .eq('id', 1)
+
+      if (error) throw error
+
+      await get().refreshData()
+    } catch (error) {
+      console.error('Error selecting operating event:', error)
+      throw error
+    }
+  },
+
+  closeEvent: async (eventId) => {
+    try {
+      // Cerrar el evento
+      const { error } = await supabase
         .from('events')
-        .update({
-          is_active: false,
-          closed_at: new Date().toISOString()
-        })
+        .update({ is_active: false, closed_at: new Date().toISOString() })
         .eq('id', eventId)
 
       if (error) throw error
 
-      // Refrescar datos
+      // Limpiar el evento en operación en venue_config
+      await supabase
+        .from('venue_config')
+        .update({ current_event_id: null })
+        .eq('id', 1)
+
       await get().refreshData()
     } catch (error) {
       console.error('Error closing event:', error)
