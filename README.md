@@ -1,6 +1,8 @@
 # Manso Gestión
 
-Sistema de gestión para eventos en vivo: barra, entradas y control financiero en tiempo real. Diseñado para operar desde celular.
+Sistema de gestión para eventos en vivo: barra, entradas y control financiero en tiempo real. Diseñado para operar desde celular con conectividad limitada.
+
+---
 
 ## Stack
 
@@ -14,24 +16,46 @@ Sistema de gestión para eventos en vivo: barra, entradas y control financiero e
 
 ---
 
-## Secciones de la app
+## Rutas
 
-### Rutas privadas (`/admin/*`)
-
-| Ruta | Acceso | Descripción |
-|---|---|---|
-| `/admin/home` | Control | Panel principal: balance, stock, arqueo, historial, configuración |
-| `/admin/barra` | Empleados | Carrito táctil + ventas |
-| `/admin/entradas` | Empleados | Scanner QR + entrada manual |
-| `/admin/comunidad` | Control | Emails de asistentes exportables a Excel |
-
-### Rutas públicas
+### Públicas (sin autenticación)
 
 | Ruta | Descripción |
 |---|---|
-| `/registro` | Formulario para registrarse y obtener entrada QR digital |
+| `/` | Landing pública: acceso a Registro, Mi Entrada y Carta |
+| `/registro` | Formulario para registrarse y obtener entrada QR digital. Acepta `?event=<id>` para un evento específico |
 | `/mi-entrada` | Muestra el QR guardado en el dispositivo |
-| `/carta` | Carta digital pública: menú con carrito y prepago por transferencia |
+| `/carta` | Carta digital: menú de productos con precios (solo lectura) |
+
+### Privadas (`/admin/*`)
+
+| Ruta | Acceso | Descripción |
+|---|---|---|
+| `/admin/home` | Control | Panel principal: gestión de eventos, balance, stock, arqueo |
+| `/admin/barra` | Empleados | Carrito táctil + ventas |
+| `/admin/entradas` | Empleados | Scanner QR + entrada manual |
+| `/admin/comunidad` | Control | Emails de asistentes exportables a Excel |
+| `/admin/publico` | Control | Links a las páginas públicas (se abren en pestaña nueva) |
+
+---
+
+## Sistema de eventos (multievento)
+
+La app soporta múltiples eventos en paralelo. Hay dos conceptos distintos:
+
+| Concepto | Significado | Dónde vive |
+|---|---|---|
+| **Evento abierto** | Creado, no cerrado todavía | `events.is_active = true` — puede haber varios |
+| **Evento en operación** | El que corre ahora (barra, entradas y balance apuntan a este) | `venue_config.current_event_id` — solo uno |
+
+La vista `active_event` lee desde `venue_config.current_event_id` via JOIN. Todo el sistema apunta a esa vista.
+
+### Flujo típico de una semana
+
+1. Ana crea los eventos de la semana desde antemano (todos quedan como "abiertos")
+2. Antes de cada evento, toca **Operar** en `GestionEventos` para poner ese evento en operación
+3. Opera con barra y entradas; al terminar toca **Arqueo ↓** → va a la sección de arqueo → confirma el cierre
+4. El evento queda en el historial; el siguiente evento se puede poner en operación
 
 ---
 
@@ -42,15 +66,15 @@ Sistema de gestión para eventos en vivo: barra, entradas y control financiero e
 Tiene dos pestañas:
 
 **Operación:**
+- **GestionEventos**: lista de eventos abiertos con conteo de entradas; botón "Operar" para cambiar el evento en operación; botón "Arqueo ↓" que hace scroll al arqueo; historial colapsable de eventos cerrados; formulario inline para crear nuevo evento
 - Balance total en tiempo real vía RPC `get_current_balance`
-- Crear evento: solo disponible si no hay uno activo. Genera QR descargable con formato `manso|{event_id}|{event_name}`
 - Gestión de stock inicial por producto con controles +/−
 - Ingresos desglosados por origen (barra / entradas) y método de pago
-- Arqueo de caja: resumen del evento activo + cierre con doble confirmación
-- Historial de eventos cerrados con totales
+- Arqueo de caja: resumen del evento activo (balance, ventas, entradas, recaudado) + cierre con confirmación
+- Historial de eventos cerrados
 
 **Configuración:**
-- Alias y CBU/CVU para prepago: se muestra en `/carta` al confirmar un pedido
+- Alias y CBU/CVU del local (se muestra en `/carta`)
 - Cambio de PIN de Control (triple confirmación)
 - Cambio de PIN de Empleados (triple confirmación)
 
@@ -58,45 +82,67 @@ Tiene dos pestañas:
 - Carrito táctil: selección de cantidades → método de pago → confirmar
 - Métodos: Efectivo / Tarjeta / Transferencia
 - Validación de stock inline
-- Ventas recientes del evento activo
+- Ventas recientes del evento en operación
 
 ### Entradas (`/admin/entradas`)
 - Scanner QR por cámara (soporte multi-formato: Manso, Luma, URL, JSON, texto libre)
-- Validación contra evento activo (rechaza QRs de eventos anteriores)
+- Validación contra el evento en operación (rechaza QRs de otros eventos)
 - Pantalla de confirmación editable: nombre + tipo (Regular / Invitado)
 - Entrada manual sin QR
 
-### Carta digital (`/carta`)
-- Menú público con productos agrupados por categoría (Bebidas / Comidas / Otros)
-- Carrito con +/− por ítem
-- Al confirmar: genera código único de referencia (6 chars)
-- Instrucciones de pago: total + alias configurado desde Control
-- El cliente muestra el comprobante de transferencia en la barra para retirar su pedido
+### Vistas públicas (`/admin/publico`)
+- Solo Control
+- Tres tarjetas con links a `/registro`, `/mi-entrada` y `/carta`
+- Se abren en pestaña nueva para no perder el contexto del panel
 
 ### Registro de entrada (`/registro`)
+- Si llega con `?event=<id>`: registra para ese evento específico (vía QR del evento)
+- Si llega sin param: usa el evento en operación (`active_event` view)
 - El cliente ingresa nombre y email
-- Genera un QR único vinculado al evento activo
+- Se genera un token UUID vinculado al evento
 - QR guardado en `localStorage` del dispositivo
-- El email queda registrado en la base de datos (Manso Club)
+- El email queda en `ticket_registrations` (base de la comunidad Manso Club)
+
+### Mi Entrada (`/mi-entrada`)
+- Muestra el QR del token guardado en localStorage
+- Botón para descargar la entrada como imagen PNG
+- Si no hay ticket, redirige a `/registro`
+
+### Carta digital (`/carta`)
+- Menú público de solo lectura: productos agrupados por categoría (Bebidas / Comidas / Otros)
+- Muestra nombre y precio de cada ítem
+- Sin carrito ni proceso de pago (la integración de pagos está pendiente)
+
+---
+
+## QR — formatos
+
+| Tipo | Formato | Generado en | Leído en |
+|---|---|---|---|
+| QR del evento (para registro) | `https://dominio/registro?event=<event_id>` | `EventCreator`, `EventoActivo` | Navegador del asistente |
+| QR de ticket (entrada) | `manso-ticket\|<token>` | `MiEntrada` (canvas) | Scanner en `Entradas` |
 
 ---
 
 ## Modelo de datos (Supabase)
 
-| Tabla/Vista | Campos clave |
+| Tabla / Vista | Campos clave |
 |---|---|
-| `events` | id, name, regular_ticket_price, invited_ticket_price, is_active, closed_at |
-| `products` | id, name, price, category (bebida/comida/otro), stock |
+| `events` | id, name, is_active, registrations_open, max_capacity, closed_at |
+| `products` | id, name, price, category, stock, visible_en_carta |
 | `sales` | id, product_id, product_name, quantity, total, payment_method, event_id |
 | `ticket_sales` | id, guest_name, type (regular/invitado), price, event_id |
 | `guests` | id, name, type, event_id |
-| `ticket_registrations` | id, event_id, name, email, token (UUID) |
-| `venue_config` | id, alias_pago, cbu_pago, carta_activa |
-| `active_event` | vista de `events` WHERE is_active = true |
+| `ticket_registrations` | id, event_id, name, email, token (UUID), used_at |
+| `drink_orders` | id, event_id, items (jsonb), total, status, comprobante_token |
+| `venue_config` | id, alias_pago, cbu_pago, carta_activa, **current_event_id** |
+| `user_profiles` | id (→ auth.users), role (control / empleado) |
+| `active_event` | Vista: JOIN events + venue_config WHERE venue_config.current_event_id = events.id |
 
 ### RLS relevante
-- `venue_config`: lectura pública, escritura solo rol `control`
-- `ticket_registrations`: escritura anónima (para registro público), lectura autenticada
+- `venue_config`: lectura pública (anon), escritura solo rol `control`
+- `ticket_registrations`: escritura anónima (registro público), lectura autenticada
+- `drink_orders`: inserción anónima, lectura/actualización autenticada
 
 ---
 
@@ -105,10 +151,8 @@ Tiene dos pestañas:
 | Endpoint | Descripción |
 |---|---|
 | `POST /api/registro-entrada` | Registra asistente y genera token UUID |
-| `POST /api/change-pin` | Cambia PIN de Control o Empleados (requiere token de Control) |
+| `POST /api/change-pin` | Cambia PIN de Control o Empleados (requiere sesión de Control) |
 | `GET /api/keep-alive` | Ping a Supabase para evitar suspensión (cron cada 10 min) |
-
-`/api/change-pin` requiere la variable de entorno `SUPABASE_SERVICE_ROLE_KEY` en Vercel.
 
 ---
 
@@ -117,7 +161,7 @@ Tiene dos pestañas:
 ```
 VITE_SUPABASE_URL=...
 VITE_SUPABASE_ANON_KEY=...
-SUPABASE_SERVICE_ROLE_KEY=...   # solo servidor, para change-pin
+SUPABASE_SERVICE_ROLE_KEY=...   # solo servidor, para /api/change-pin
 ```
 
 ---
@@ -129,42 +173,28 @@ pnpm install
 pnpm dev
 ```
 
----
-
-## Plan de debugging (auditoría 2026-04-15)
-
-### 🔴 Críticos
-
-| # | Ubicación | Descripción | Fix |
-|---|---|---|---|
-| 1 | `Barra.tsx:101` — `handleConfirmPurchase` | `Promise.all(cartItems.map(addSale))` no es atómico: si falla el ítem 3, los 2 anteriores ya se insertaron y el balance queda corrupto. | Crear RPC `add_sale_batch(items[])` en Supabase que inserte todo en una transacción; llamarla desde un único `addSaleBatch` en el store. |
-| 2 | `products.stock` — sin decremento | El stock se valida en Barra antes de vender, pero nunca se descuenta en DB. Si hay dos dispositivos, el stock se puede pasar fácilmente. | Agregar trigger `after insert on sales` que reste `quantity` de `products.stock`; o incluir el UPDATE en la misma transacción del RPC del bug #1. |
-| 3 | `RegistroEventos.tsx:29` — `catch {}` vacío | Si el DELETE falla por FK (ej. hay sales con ese `event_id`), el error se traga silenciosamente y la UI muestra éxito mientras el evento sigue en DB. | Relanzar el error en `handleDelete` y mostrar un mensaje de error en la UI. |
-
-### 🟡 Importantes
-
-| # | Ubicación | Descripción | Fix |
-|---|---|---|---|
-| 4 | `MiEntrada.tsx` — `findSavedTicket()` | Itera todas las keys `manso_ticket_*` en localStorage y devuelve la primera que encuentra. Si el usuario registró entradas a varios eventos, puede mostrar un QR de un evento anterior. | Leer primero el evento activo desde Supabase y cruzar con la key `manso_ticket_{active_event_id}`. |
-| 5 | `EventoActivo.tsx:66` — `parseInt` | `parseInt(e.target.value)` retorna `NaN` cuando el input está vacío. Se pasa `NaN` al UPDATE en Supabase y la columna `max_capacity` queda en NULL sin validación. | Usar `parseInt(e.target.value) || null` o validar antes de llamar al update. |
-| 6 | `api/change-pin.ts` — `listUsers()` | `supabase.auth.admin.listUsers()` sin parámetro `perPage` devuelve por defecto 50 usuarios. Si hay más de 50, el usuario objetivo puede no estar en la lista y el cambio de PIN fallará silenciosamente. | Pasar `{ perPage: 1000 }` o usar `getUserByEmail()` si está disponible en el SDK. |
-| 7 | `useAppStore` — `activeEvent` stale | `addSale` y `addTicketSale` usan `get().activeEvent?.id` capturado al momento de la llamada. Si el evento fue cerrado desde otro dispositivo, la venta se inserta con `event_id` incorrecto hasta que la caché de 30 s expira. | Siempre leer el `event_id` desde la vista `active_event` en el servidor antes de insertar, o reducir el TTL de caché. |
-| 8 | `api/registro-entrada.ts` — sin rate limiting | El endpoint público no tiene límite de solicitudes por IP ni por email. Un bot puede saturar `ticket_registrations` con emails falsos. | Agregar un header `X-Forwarded-For` check + tabla de rate-limit en Supabase, o usar Vercel WAF / middleware. |
-
-### 🟢 Menores
-
-| # | Ubicación | Descripción | Fix |
-|---|---|---|---|
-| 9 | `EventoActivo.tsx` — badge "Vivo" | El badge "En vivo" siempre se renderiza si hay `activeEvent`, sin verificar si el evento está realmente `is_active`. | Condicionar el badge a `activeEvent.is_active === true`. |
-| 10 | `deleteEvent` en store | Al eliminar un evento se limpian `sales` y `ticketSales` del estado local, pero no `guests`. Si se abre la sección Entradas después, los invitados del evento borrado siguen en la UI. | Agregar `guests: state.guests.filter(g => g.event_id !== eventId)` al `set()` de `deleteEvent`. |
-| 11 | `EventoActivo.tsx` — `setTimeout` sin cleanup | El `setTimeout` para mostrar el toast de capacidad guardada no retorna un cleanup en el `useEffect`. En React Strict Mode (doble render) puede dispararse dos veces. | Retornar `() => clearTimeout(timer)` en el efecto. |
-| 12 | `AuthContext` — expiración de token | No hay manejo de `TOKEN_REFRESHED` / `SIGNED_OUT` por expiración. Si el token vence durante una sesión larga, las llamadas a Supabase empezarán a dar 401 sin que el usuario vea feedback. | Suscribirse a `supabase.auth.onAuthStateChange` y redirigir al login en evento `SIGNED_OUT`. |
+Abrir `http://localhost:5173/` para la landing pública o `http://localhost:5173/login` para el panel de gestión.
 
 ---
 
-## Pendientes
+## Bugs conocidos pendientes
 
-- Spinner hardcodeado con `setTimeout` → reemplazar por `isLoading` real del store
-- Eliminar `console.log` de debug en store y componentes
-- Eliminar `test-supabase.js` del root
-- `carta_activa` en `venue_config`: implementar toggle para habilitar/deshabilitar `/carta`
+Ver `DEBUGGING.md` para el detalle completo.
+
+| # | Severidad | Descripción |
+|---|---|---|
+| 7 | 🟡 Importante | `activeEvent` stale hasta 30 s entre dispositivos — ventas pueden insertarse con event_id incorrecto |
+| 8 | 🟡 Importante | Sin rate limiting en `/api/registro-entrada` — riesgo de spam de registros |
+| 10 | 🟢 Menor | `deleteEvent` no limpia `guests` del estado local |
+| 11 | 🟢 Menor | `setTimeout` sin cleanup en `EventoActivo` |
+| 12 | 🟢 Menor | Auth: no hay manejo de expiración de token (sin redirect a login) |
+
+---
+
+## Changelog resumido
+
+| Versión | Descripción |
+|---|---|
+| v1.0 | Sistema base: barra, entradas, balance monoevento |
+| v2.0 | Roles (Control / Empleados), páginas públicas (registro, carta, mi entrada), auth con PIN |
+| v2.1 (rama `new-features`) | Multievento, landing pública `/`, vistas públicas para admin, carta simplificada a solo lectura, gestión de eventos |

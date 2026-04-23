@@ -1,6 +1,6 @@
-# Manso Gestión — Plan v2.0
+# Manso Gestión — Plan v2.0 (ARCHIVADO)
 
-> Documento de planificación. No ejecutar nada hasta que el plan esté validado.
+> Documento de planificación original. La v2.0 fue implementada — ver `README.md` para el estado actual.
 
 ---
 
