@@ -240,7 +240,7 @@ export default function Home() {
 
         {/* Arqueo de Caja */}
         {activeEvent && (
-          <section className="bg-gray-800/50 border border-red-900/50 rounded-3xl p-6 sm:p-8">
+          <section id="arqueo" className="bg-gray-800/50 border border-red-900/50 rounded-3xl p-6 sm:p-8">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
               <div>
                 <h2 className="text-xl font-semibold text-white">Arqueo de Caja</h2>

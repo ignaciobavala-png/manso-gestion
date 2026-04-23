@@ -2,15 +2,16 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAppStore } from '../store/useAppStore'
 import EventCreator from './EventCreator'
-import ConfirmModal from './ConfirmModal'
 
 export default function GestionEventos() {
-  const { events, activeEvent, selectOperatingEvent, closeEvent } = useAppStore()
+  const { events, activeEvent, selectOperatingEvent } = useAppStore()
   const [regCounts, setRegCounts] = useState<Record<string, number>>({})
   const [showCreator, setShowCreator] = useState(false)
   const [showHistorial, setShowHistorial] = useState(false)
-  const [closingId, setClosingId] = useState<string | null>(null)
-  const [confirmClose, setConfirmClose] = useState<string | null>(null)
+
+  const scrollToArqueo = () => {
+    document.getElementById('arqueo')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 
   const openEvents = events.filter(e => e.is_active && !e.closed_at)
   const closedEvents = events.filter(e => !e.is_active || e.closed_at)
@@ -31,16 +32,6 @@ export default function GestionEventos() {
         setRegCounts(counts)
       })
   }, [events])
-
-  const handleClose = async (eventId: string) => {
-    setClosingId(eventId)
-    try {
-      await closeEvent(eventId)
-    } finally {
-      setClosingId(null)
-      setConfirmClose(null)
-    }
-  }
 
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' })
@@ -113,10 +104,10 @@ export default function GestionEventos() {
                   )}
                   {isCurrent && (
                     <button
-                      onClick={() => setConfirmClose(e.id)}
+                      onClick={scrollToArqueo}
                       className="text-xs px-3 py-1.5 bg-red-900/60 hover:bg-red-800 text-red-300 font-medium rounded-xl transition-colors whitespace-nowrap"
                     >
-                      Cerrar
+                      Arqueo ↓
                     </button>
                   )}
                 </div>
@@ -154,16 +145,6 @@ export default function GestionEventos() {
         </div>
       )}
 
-      {/* Modal confirmación de cierre */}
-      <ConfirmModal
-        isOpen={confirmClose !== null}
-        title="Cerrar evento"
-        message="Esto cerrará el evento y limpiará la operación. Los datos quedan en el historial."
-        confirmText={closingId ? 'Cerrando...' : 'Confirmar cierre'}
-        onConfirm={() => confirmClose && handleClose(confirmClose)}
-        onClose={() => setConfirmClose(null)}
-        type="danger"
-      />
     </section>
   )
 }
