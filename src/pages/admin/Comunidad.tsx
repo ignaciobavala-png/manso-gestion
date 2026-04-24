@@ -21,6 +21,7 @@ export default function Comunidad() {
   const [rows, setRows] = useState<Registration[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedEvent, setSelectedEvent] = useState<string>('todos')
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -49,6 +50,19 @@ export default function Comunidad() {
   const filtered = selectedEvent === 'todos'
     ? rows
     : rows.filter(r => r.event_id === selectedEvent)
+
+  const handleDelete = async (id: string) => {
+    setDeletingId(id)
+    const { error } = await supabase
+      .from('ticket_registrations')
+      .delete()
+      .eq('id', id)
+
+    if (!error) {
+      setRows(prev => prev.filter(r => r.id !== id))
+    }
+    setDeletingId(null)
+  }
 
   const handleExport = () => {
     const data = filtered.map(r => ({
@@ -122,22 +136,38 @@ export default function Comunidad() {
             {filtered.map(r => (
               <div key={r.id} className="bg-neutral-900 border border-white/10 rounded-2xl px-4 py-3">
                 <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p className="text-white font-medium text-sm truncate">{r.name}</p>
                     <p className="text-gray-400 text-sm truncate">{r.email}</p>
                     <p className="text-gray-600 text-sm mt-0.5">{r.event_name}</p>
                   </div>
-                  <div className="text-right flex-shrink-0">
-                    <span className={`inline-block text-sm px-2 py-0.5 rounded-full ${
-                      r.used_at
-                        ? 'bg-emerald-900/50 text-emerald-400'
-                        : 'bg-white/10 text-gray-400'
-                    }`}>
-                      {r.used_at ? 'Ingresó' : 'Pendiente'}
-                    </span>
-                    <p className="text-gray-600 text-sm mt-1">
-                      {new Date(r.registered_at).toLocaleDateString('es-AR')}
-                    </p>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <div className="text-right">
+                      <span className={`inline-block text-sm px-2 py-0.5 rounded-full ${
+                        r.used_at
+                          ? 'bg-emerald-900/50 text-emerald-400'
+                          : 'bg-white/10 text-gray-400'
+                      }`}>
+                        {r.used_at ? 'Ingresó' : 'Pendiente'}
+                      </span>
+                      <p className="text-gray-600 text-sm mt-1">
+                        {new Date(r.registered_at).toLocaleDateString('es-AR')}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleDelete(r.id)}
+                      disabled={deletingId === r.id}
+                      className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-40"
+                      aria-label="Eliminar registro"
+                    >
+                      {deletingId === r.id ? (
+                        <div className="animate-spin h-4 w-4 border-t-2 border-b-2 border-red-400 rounded-full" />
+                      ) : (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      )}
+                    </button>
                   </div>
                 </div>
               </div>
