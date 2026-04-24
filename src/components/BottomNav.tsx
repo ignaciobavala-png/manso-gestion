@@ -25,7 +25,7 @@ export default function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 inset-x-0 z-50 bg-black/95 border-t border-white/10 pb-[env(safe-area-inset-bottom,0px)]">
-      <div className="max-w-7xl mx-auto px-4">
+      <div className="max-w-7xl mx-auto px-1 md:px-4">
         <ul className="flex justify-around">
           {tabs.map((tab) => (
             <li key={tab.path} className="flex-1">
@@ -33,15 +33,15 @@ export default function BottomNav() {
                 onClick={() => navigate(tab.path)}
                 className={`
                   w-full flex flex-col items-center
-                  min-h-14 px-3 py-2
-                  text-sm font-medium transition-colors
+                  min-h-12 md:min-h-14 px-1 md:px-3 py-1 md:py-2
+                  text-[10px] md:text-sm font-medium transition-colors
                   ${location.pathname === tab.path
                     ? 'text-emerald-400'
                     : 'text-gray-400 hover:text-gray-300'
                   }
                 `}
               >
-                <span className="text-2xl mb-1">{tab.icon}</span>
+                <span className="text-lg md:text-2xl mb-0.5 md:mb-1">{tab.icon}</span>
                 {tab.label}
               </button>
             </li>
@@ -51,9 +51,9 @@ export default function BottomNav() {
           <li className="flex-1">
             <button
               onClick={handleSignOut}
-              className="w-full flex flex-col items-center min-h-14 px-3 py-2 text-sm font-medium text-gray-400 hover:text-red-400 transition-colors"
+              className="w-full flex flex-col items-center min-h-12 md:min-h-14 px-1 md:px-3 py-1 md:py-2 text-[10px] md:text-sm font-medium text-gray-400 hover:text-red-400 transition-colors"
             >
-              <span className="text-2xl mb-1">→</span>
+              <span className="text-lg md:text-2xl mb-0.5 md:mb-1">→</span>
               Salir
             </button>
           </li>
