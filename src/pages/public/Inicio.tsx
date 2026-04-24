@@ -3,7 +3,7 @@ import PublicLayout from '../../components/PublicLayout'
 
 const PAGES = [
   {
-    label: 'Registrarme',
+    label: 'Eventos',
     description: 'Obtené tu entrada para el evento',
     path: '/registro',
     icon: '🎟️',

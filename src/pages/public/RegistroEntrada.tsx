@@ -23,6 +23,14 @@ function Cartelera() {
   const navigate = useNavigate()
   const [events, setEvents] = useState<EventCard[]>([])
   const [loading, setLoading] = useState(true)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+
+  const copyLink = (eventId: string) => {
+    const url = `${window.location.origin}/registro?event=${eventId}`
+    navigator.clipboard.writeText(url)
+    setCopiedId(eventId)
+    setTimeout(() => setCopiedId(null), 2000)
+  }
 
   useEffect(() => {
     supabase
@@ -112,9 +120,18 @@ function Cartelera() {
                       {formatDate(event.start_date)}
                     </p>
                   )}
-                  <p className="text-emerald-400 text-xs font-semibold mt-1">
-                    Reservar lugar →
-                  </p>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <p className="text-emerald-400 text-xs font-semibold">
+                      Reservar lugar →
+                    </p>
+                    <span className="text-white/20 mx-0.5">·</span>
+                    <button
+                      onClick={e => { e.stopPropagation(); copyLink(event.id) }}
+                      className="text-gray-400 hover:text-emerald-300 text-xs transition-colors active:scale-90"
+                    >
+                      {copiedId === event.id ? '✓ Link copiado' : 'Copiar link'}
+                    </button>
+                  </div>
                 </div>
               </button>
             ))}

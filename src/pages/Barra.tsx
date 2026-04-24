@@ -394,65 +394,6 @@ export default function Barra() {
             ))}
           </div>
 
-          {/* Recent Sales */}
-          <div className="p-6 sm:p-8 border-t-2 border-zinc-800">
-            <h2 className="text-xl font-semibold mb-6 text-white">Ventas Recientes</h2>
-            <div className="space-y-3">
-              {activeSales.length === 0 ? (
-                <p className="text-center text-gray-500 py-4">Sin ventas registradas</p>
-              ) : (
-                activeSales.slice(0, 10).map((sale) => {
-                  const isConfirming = confirmingSaleDelete === sale.id
-                  return (
-                    <div key={sale.id} className="bg-neutral-900 rounded-2xl border border-white/10 overflow-hidden">
-                      <div className="flex items-center justify-between p-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 flex items-center justify-center bg-emerald-900 bg-opacity-30 text-emerald-400 rounded-full">
-                            <span className="text-lg">🍺</span>
-                          </div>
-                          <div>
-                            <h3 className="font-medium text-white">{sale.product_name} ×{sale.quantity}</h3>
-                            <p className="text-sm text-gray-400">{new Date(sale.created_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span className="text-lg font-bold text-emerald-400">{formatCurrency(sale.total)}</span>
-                          <button
-                            onClick={() => { setConfirmingSaleDelete(sale.id); }}
-                            className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-colors"
-                            aria-label="Eliminar venta"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                      {isConfirming && (
-                        <div className="px-4 pb-3 flex gap-2">
-                          <button
-                            onClick={() => setConfirmingSaleDelete(null)}
-                            disabled={deletingSale}
-                            className="flex-1 py-1.5 text-sm bg-gray-600 hover:bg-gray-500 disabled:opacity-50 text-white rounded-lg transition-colors"
-                          >
-                            Cancelar
-                          </button>
-                          <button
-                            onClick={() => handleDeleteSale(sale.id)}
-                            disabled={deletingSale}
-                            className="flex-1 py-1.5 text-sm bg-red-700 hover:bg-red-600 disabled:opacity-50 text-white font-semibold rounded-lg transition-colors"
-                          >
-                            {deletingSale ? 'Eliminando...' : 'Confirmar borrar'}
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )
-                })
-              )}
-            </div>
-          </div>
-
         {/* Resumen del carrito */}
         {cartItems.length > 0 && (
           <div className="p-6 sm:p-8 border-t-2 border-zinc-800 space-y-2 bg-neutral-950/30">
@@ -537,6 +478,66 @@ export default function Barra() {
             </button>
           )}
         </div>
+
+          {/* Recent Sales */}
+          <div className="p-6 sm:p-8 border-t-2 border-zinc-800">
+            <h2 className="text-xl font-semibold mb-6 text-white">Ventas Recientes</h2>
+            <div className="space-y-3">
+              {activeSales.length === 0 ? (
+                <p className="text-center text-gray-500 py-4">Sin ventas registradas</p>
+              ) : (
+                activeSales.slice(0, 10).map((sale) => {
+                  const isConfirming = confirmingSaleDelete === sale.id
+                  return (
+                    <div key={sale.id} className="bg-neutral-900 rounded-2xl border border-white/10 overflow-hidden">
+                      <div className="flex items-center justify-between p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 flex items-center justify-center bg-emerald-900 bg-opacity-30 text-emerald-400 rounded-full">
+                            <span className="text-lg">🍺</span>
+                          </div>
+                          <div>
+                            <h3 className="font-medium text-white">{sale.product_name} ×{sale.quantity}</h3>
+                            <p className="text-sm text-gray-400">{new Date(sale.created_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-lg font-bold text-emerald-400">{formatCurrency(sale.total)}</span>
+                          <button
+                            onClick={() => { setConfirmingSaleDelete(sale.id); }}
+                            className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-colors"
+                            aria-label="Eliminar venta"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                      {isConfirming && (
+                        <div className="px-4 pb-3 flex gap-2">
+                          <button
+                            onClick={() => setConfirmingSaleDelete(null)}
+                            disabled={deletingSale}
+                            className="flex-1 py-1.5 text-sm bg-gray-600 hover:bg-gray-500 disabled:opacity-50 text-white rounded-lg transition-colors"
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            onClick={() => handleDeleteSale(sale.id)}
+                            disabled={deletingSale}
+                            className="flex-1 py-1.5 text-sm bg-red-700 hover:bg-red-600 disabled:opacity-50 text-white font-semibold rounded-lg transition-colors"
+                          >
+                            {deletingSale ? 'Eliminando...' : 'Confirmar borrar'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })
+              )}
+            </div>
+          </div>
+
         </div>
       </main>
 
