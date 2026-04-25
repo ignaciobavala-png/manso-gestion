@@ -43,12 +43,6 @@ export default function Inicio() {
           </button>
         ))}
 
-        <button
-          onClick={() => navigate('/login')}
-          className="mt-4 text-white/60 hover:text-white/80 text-xs text-center transition-colors"
-        >
-          Acceso staff
-        </button>
       </div>
     </PublicLayout>
   )
