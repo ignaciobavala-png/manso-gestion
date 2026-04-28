@@ -4,6 +4,7 @@ import Ingresos from '../components/Ingresos'
 import RegistroEventos from '../components/RegistroEventos'
 import EventoActivo from '../components/EventoActivo'
 import GestionEventos from '../components/GestionEventos'
+import EntradasRegistradas from '../components/EntradasRegistradas'
 import AlertModal from '../components/AlertModal'
 import Background from '../components/Background'
 import Configuracion from './admin/Configuracion'
@@ -171,6 +172,9 @@ export default function Home() {
 
               {/* Gestión del evento activo — QR, pausa y capacidad */}
               {activeEvent && <EventoActivo />}
+
+              {/* Entradas registradas — listado de registros con comprobantes */}
+              {activeEvent && <EntradasRegistradas />}
 
               {/* Stock Inicial Section */}
               <div className="border-t-2 border-zinc-800">

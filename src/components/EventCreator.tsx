@@ -11,6 +11,7 @@ export default function EventCreator({ onCreated }: Props) {
   const { addEvent } = useAppStore()
 
   const [form, setForm] = useState({ name: '', description: '', ticketPrice: '', startDate: '' })
+  const [isPaid, setIsPaid] = useState(false)
   const [qrCodeUrl, setQrCodeUrl] = useState('')
   const [createdEventName, setCreatedEventName] = useState('')
   const [saving, setSaving] = useState(false)
@@ -32,12 +33,18 @@ export default function EventCreator({ onCreated }: Props) {
 
     setSaving(true)
     try {
-      const price = parseFloat(form.ticketPrice) || 0
+      const price = isPaid ? parseFloat(form.ticketPrice) || 0 : 0
+      if (isPaid && price <= 0) {
+        setAlertModal({ isOpen: true, message: 'El precio debe ser mayor a 0 para una entrada paga', type: 'warning' })
+        setSaving(false)
+        return
+      }
       const event = await addEvent({
         name: form.name.trim(),
         description: form.description.trim() || undefined,
         regular_ticket_price: price,
         invited_ticket_price: price,
+        is_paid: isPaid,
         is_active: true,
         registrations_open: true,
         max_capacity: null,
@@ -117,20 +124,49 @@ export default function EventCreator({ onCreated }: Props) {
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-300 mb-2">Precio de entrada</label>
-        <div className="relative">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">$</span>
-          <input
-            type="number"
-            min="0"
-            value={form.ticketPrice}
-            onChange={(e) => setForm(prev => ({ ...prev, ticketPrice: e.target.value }))}
-            placeholder="0"
-            className="w-full pl-8 pr-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-          />
+        <label className="block text-sm font-medium text-gray-300 mb-3">Tipo de entrada</label>
+        <div className="flex rounded-xl overflow-hidden border border-white/20 bg-neutral-900/80">
+          <button
+            type="button"
+            onClick={() => setIsPaid(false)}
+            className={`flex-1 py-3 text-sm font-medium transition-colors ${
+              !isPaid
+                ? 'bg-emerald-600 text-white'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            Gratuita
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsPaid(true)}
+            className={`flex-1 py-3 text-sm font-medium transition-colors ${
+              isPaid
+                ? 'bg-emerald-600 text-white'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            Entrada paga
+          </button>
         </div>
-        <p className="text-sm text-gray-500 mt-1">Se aplica igual para regular e invitado. Dejá en 0 si la entrada es gratis.</p>
       </div>
+      {isPaid && (
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">Precio de entrada</label>
+          <div className="relative">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">$</span>
+            <input
+              type="number"
+              min="0"
+              value={form.ticketPrice}
+              onChange={(e) => setForm(prev => ({ ...prev, ticketPrice: e.target.value }))}
+              placeholder="0"
+              className="w-full pl-8 pr-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+            />
+          </div>
+          <p className="text-sm text-gray-500 mt-1">Se aplica igual para regular e invitado.</p>
+        </div>
+      )}
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-2">Fecha y hora *</label>
         <input

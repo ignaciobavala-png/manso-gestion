@@ -133,6 +133,7 @@ export interface Database {
           regular_ticket_price: number
           invited_ticket_price: number
           is_active: boolean
+          is_paid: boolean
           registrations_open: boolean
           max_capacity: number | null
           start_date?: string
@@ -149,6 +150,7 @@ export interface Database {
           regular_ticket_price?: number
           invited_ticket_price?: number
           is_active?: boolean
+          is_paid?: boolean
           registrations_open?: boolean
           max_capacity?: number | null
           start_date?: string
@@ -165,6 +167,7 @@ export interface Database {
           regular_ticket_price?: number
           invited_ticket_price?: number
           is_active?: boolean
+          is_paid?: boolean
           registrations_open?: boolean
           max_capacity?: number | null
           start_date?: string
@@ -173,6 +176,38 @@ export interface Database {
           closed_at?: string
           created_at?: string
           updated_at?: string
+        }
+      }
+      ticket_registrations: {
+        Row: {
+          id: string
+          event_id: string
+          name: string
+          email: string
+          token: string
+          receipt_url?: string | null
+          registered_at: string
+          used_at?: string | null
+        }
+        Insert: {
+          id?: string
+          event_id: string
+          name: string
+          email: string
+          token: string
+          receipt_url?: string | null
+          registered_at?: string
+          used_at?: string
+        }
+        Update: {
+          id?: string
+          event_id?: string
+          name?: string
+          email?: string
+          token?: string
+          receipt_url?: string | null
+          registered_at?: string
+          used_at?: string
         }
       }
       venue_config: {

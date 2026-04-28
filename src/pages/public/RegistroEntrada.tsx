@@ -13,6 +13,7 @@ interface EventCard {
 interface ActiveEvent {
   id: string
   name: string
+  is_paid: boolean
 }
 
 const LS_KEY = (eventId: string) => `manso_ticket_${eventId}`
@@ -151,15 +152,43 @@ function EventoForm({ eventParam }: { eventParam: string }) {
   const [capacityInfo, setCapacityInfo] = useState<{ max: number; current: number } | null>(null)
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
+  const [receiptFile, setReceiptFile] = useState<File | null>(null)
+  const [receiptUrl, setReceiptUrl] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+
+  const handleReceiptUpload = async (file: File) => {
+    if (!activeEvent) return
+    setReceiptFile(file)
+    setUploading(true)
+    setUploadError('')
+    try {
+      const ext = file.name.split('.').pop()
+      const path = `${activeEvent.id}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`
+      const { error: storageError } = await supabase.storage
+        .from('comprobantes')
+        .upload(path, file, { upsert: false })
+      if (storageError) throw storageError
+      const { data: urlData } = supabase.storage
+        .from('comprobantes')
+        .getPublicUrl(path)
+      setReceiptUrl(urlData.publicUrl)
+    } catch {
+      setUploadError('Error al subir el comprobante. Intentá de nuevo.')
+      setReceiptFile(null)
+    } finally {
+      setUploading(false)
+    }
+  }
 
   useEffect(() => {
     async function load() {
       setLoadingEvent(true)
       const { data, error } = await supabase
         .from('events')
-        .select('id, name, registrations_open, max_capacity')
+        .select('id, name, registrations_open, max_capacity, is_paid')
         .eq('id', eventParam)
         .eq('is_active', true)
         .single()
@@ -167,7 +196,7 @@ function EventoForm({ eventParam }: { eventParam: string }) {
       setLoadingEvent(false)
       if (error || !data || !data.registrations_open) return
 
-      setActiveEvent({ id: data.id, name: data.name })
+      setActiveEvent({ id: data.id, name: data.name, is_paid: data.is_paid })
 
       // Obtener conteo actual si tiene capacidad máxima
       if (data.max_capacity !== null) {
@@ -192,6 +221,11 @@ function EventoForm({ eventParam }: { eventParam: string }) {
     e.preventDefault()
     if (!activeEvent) return
 
+    if (activeEvent.is_paid && !receiptUrl) {
+      setError('Subí el comprobante de pago para continuar')
+      return
+    }
+
     setSubmitting(true)
     setError('')
 
@@ -199,7 +233,12 @@ function EventoForm({ eventParam }: { eventParam: string }) {
       const res = await fetch('/api/registro-entrada', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), email: email.trim(), event_id: activeEvent.id })
+        body: JSON.stringify({
+          name: name.trim(),
+          email: email.trim(),
+          event_id: activeEvent.id,
+          receipt_url: receiptUrl || undefined
+        })
       })
 
       const data = await res.json()
@@ -312,6 +351,55 @@ function EventoForm({ eventParam }: { eventParam: string }) {
                   />
                 </div>
 
+              {activeEvent.is_paid && (
+                <div className="space-y-3">
+                  <div className="border-t border-white/10 pt-3">
+                    <p className="text-white text-sm font-medium mb-2">Subí tu comprobante de pago</p>
+                    {!receiptUrl ? (
+                      <label className="flex flex-col items-center gap-2 p-4 border-2 border-dashed border-white/25 rounded-2xl cursor-pointer hover:border-emerald-400/50 transition-colors">
+                        {uploading ? (
+                          <div className="flex items-center gap-2 text-gray-400">
+                            <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-emerald-400" />
+                            <span className="text-sm">Subiendo...</span>
+                          </div>
+                        ) : (
+                          <>
+                            <span className="text-2xl">📎</span>
+                            <span className="text-gray-400 text-sm">Tocá para seleccionar una foto</span>
+                          </>
+                        )}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={ev => {
+                            const file = ev.target.files?.[0]
+                            if (file) handleReceiptUpload(file)
+                            ev.target.value = ''
+                          }}
+                        />
+                      </label>
+                    ) : (
+                      <div className="flex items-center gap-3 p-3 bg-emerald-900/30 border border-emerald-700/40 rounded-2xl">
+                        <span className="text-xl">✅</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-emerald-300 text-sm font-medium">Comprobante subido</p>
+                          <p className="text-gray-400 text-xs truncate">{receiptFile?.name}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => { setReceiptFile(null); setReceiptUrl('') }}
+                          className="text-gray-400 hover:text-red-400 text-sm transition-colors"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+                    {uploadError && <p className="text-red-400 text-sm text-center">{uploadError}</p>}
+                  </div>
+                </div>
+              )}
+
               {error && <p className="text-red-400 text-sm text-center">{error}</p>}
 
               {capacityInfo && capacityInfo.current >= capacityInfo.max ? (
@@ -319,7 +407,7 @@ function EventoForm({ eventParam }: { eventParam: string }) {
               ) : (
               <button
                 type="submit"
-                disabled={submitting || !name.trim() || !email.trim()}
+                disabled={submitting || !name.trim() || !email.trim() || (activeEvent.is_paid && !receiptUrl)}
                 className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-white/10 disabled:text-gray-600 text-white font-semibold py-4 rounded-2xl transition-all active:scale-95 text-sm"
               >
                 {submitting ? 'Generando tu entrada...' : 'Quiero mi entrada →'}

@@ -16,7 +16,7 @@ export default async function handler(req: Request): Promise<Response> {
     return json({ error: 'Body inválido' }, 400)
   }
 
-  const { name, email, event_id } = body as Record<string, string>
+  const { name, email, event_id, receipt_url } = body as Record<string, string>
 
   if (!name?.trim() || !email?.trim() || !event_id) {
     return json({ error: 'Datos incompletos' }, 400)
@@ -71,6 +71,7 @@ export default async function handler(req: Request): Promise<Response> {
       name: name.trim(),
       email: email.toLowerCase().trim(),
       token,
+      receipt_url: receipt_url?.trim() || null,
     })
 
   if (error) {
