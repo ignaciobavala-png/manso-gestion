@@ -4,19 +4,19 @@ import PublicLayout from '../../components/PublicLayout'
 const PAGES = [
   {
     label: 'Eventos',
-    description: 'Obtené tu entrada para el evento',
+    description: 'obtené tu entrada',
     path: '/registro',
     icon: '🎟️',
   },
   {
     label: 'Mi entrada',
-    description: 'Consultá tu entrada si ya te registraste',
+    description: 'revisá tus entradas',
     path: '/mi-entrada',
     icon: '📲',
   },
   {
     label: 'Carta',
-    description: 'Mirá el menú y cómo pagar',
+    description: 'conocé nuestro menú',
     path: '/carta',
     icon: '🍻',
   },

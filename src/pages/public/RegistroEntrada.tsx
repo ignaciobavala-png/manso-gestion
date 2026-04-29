@@ -14,9 +14,15 @@ interface ActiveEvent {
   id: string
   name: string
   is_paid: boolean
+  regular_ticket_price: number
 }
 
-const LS_KEY = (eventId: string) => `manso_ticket_${eventId}`
+interface VenueConfig {
+  alias_pago: string | null
+  cbu_pago: string | null
+}
+
+const LS_KEY = (eventId: string) => `manso_tickets_${eventId}`
 
 // ─── Cartelera (sin ?event=) ────────────────────────────────────────────────
 
@@ -64,8 +70,7 @@ function Cartelera() {
 
   return (
     <PublicLayout>
-        <div className="flex-1 flex flex-col items-center px-5 pb-10">
-        {/* Header con back button */}
+      <div className="flex-1 flex flex-col items-center px-5 pb-10">
         <div className="w-full max-w-lg mb-8 mt-4">
           <div className="flex items-center">
             <button
@@ -94,7 +99,6 @@ function Cartelera() {
                 onClick={() => navigate(`/registro?event=${event.id}`)}
                 className="group flex flex-col rounded-2xl overflow-hidden border border-white/10 bg-black/40 backdrop-blur-sm hover:border-emerald-500/50 transition-all active:scale-95 text-left"
               >
-                {/* Flyer — portrait 4:5 */}
                 <div className="w-full relative" style={{ paddingBottom: '125%' }}>
                   {event.flyer_url ? (
                     <img
@@ -107,11 +111,9 @@ function Cartelera() {
                       <span className="text-4xl">🎶</span>
                     </div>
                   )}
-                  {/* Gradient overlay for text legibility */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                 </div>
 
-                {/* Info */}
                 <div className="p-3 space-y-0.5">
                   <p className="text-white font-semibold text-sm leading-tight line-clamp-2 group-hover:text-emerald-300 transition-colors">
                     {event.name}
@@ -148,10 +150,11 @@ function Cartelera() {
 function EventoForm({ eventParam }: { eventParam: string }) {
   const navigate = useNavigate()
   const [activeEvent, setActiveEvent] = useState<ActiveEvent | null>(null)
+  const [venueConfig, setVenueConfig] = useState<VenueConfig | null>(null)
   const [loadingEvent, setLoadingEvent] = useState(true)
   const [capacityInfo, setCapacityInfo] = useState<{ max: number; current: number } | null>(null)
-  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
+  const [attendeeNames, setAttendeeNames] = useState<string[]>([''])
   const [receiptFile, setReceiptFile] = useState<File | null>(null)
   const [receiptUrl, setReceiptUrl] = useState('')
   const [uploading, setUploading] = useState(false)
@@ -188,7 +191,7 @@ function EventoForm({ eventParam }: { eventParam: string }) {
       setLoadingEvent(true)
       const { data, error } = await supabase
         .from('events')
-        .select('id, name, registrations_open, max_capacity, is_paid')
+        .select('id, name, registrations_open, max_capacity, is_paid, regular_ticket_price')
         .eq('id', eventParam)
         .eq('is_active', true)
         .single()
@@ -196,9 +199,13 @@ function EventoForm({ eventParam }: { eventParam: string }) {
       setLoadingEvent(false)
       if (error || !data || !data.registrations_open) return
 
-      setActiveEvent({ id: data.id, name: data.name, is_paid: data.is_paid })
+      setActiveEvent({
+        id: data.id,
+        name: data.name,
+        is_paid: data.is_paid,
+        regular_ticket_price: data.regular_ticket_price,
+      })
 
-      // Obtener conteo actual si tiene capacidad máxima
       if (data.max_capacity !== null) {
         const { count } = await supabase
           .from('ticket_registrations')
@@ -209,13 +216,41 @@ function EventoForm({ eventParam }: { eventParam: string }) {
           setCapacityInfo({ max: data.max_capacity, current: count })
         }
       }
-
-      const saved = localStorage.getItem(LS_KEY(data.id))
-      if (saved) navigate('/mi-entrada', { replace: true })
     }
 
     load()
-  }, [navigate, eventParam])
+
+    supabase
+      .from('venue_config')
+      .select('alias_pago, cbu_pago')
+      .single()
+      .then(({ data }) => {
+        if (data) setVenueConfig(data)
+      })
+  }, [eventParam])
+
+  const attendeeCount = attendeeNames.filter(n => n.trim().length > 0).length
+  const ticketPrice = activeEvent?.regular_ticket_price ?? 0
+  const totalAmount = attendeeCount * ticketPrice
+
+  const setAttendeeName = (index: number, value: string) => {
+    setAttendeeNames(prev => {
+      const next = [...prev]
+      next[index] = value
+      return next
+    })
+  }
+
+  const addAttendee = () => {
+    setAttendeeNames(prev => [...prev, ''])
+  }
+
+  const removeAttendee = (index: number) => {
+    setAttendeeNames(prev => {
+      if (prev.length <= 1) return prev
+      return prev.filter((_, i) => i !== index)
+    })
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -229,12 +264,14 @@ function EventoForm({ eventParam }: { eventParam: string }) {
     setSubmitting(true)
     setError('')
 
+    const validNames = attendeeNames.map(n => n.trim()).filter(n => n.length > 0)
+
     try {
       const res = await fetch('/api/registro-entrada', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: name.trim(),
+          attendees: validNames.map(name => ({ name })),
           email: email.trim(),
           event_id: activeEvent.id,
           receipt_url: receiptUrl || undefined
@@ -244,7 +281,7 @@ function EventoForm({ eventParam }: { eventParam: string }) {
       const data = await res.json()
 
       if (res.status === 409) {
-        setError('Ya tenés una entrada para este evento. Si la perdiste, acercate a la puerta.')
+        setError(data.error || 'Conflicto al registrar. Intentá de nuevo.')
         setSubmitting(false)
         return
       }
@@ -255,10 +292,14 @@ function EventoForm({ eventParam }: { eventParam: string }) {
         return
       }
 
-      localStorage.setItem(
-        LS_KEY(activeEvent.id),
-        JSON.stringify({ token: data.token, name: name.trim(), event_name: activeEvent.name, event_id: activeEvent.id })
-      )
+      const tickets = data.tickets.map((t: { name: string; token: string }) => ({
+        token: t.token,
+        name: t.name,
+        event_name: activeEvent.name,
+        event_id: activeEvent.id,
+      }))
+
+      localStorage.setItem(LS_KEY(activeEvent.id), JSON.stringify(tickets))
       navigate('/mi-entrada')
     } catch {
       setError('Sin conexión. Intentá de nuevo.')
@@ -270,7 +311,6 @@ function EventoForm({ eventParam }: { eventParam: string }) {
     return <FormSkeleton />
   }
 
-  // Ya cargó pero no encontró el evento
   if (!activeEvent) {
     return (
       <PublicLayout>
@@ -279,15 +319,15 @@ function EventoForm({ eventParam }: { eventParam: string }) {
             <button onClick={() => navigate('/registro')} className="text-white/50 hover:text-white/80 transition-colors text-2xl leading-none">←</button>
           </div>
           <div className="flex-1 flex flex-col items-center justify-center text-center gap-4 -mt-12">
-          <p className="text-4xl">🎵</p>
-          <h2 className="text-2xl font-bold text-white">Este evento no está disponible</h2>
-          <p className="text-gray-400 text-sm max-w-xs">El registro puede estar cerrado o el evento ya finalizó.</p>
-          <button
-            onClick={() => navigate('/registro')}
-            className="text-emerald-400 text-sm font-semibold hover:text-emerald-300 transition-colors"
-          >
-            Ver otros eventos →
-          </button>
+            <p className="text-4xl">🎵</p>
+            <h2 className="text-2xl font-bold text-white">Este evento no está disponible</h2>
+            <p className="text-gray-400 text-sm max-w-xs">El registro puede estar cerrado o el evento ya finalizó.</p>
+            <button
+              onClick={() => navigate('/registro')}
+              className="text-emerald-400 text-sm font-semibold hover:text-emerald-300 transition-colors"
+            >
+              Ver otros eventos →
+            </button>
           </div>
         </div>
       </PublicLayout>
@@ -300,7 +340,7 @@ function EventoForm({ eventParam }: { eventParam: string }) {
         <div className="w-full max-w-sm mb-4 pt-2">
           <button onClick={() => navigate('/registro')} className="text-white/50 hover:text-white/80 transition-colors text-2xl leading-none">←</button>
         </div>
-        {/* Nombre del evento */}
+
         <div className="text-center mb-7">
           <p className="text-white/70 text-sm font-semibold uppercase tracking-[0.25em] mb-2">Esta noche</p>
           <h2 className="text-3xl font-bold text-white">{activeEvent.name}</h2>
@@ -315,46 +355,113 @@ function EventoForm({ eventParam }: { eventParam: string }) {
           )}
         </div>
 
-        {/* Card del formulario */}
         <div className="max-w-sm w-full mx-auto">
           <div className="bg-black/50 backdrop-blur-md border border-white/15 rounded-3xl p-6 space-y-5 shadow-2xl">
             <div>
               <h3 className="text-white font-bold text-xl">Reservá tu lugar</h3>
               <p className="text-gray-300 text-sm mt-1.5">
-                Ponés tu nombre y mail, y te generamos un QR para entrar sin esperar.
+                Ponés tu mail y los nombres de quienes vienen, y te generamos un QR para cada uno.
               </p>
             </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-3">
-                  <label className="sr-only" htmlFor="reg-name">Nombre</label>
-                  <input
-                    id="reg-name"
-                    type="text"
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                    required
-                    autoComplete="name"
-                    placeholder="Tu nombre"
-                    className="w-full bg-white/15 border border-white/25 rounded-2xl px-4 py-3.5 text-white placeholder-gray-400 focus:outline-none focus:border-emerald-400 transition-colors text-sm"
-                  />
-                  <label className="sr-only" htmlFor="reg-email">Email</label>
-                  <input
-                    id="reg-email"
-                    type="email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    required
-                    autoComplete="email"
-                    placeholder="Tu email"
-                    className="w-full bg-white/15 border border-white/25 rounded-2xl px-4 py-3.5 text-white placeholder-gray-400 focus:outline-none focus:border-emerald-400 transition-colors text-sm"
-                  />
-                </div>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="text-white/70 text-xs font-medium mb-1.5 block">Tu email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                  placeholder="email@ejemplo.com"
+                  className="w-full bg-white/15 border border-white/25 rounded-2xl px-4 py-3.5 text-white placeholder-gray-400 focus:outline-none focus:border-emerald-400 transition-colors text-sm"
+                />
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-white/70 text-xs font-medium block">Nombres de los asistentes</label>
+
+                {attendeeNames.map((nameValue, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={nameValue}
+                      onChange={e => setAttendeeName(i, e.target.value)}
+                      required
+                      autoComplete="name"
+                      placeholder={`Asistente ${i + 1}`}
+                      className="flex-1 bg-white/15 border border-white/25 rounded-2xl px-4 py-3.5 text-white placeholder-gray-400 focus:outline-none focus:border-emerald-400 transition-colors text-sm"
+                    />
+                    {attendeeNames.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeAttendee(i)}
+                        className="w-10 h-10 flex items-center justify-center rounded-xl bg-red-900/40 hover:bg-red-800/60 text-red-400 transition-colors text-lg flex-shrink-0"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={addAttendee}
+                className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-dashed border-white/20 rounded-2xl py-3 text-gray-400 hover:text-gray-200 transition-colors text-sm"
+              >
+                <span className="text-lg">+</span> Agregar otra entrada
+              </button>
 
               {activeEvent.is_paid && (
-                <div className="space-y-3">
-                  <div className="border-t border-white/10 pt-3">
-                    <p className="text-white text-sm font-medium mb-2">Subí tu comprobante de pago</p>
+                <>
+                  <div className="border-t border-white/10" />
+
+                  {attendeeCount > 0 && ticketPrice > 0 && (
+                    <div className="bg-emerald-950/40 border border-emerald-800/40 rounded-2xl p-4 space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-300">Entradas</span>
+                        <span className="text-white font-medium">{attendeeCount} × ${ticketPrice.toLocaleString('es-AR')}</span>
+                      </div>
+                      <div className="border-t border-emerald-800/30 pt-2 flex justify-between">
+                        <span className="text-white font-semibold">Total a pagar</span>
+                        <span className="text-emerald-300 font-bold text-lg">${totalAmount.toLocaleString('es-AR')}</span>
+                      </div>
+
+                      {venueConfig && (venueConfig.alias_pago || venueConfig.cbu_pago) && (
+                        <div className="mt-3 pt-3 border-t border-emerald-800/30 text-xs space-y-1">
+                          <p className="text-gray-400 font-medium mb-1">Datos para transferencia:</p>
+                          {venueConfig.alias_pago && (
+                            <p className="text-gray-300 flex justify-between">
+                              <span>Alias:</span>
+                              <button
+                                type="button"
+                                onClick={() => navigator.clipboard.writeText(venueConfig.alias_pago!)}
+                                className="text-white font-mono hover:text-emerald-300 transition-colors"
+                              >
+                                {venueConfig.alias_pago}
+                              </button>
+                            </p>
+                          )}
+                          {venueConfig.cbu_pago && (
+                            <p className="text-gray-300 flex justify-between">
+                              <span>CBU:</span>
+                              <button
+                                type="button"
+                                onClick={() => navigator.clipboard.writeText(venueConfig.cbu_pago!)}
+                                className="text-white font-mono hover:text-emerald-300 transition-colors text-xs"
+                              >
+                                {venueConfig.cbu_pago}
+                              </button>
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="space-y-3">
+                    <p className="text-white text-sm font-medium">Subí tu comprobante de pago</p>
                     {!receiptUrl ? (
                       <label className="flex flex-col items-center gap-2 p-4 border-2 border-dashed border-white/25 rounded-2xl cursor-pointer hover:border-emerald-400/50 transition-colors">
                         {uploading ? (
@@ -397,7 +504,7 @@ function EventoForm({ eventParam }: { eventParam: string }) {
                     )}
                     {uploadError && <p className="text-red-400 text-sm text-center">{uploadError}</p>}
                   </div>
-                </div>
+                </>
               )}
 
               {error && <p className="text-red-400 text-sm text-center">{error}</p>}
@@ -405,19 +512,23 @@ function EventoForm({ eventParam }: { eventParam: string }) {
               {capacityInfo && capacityInfo.current >= capacityInfo.max ? (
                 <p className="text-center text-red-400 text-sm font-medium py-3">Evento completo</p>
               ) : (
-              <button
-                type="submit"
-                disabled={submitting || !name.trim() || !email.trim() || (activeEvent.is_paid && !receiptUrl)}
-                className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-white/10 disabled:text-gray-600 text-white font-semibold py-4 rounded-2xl transition-all active:scale-95 text-sm"
-              >
-                {submitting ? 'Generando tu entrada...' : 'Quiero mi entrada →'}
-              </button>
+                <button
+                  type="submit"
+                  disabled={submitting || !email.trim() || attendeeCount === 0 || (activeEvent.is_paid && !receiptUrl)}
+                  className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-white/10 disabled:text-gray-600 text-white font-semibold py-4 rounded-2xl transition-all active:scale-95 text-sm"
+                >
+                  {submitting
+                    ? 'Generando entradas...'
+                    : attendeeCount > 1
+                      ? `Reservar ${attendeeCount} entradas →`
+                      : 'Quiero mi entrada →'}
+                </button>
               )}
             </form>
           </div>
 
           <p className="text-center text-gray-600 text-xs mt-5">
-            El QR queda guardado en este dispositivo
+            Los QR quedan guardados en este dispositivo
           </p>
         </div>
       </div>

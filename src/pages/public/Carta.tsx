@@ -89,9 +89,12 @@ export default function Carta() {
           </button>
         </div>
 
-        <p className="text-center text-gray-300 text-sm font-semibold uppercase tracking-[0.25em] mb-8">
-          Carta digital
-        </p>
+        <div className="text-center mb-8">
+          <p className="inline-block bg-white/5 border border-white/10 rounded-xl px-5 py-2.5">
+            <span className="text-white font-bold text-base tracking-wide">ALIAS: </span>
+            <span className="text-white font-mono text-base font-semibold">MANSO.CLUB</span>
+          </p>
+        </div>
 
         <div className="px-8 space-y-10 max-w-md mx-auto w-full">
           {Object.entries(grouped).map(([cat, items]) => (

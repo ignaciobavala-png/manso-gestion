@@ -11,78 +11,58 @@ interface TicketData {
   event_id: string
 }
 
-function getTicketForEvent(eventId: string): TicketData | null {
+function getTicketsForEvent(eventId: string): TicketData[] {
   try {
-    const raw = localStorage.getItem(`manso_ticket_${eventId}`)
-    if (raw) return JSON.parse(raw) as TicketData
+    const raw = localStorage.getItem(`manso_tickets_${eventId}`)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      return Array.isArray(parsed) ? parsed : []
+    }
+    const oldRaw = localStorage.getItem(`manso_ticket_${eventId}`)
+    if (oldRaw) {
+      const single = JSON.parse(oldRaw) as TicketData
+      return [single]
+    }
   } catch { /* ignorar entradas corruptas */ }
-  return null
+  return []
 }
 
-function findAnyTicket(): TicketData | null {
+function findAnyTickets(): TicketData[] {
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i)
+    if (key?.startsWith('manso_tickets_')) {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(key)!)
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      } catch { /* ignorar */ }
+    }
     if (key?.startsWith('manso_ticket_')) {
       try {
-        return JSON.parse(localStorage.getItem(key)!) as TicketData
+        return [JSON.parse(localStorage.getItem(key)!) as TicketData]
       } catch { /* ignorar */ }
     }
   }
-  return null
+  return []
 }
 
-export default function MiEntrada() {
-  const navigate = useNavigate()
+function TicketCard({ ticket }: { ticket: TicketData }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const [ticket, setTicket] = useState<TicketData | null>(null)
   const [downloading, setDownloading] = useState(false)
 
   useEffect(() => {
-    // Intentar encontrar el ticket del evento activo primero
-    supabase.from('active_event').select('id').single().then(({ data, error }) => {
-      if (error) {
-        // Si no hay fila en active_event, buscar cualquier ticket guardado
-        const saved = findAnyTicket()
-        if (!saved) {
-          navigate('/registro', { replace: true })
-          return
-        }
-        setTicket(saved)
-        return
-      }
-
-      let saved: TicketData | null = null
-
-      if (data?.id) {
-        saved = getTicketForEvent(data.id)
-      }
-
-      // Si no hay evento activo o no hay ticket para ese evento, buscar cualquier ticket guardado
-      if (!saved) {
-        saved = findAnyTicket()
-      }
-
-      if (!saved) {
-        navigate('/registro', { replace: true })
-        return
-      }
-      setTicket(saved)
-    })
-  }, [navigate])
-
-  useEffect(() => {
-    if (!ticket || !canvasRef.current) return
+    if (!canvasRef.current) return
     QRCode.toCanvas(canvasRef.current, `manso-ticket|${ticket.token}`, {
-      width: 240,
+      width: 200,
       margin: 2,
       color: { dark: '#000000', light: '#ffffff' }
     })
   }, [ticket])
 
   const handleDownload = async () => {
-    if (!ticket) return
     setDownloading(true)
     try {
+      await new Promise<void>(resolve => setTimeout(resolve, 50)) // esperar render del canvas
+
       const card = document.createElement('canvas')
       card.width = 400
       card.height = 520
@@ -136,7 +116,63 @@ export default function MiEntrada() {
     }
   }
 
-  if (!ticket) {
+  return (
+    <div className="bg-black/60 backdrop-blur-md border border-white/10 rounded-3xl overflow-hidden">
+      <div className="h-1 bg-gradient-to-r from-emerald-700 via-emerald-500 to-emerald-700" />
+
+      <div className="px-6 pt-5 pb-6 flex flex-col items-center">
+        <p className="text-gray-500 text-[10px] tracking-[3px] uppercase mb-1">entrada digital</p>
+        <p className="text-emerald-400 text-sm font-medium mb-4">{ticket.event_name}</p>
+
+        <div className="bg-white rounded-2xl p-3 shadow-2xl">
+          <canvas ref={canvasRef} className="block" style={{ width: 200, height: 200 }} />
+        </div>
+
+        <p className="text-white font-bold text-lg mt-4">{ticket.name}</p>
+        <p className="text-gray-500 text-xs mt-1">Mostrá este QR en la puerta de ingreso.</p>
+      </div>
+
+      <div className="border-t border-white/5 px-6 py-3 flex">
+        <button
+          onClick={handleDownload}
+          disabled={downloading}
+          className="w-full bg-emerald-700 hover:bg-emerald-600 disabled:opacity-60 text-white font-medium py-2.5 rounded-xl transition-all active:scale-95 text-sm"
+        >
+          {downloading ? 'Generando...' : 'Descargar entrada'}
+        </button>
+      </div>
+
+      <div className="h-1 bg-gradient-to-r from-emerald-700 via-emerald-500 to-emerald-700" />
+    </div>
+  )
+}
+
+export default function MiEntrada() {
+  const navigate = useNavigate()
+  const [tickets, setTickets] = useState<TicketData[] | null>(null)
+
+  useEffect(() => {
+    supabase.from('active_event').select('id').single().then(({ data, error }) => {
+      if (error) {
+        setTickets(findAnyTickets())
+        return
+      }
+
+      let saved: TicketData[] = []
+
+      if (data?.id) {
+        saved = getTicketsForEvent(data.id)
+      }
+
+      if (saved.length === 0) {
+        saved = findAnyTickets()
+      }
+
+      setTickets(saved)
+    })
+  }, [])
+
+  if (tickets === null) {
     return (
       <PublicLayout showHeader={false}>
         <div className="flex-1 flex items-center justify-center">
@@ -148,51 +184,55 @@ export default function MiEntrada() {
 
   return (
     <PublicLayout>
-      <div className="flex-1 flex flex-col items-center justify-center px-5 pb-10 -mt-4">
-        <div className="w-full max-w-sm space-y-4">
-
-          {/* Back button */}
-          <div className="flex">
-            <button onClick={() => navigate('/')} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all text-lg">←</button>
+      <div className="flex-1 flex flex-col items-center px-5 pb-10">
+        {tickets.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-center gap-5 -mt-12 max-w-sm w-full">
+            <span className="text-5xl">📲</span>
+            <div>
+              <h2 className="text-xl font-bold text-white">No tenés entradas guardadas</h2>
+              <p className="text-gray-400 text-sm mt-2 max-w-xs">
+                Las entradas se guardan solo en el dispositivo donde las registraste.
+              </p>
+            </div>
+            <button
+              onClick={() => navigate('/registro')}
+              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-4 rounded-2xl transition-all active:scale-95 text-sm"
+            >
+              Obtener entrada →
+            </button>
           </div>
+        ) : (
+          <div className="w-full max-w-sm space-y-5">
 
-          {/* Tarjeta de entrada */}
-          <div className="bg-black/60 backdrop-blur-md border border-white/10 rounded-3xl overflow-hidden">
-            {/* Franja top */}
-            <div className="h-1 bg-gradient-to-r from-emerald-700 via-emerald-500 to-emerald-700" />
-
-            <div className="px-6 pt-6 pb-7 flex flex-col items-center">
-              <p className="text-gray-500 text-[10px] tracking-[3px] uppercase mb-1">entrada digital</p>
-              <p className="text-emerald-400 text-sm font-medium mb-5">{ticket.event_name}</p>
-
-              {/* QR */}
-              <div className="bg-white rounded-2xl p-3 shadow-2xl">
-                <canvas ref={canvasRef} className="block" />
-              </div>
-
-              <p className="text-white font-bold text-xl mt-5">{ticket.name}</p>
-              <p className="text-gray-500 text-xs mt-1">Mostrá este QR en la puerta de ingreso.</p>
+            <div className="flex items-center justify-between">
+              <button onClick={() => navigate('/')} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all text-lg">←</button>
+              {tickets.length > 1 && (
+                <span className="text-gray-400 text-sm font-medium">{tickets.length} entradas</span>
+              )}
             </div>
 
-            <div className="h-1 bg-gradient-to-r from-emerald-700 via-emerald-500 to-emerald-700" />
-          </div>
+            {tickets.length > 1 && (
+              <div className="bg-amber-950/60 border border-amber-700/40 rounded-2xl px-4 py-3 text-center">
+                <p className="text-amber-300 text-sm">
+                  Guardá cada entrada por separado. Cada persona necesita mostrar su propio QR en la puerta.
+                </p>
+              </div>
+            )}
 
-          {/* Aviso */}
-          <div className="bg-amber-950/60 border border-amber-700/40 rounded-2xl px-4 py-3 text-center">
-            <p className="text-amber-300 text-sm">
-              Guardá esta imagen. No necesitás internet para mostrarla en la puerta.
-            </p>
-          </div>
+            {tickets.map((ticket, i) => (
+              <TicketCard key={`${ticket.token}-${i}`} ticket={ticket} />
+            ))}
 
-          {/* Botón */}
-          <button
-            onClick={handleDownload}
-            disabled={downloading}
-            className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white font-semibold py-4 rounded-2xl transition-all active:scale-95"
-          >
-            {downloading ? 'Generando imagen...' : 'Descargar imagen'}
-          </button>
-        </div>
+            {tickets.length === 1 && (
+              <div className="bg-amber-950/60 border border-amber-700/40 rounded-2xl px-4 py-3 text-center">
+                <p className="text-amber-300 text-sm">
+                  Guardá esta imagen. No necesitás internet para mostrarla en la puerta.
+                </p>
+              </div>
+            )}
+
+          </div>
+        )}
       </div>
     </PublicLayout>
   )

@@ -31,10 +31,10 @@ Sistema de gestión para eventos en vivo: barra, entradas y control financiero e
 
 | Ruta | Acceso | Descripción |
 |---|---|---|
-| `/admin/home` | Control | Panel principal: gestión de eventos, balance, stock, arqueo |
+| `/admin/home` | Control | Panel principal: gestión de eventos, balance, stock, arqueo, entradas registradas |
 | `/admin/barra` | Empleados | Carrito táctil + ventas |
 | `/admin/entradas` | Empleados | Scanner QR + entrada manual |
-| `/admin/comunidad` | Control | Emails de asistentes exportables a Excel |
+| `/admin/comunidad` | Control | Emails de asistentes exportables a Excel con comprobantes de pago |
 | `/admin/publico` | Control | Links a las páginas públicas (se abren en pestaña nueva) |
 
 ---
@@ -66,7 +66,8 @@ La vista `active_event` lee desde `venue_config.current_event_id` via JOIN. Todo
 Tiene dos pestañas:
 
 **Operación:**
-- **GestionEventos**: lista de eventos abiertos con conteo de entradas y capacidad; botón "Operar" para cambiar el evento en operación; botón "Arqueo ↓" que hace scroll al arqueo; historial colapsable de eventos cerrados; formulario inline con subida de flyer para crear nuevo evento
+- **GestionEventos**: lista de eventos abiertos con conteo de entradas y capacidad; botón "Operar" para cambiar el evento en operación; botón "Arqueo ↓" que hace scroll al arqueo; historial colapsable de eventos cerrados; formulario inline con subida de flyer para crear nuevo evento. Al crear, toggle **Gratuita / Entrada paga** que condiciona si se muestra el campo de precio y si el registro público pedirá comprobante.
+- **EntradasRegistradas**: sección colapsable que muestra los registros del evento en operación con thumbnail del comprobante de pago (si aplica), nombre, email, fecha y estado (Pendiente/Ingresó). Usa signed URLs temporales para acceder al bucket `comprobantes` con RLS.
 - Balance total en tiempo real vía RPC `get_current_balance`
 - Gestión de stock inicial por producto con controles +/−
 - Ingresos desglosados por origen (barra / entradas) y método de pago
@@ -97,11 +98,13 @@ Tiene dos pestañas:
 
 ### Registro de entrada (`/registro`)
 - Si llega con `?event=<id>`: registra para ese evento específico (vía QR del evento)
-- Si llega sin param: usa el evento en operación (`active_event` view)
+- Si llega sin param: muestra carrete de eventos activos con registro abierto
 - El cliente ingresa nombre y email
+- Si el evento es **pago** (`is_paid = true`): debe subir una foto del comprobante de pago al bucket `comprobantes` antes de poder continuar
+- Si el evento es **gratuito**: continúa directamente sin pedir comprobante
 - Se genera un token UUID vinculado al evento
 - QR guardado en `localStorage` del dispositivo
-- El email queda en `ticket_registrations` (base de la comunidad Manso Club)
+- El email y la URL del comprobante quedan en `ticket_registrations`
 
 ### Mi Entrada (`/mi-entrada`)
 - Muestra el QR del token guardado en localStorage
@@ -112,6 +115,21 @@ Tiene dos pestañas:
 - Menú público de solo lectura: productos agrupados por categoría (Bebidas / Comidas / Otros)
 - Muestra nombre y precio de cada ítem
 - Sin carrito ni proceso de pago (la integración de pagos está pendiente)
+
+### Comprobantes de pago
+
+Cuando un evento se crea con el toggle **Entrada paga**, el flujo público de registro pide al asistente que suba una foto o screenshot del comprobante antes de entregar el QR.
+
+- Las imágenes se almacenan en el bucket `comprobantes` de Supabase Storage (público para INSERT)
+- La URL del comprobante se guarda en `ticket_registrations.receipt_url`
+- En el panel Control, la sección **Entradas registradas** muestra thumbnails de los comprobantes usando signed URLs (1h de validez) generadas con la sesión autenticada del staff
+- La vista **Comunidad** (`/admin/comunidad`) también incluye un ícono 📷 para abrir el comprobante en pestaña nueva
+- Las políticas RLS del bucket restringen: SELECT y DELETE solo para staff (`control@` / `empleado@`), INSERT público para que los asistentes puedan subir
+
+Los archivos de migración están en:
+- `supabase-schema.sql` — esquema base
+- `supabase-rls-migration.sql` — políticas RLS granulares
+- `supabase-payments-migration.sql` — columnas `is_paid` + `receipt_url` y bucket `comprobantes`
 
 ---
 
@@ -128,12 +146,12 @@ Tiene dos pestañas:
 
 | Tabla / Vista | Campos clave |
 |---|---|
-| `events` | id, name, is_active, registrations_open, max_capacity, flyer_url, closed_at |
+| `events` | id, name, is_active, registrations_open, max_capacity, is_paid, flyer_url, closed_at |
 | `products` | id, name, price, category, stock, visible_en_carta |
 | `sales` | id, product_id, product_name, quantity, total, payment_method, event_id |
 | `ticket_sales` | id, guest_name, type (regular/invitado), price, event_id |
 | `guests` | id, name, type, event_id |
-| `ticket_registrations` | id, event_id, name, email, token (UUID), used_at |
+| `ticket_registrations` | id, event_id, name, email, token (UUID), receipt_url, used_at |
 | `drink_orders` | id, event_id, items (jsonb), total, status, comprobante_token |
 | `venue_config` | id, alias_pago, cbu_pago, carta_activa, current_event_id |
 | `user_profiles` | id (→ auth.users), role (control / empleado) |
@@ -153,6 +171,7 @@ Las políticas reemplazan las antiguas `FOR ALL USING (true)` por reglas granula
 | `ticket_registrations` | INSERT público + SELECT público + ALL para staff |
 | `venue_config` | SELECT público + ALL solo para control@ |
 | `drink_orders` | INSERT público + SELECT/UPDATE autenticado (heredadas de v2.0) |
+| `storage.buckets.comprobantes` | INSERT público + SELECT/DELETE solo para staff |
 
 Los usuarios staff se identifican via `auth.jwt() ->> 'email'` contra los emails fijos `control@manso.internal` y `empleado@manso.internal`.
 
@@ -212,3 +231,4 @@ Ver `DEBUGGING.md` para el detalle completo.
 | v2.0 | Roles (Control / Empleados), páginas públicas (registro, carta, mi entrada), auth con PIN |
 | v2.1 | Multievento, landing pública `/`, vistas públicas para admin, carta simplificada a solo lectura, gestión de eventos |
 | v2.2 | RLS policies granulares por email, migración de seguridad, flyers de eventos |
+| v2.3 | Eventos pagos con subida de comprobante, bucket `comprobantes`, verificación de pagos en panel Control y Comunidad |

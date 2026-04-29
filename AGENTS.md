@@ -27,7 +27,7 @@
 - `/` — landing pública
 - `/login` — teclado PIN
 - `/registro`, `/mi-entrada`, `/carta` — públicas
-- `/admin/home` — solo Control
+- `/admin/home` — solo Control, incluye sección EntradasRegistradas (comprobantes del evento activo)
 - `/admin/barra`, `/admin/entradas` — cualquier rol autenticado
 - `/admin/comunidad`, `/admin/publico` — solo Control
 
@@ -36,18 +36,23 @@
 - `ticket_registrations`: INSERT público, SELECT público, ALL staff
 - `venue_config`: SELECT público, ALL solo `control@manso.internal`
 - `drink_orders`: INSERT público, SELECT/UPDATE autenticado (heredado)
+- `storage.comprobantes`: INSERT público, SELECT/DELETE solo staff
 
 ## Esquema DB relevante
-- `events` — is_active, registrations_open, max_capacity, flyer_url, closed_at
+- `events` — is_active, is_paid, registrations_open, max_capacity, flyer_url, closed_at
 - `products` — visible_en_carta (bool), stock, price, category
-- `ticket_registrations` — event_id, name, email, token, used_at (UNIQUE email+event_id)
+- `ticket_registrations` — event_id, name, email, token, receipt_url, used_at (UNIQUE email+event_id)
 - `guests` — event_id, type (invitado|regular)
 - `sales`, `ticket_sales` — event_id FK
 - `venue_config` — fila única (id=1), current_event_id, alias_pago, cbu_pago, carta_activa
 - `active_event` — view: JOIN events + venue_config WHERE current_event_id = events.id
 
+## Storage Buckets
+- `event-flyers` — flyers de eventos, SELECT público, INSERT/UPDATE/DELETE staff
+- `comprobantes` — comprobantes de pago, INSERT público, SELECT/DELETE solo staff. Las URLs se generan con `createSignedUrl()` para el panel admin (RLS no permite acceso público a las imágenes)
+
 ## API Edge Functions (`/api/*`)
-- `registro-entrada.ts` — POST, público, usa anon key, valida capacidad + unicidad email
+- `registro-entrada.ts` — POST, público, usa anon key, valida capacidad + unicidad email, acepta `receipt_url` opcional
 - `change-pin.ts` — POST, solo control, usa service_role key
 - `keep-alive.ts` — GET, público, evita suspensión Supabase
 
