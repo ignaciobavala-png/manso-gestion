@@ -15,6 +15,7 @@ interface ActiveEvent {
   name: string
   is_paid: boolean
   regular_ticket_price: number
+  start_date: string | null
 }
 
 interface VenueConfig {
@@ -191,7 +192,7 @@ function EventoForm({ eventParam }: { eventParam: string }) {
       setLoadingEvent(true)
       const { data, error } = await supabase
         .from('events')
-        .select('id, name, registrations_open, max_capacity, is_paid, regular_ticket_price')
+        .select('id, name, registrations_open, max_capacity, is_paid, regular_ticket_price, start_date')
         .eq('id', eventParam)
         .eq('is_active', true)
         .single()
@@ -204,6 +205,7 @@ function EventoForm({ eventParam }: { eventParam: string }) {
         name: data.name,
         is_paid: data.is_paid,
         regular_ticket_price: data.regular_ticket_price,
+        start_date: data.start_date,
       })
 
       if (data.max_capacity !== null) {
@@ -342,8 +344,31 @@ function EventoForm({ eventParam }: { eventParam: string }) {
         </div>
 
         <div className="text-center mb-7">
-          <p className="text-white/70 text-sm font-semibold uppercase tracking-[0.25em] mb-2">Esta noche</p>
+          <p className="text-white/70 text-sm font-semibold uppercase tracking-[0.25em] mb-2">
+            {activeEvent.start_date
+              ? new Date(activeEvent.start_date).toLocaleString('es-AR', {
+                  weekday: 'long', day: 'numeric', month: 'long',
+                  hour: '2-digit', minute: '2-digit',
+                })
+              : 'Esta noche'}
+          </p>
           <h2 className="text-3xl font-bold text-white">{activeEvent.name}</h2>
+          {activeEvent.is_paid && activeEvent.regular_ticket_price > 0 && (
+            <div className="mt-2 space-y-1">
+              <p className="text-emerald-400 text-sm font-medium">
+                Entrada general · ${activeEvent.regular_ticket_price.toLocaleString('es-AR')}
+              </p>
+              <div className="inline-block bg-white/5 border border-white/10 rounded-xl px-5 py-2.5">
+                <span className="text-white font-bold text-sm">Alias: </span>
+                <span className="text-white font-mono font-semibold tracking-wide">{venueConfig?.alias_pago || 'MANSO.CLUB'}</span>
+              </div>
+            </div>
+          )}
+          {!activeEvent.is_paid && (
+            <p className="mt-2 text-emerald-400/70 text-sm font-medium">
+              Entrada gratuita
+            </p>
+          )}
           <div className="mt-3 inline-flex items-center gap-2 bg-black/50 border border-white/15 rounded-full px-4 py-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-white/70 animate-pulse" />
             <span className="text-white/80 text-xs font-semibold tracking-wide">Entrada disponible</span>
@@ -527,9 +552,7 @@ function EventoForm({ eventParam }: { eventParam: string }) {
             </form>
           </div>
 
-          <p className="text-center text-gray-600 text-xs mt-5">
-            Los QR quedan guardados en este dispositivo
-          </p>
+
         </div>
       </div>
     </PublicLayout>
