@@ -27,24 +27,6 @@ function getTicketsForEvent(eventId: string): TicketData[] {
   return []
 }
 
-function findAnyTickets(): TicketData[] {
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i)
-    if (key?.startsWith('manso_tickets_')) {
-      try {
-        const parsed = JSON.parse(localStorage.getItem(key)!)
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed
-      } catch { /* ignorar */ }
-    }
-    if (key?.startsWith('manso_ticket_')) {
-      try {
-        return [JSON.parse(localStorage.getItem(key)!) as TicketData]
-      } catch { /* ignorar */ }
-    }
-  }
-  return []
-}
-
 function TicketCard({ ticket }: { ticket: TicketData }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [downloading, setDownloading] = useState(false)
@@ -153,20 +135,12 @@ export default function MiEntrada() {
 
   useEffect(() => {
     supabase.from('active_event').select('id').single().then(({ data, error }) => {
-      if (error) {
-        setTickets(findAnyTickets())
+      if (error || !data?.id) {
+        setTickets([])
         return
       }
 
-      let saved: TicketData[] = []
-
-      if (data?.id) {
-        saved = getTicketsForEvent(data.id)
-      }
-
-      if (saved.length === 0) {
-        saved = findAnyTickets()
-      }
+      const saved = getTicketsForEvent(data.id)
 
       setTickets(saved)
     })
