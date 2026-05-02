@@ -39,7 +39,7 @@
 - `storage.comprobantes`: INSERT público, SELECT/DELETE solo staff
 
 ## Esquema DB relevante
-- `events` — is_active, is_paid, registrations_open, max_capacity, flyer_url, closed_at
+- `events` — is_active, is_paid, registrations_open, max_capacity, flyer_url, ticket_alias_pago, ticket_cbu_pago, closed_at
 - `products` — visible_en_carta (bool), stock, price, category
 - `ticket_registrations` — event_id, name, email, token, receipt_url, used_at (UNIQUE email+event_id)
 - `guests` — event_id, type (invitado|regular)

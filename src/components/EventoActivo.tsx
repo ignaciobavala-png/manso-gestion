@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useAppStore } from '../store/useAppStore'
 
 export default function EventoActivo() {
-  const { activeEvent, refreshData } = useAppStore()
+  const { activeEvent, refreshData, updateEventPaymentAlias } = useAppStore()
 
   const [qrUrl, setQrUrl] = useState('')
   const [registrationCount, setRegistrationCount] = useState<number | null>(null)
@@ -14,6 +14,10 @@ export default function EventoActivo() {
   const [savingCapacity, setSavingCapacity] = useState(false)
   const [capacitySaved, setCapacitySaved] = useState(false)
   const capacityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [aliasPago, setAliasPago] = useState('')
+  const [cbuPago, setCbuPago] = useState('')
+  const [savingAlias, setSavingAlias] = useState(false)
+  const [aliasSaved, setAliasSaved] = useState(false)
 
   // Limpiar timer de capacidad al desmontar
   useEffect(() => () => { if (capacityTimerRef.current) clearTimeout(capacityTimerRef.current) }, [])
@@ -28,19 +32,21 @@ export default function EventoActivo() {
     }).then(setQrUrl)
   }, [activeEvent])
 
-  // Cargar estado del evento y conteo de registros
+  // Cargar estado del evento, alias y conteo de registros
   useEffect(() => {
     if (!activeEvent) return
 
     supabase
       .from('events')
-      .select('registrations_open, max_capacity')
+      .select('registrations_open, max_capacity, ticket_alias_pago, ticket_cbu_pago')
       .eq('id', activeEvent.id)
       .single()
       .then(({ data }) => {
         if (!data) return
         setRegistrationsOpen(data.registrations_open)
         setMaxCapacity(data.max_capacity?.toString() ?? '')
+        setAliasPago(data.ticket_alias_pago ?? '')
+        setCbuPago(data.ticket_cbu_pago ?? '')
       })
 
     supabase
@@ -81,6 +87,24 @@ export default function EventoActivo() {
       refreshData()
     }
     setSavingCapacity(false)
+  }
+
+  const saveAlias = async () => {
+    setSavingAlias(true)
+    setAliasSaved(false)
+    try {
+      await updateEventPaymentAlias(
+        activeEvent.id,
+        aliasPago.trim() || null,
+        cbuPago.trim() || null
+      )
+      setAliasSaved(true)
+      if (capacityTimerRef.current) clearTimeout(capacityTimerRef.current)
+      capacityTimerRef.current = setTimeout(() => setAliasSaved(false), 2000)
+    } catch (error) {
+      console.error('Error saving alias:', error)
+    }
+    setSavingAlias(false)
   }
 
   const downloadQR = () => {
@@ -169,6 +193,39 @@ export default function EventoActivo() {
             {capacitySaved ? '✓' : 'Guardar'}
           </button>
         </div>
+      </div>
+
+      {/* Alias / CBU del evento para entradas */}
+      <div className="space-y-3 border-t border-zinc-800 pt-4">
+        <h3 className="text-sm text-gray-400 uppercase tracking-wider">Alias de pago (entradas)</h3>
+        <p className="text-xs text-gray-600">Si no se especifica, se usará el alias general del venue.</p>
+        <div>
+          <label className="text-xs text-gray-500 mb-1 block">Alias</label>
+          <input
+            type="text"
+            value={aliasPago}
+            onChange={e => { setAliasPago(e.target.value); setAliasSaved(false) }}
+            placeholder="Ej: PROD.NOCHE.123"
+            className="w-full bg-neutral-900/80 border border-white/20 rounded-xl px-4 py-2.5 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-emerald-500 transition-colors"
+          />
+        </div>
+        <div>
+          <label className="text-xs text-gray-500 mb-1 block">CBU</label>
+          <input
+            type="text"
+            value={cbuPago}
+            onChange={e => { setCbuPago(e.target.value); setAliasSaved(false) }}
+            placeholder="Opcional"
+            className="w-full bg-neutral-900/80 border border-white/20 rounded-xl px-4 py-2.5 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-emerald-500 transition-colors"
+          />
+        </div>
+        <button
+          onClick={saveAlias}
+          disabled={savingAlias}
+          className="w-full py-2.5 bg-white/10 hover:bg-white/20 disabled:opacity-50 text-white text-sm font-medium rounded-xl transition-colors"
+        >
+          {savingAlias ? 'Guardando...' : aliasSaved ? '✓ Guardado' : 'Guardar alias'}
+        </button>
       </div>
 
       {/* Toggle pausa */}

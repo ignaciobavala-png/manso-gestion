@@ -10,6 +10,7 @@ export default function GestionEventos() {
   const [showHistorial, setShowHistorial] = useState(false)
   const [uploadingFor, setUploadingFor] = useState<string | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({})
 
   const scrollToArqueo = () => {
@@ -195,6 +196,16 @@ export default function GestionEventos() {
                         Arqueo ↓
                       </button>
                     )}
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(`${window.location.origin}/registro?event=${e.id}`)
+                        setCopiedId(e.id)
+                        setTimeout(() => setCopiedId(null), 2000)
+                      }}
+                      className="text-sm px-3 py-1.5 bg-white/10 hover:bg-white/20 text-gray-300 font-medium rounded-xl transition-colors whitespace-nowrap"
+                    >
+                      {copiedId === e.id ? '✓ Link copiado' : 'Copiar link'}
+                    </button>
                   </div>
                 </div>
               </div>

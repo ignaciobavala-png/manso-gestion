@@ -10,7 +10,7 @@ interface Props {
 export default function EventCreator({ onCreated }: Props) {
   const { addEvent } = useAppStore()
 
-  const [form, setForm] = useState({ name: '', description: '', ticketPrice: '', startDate: '' })
+  const [form, setForm] = useState({ name: '', description: '', ticketPrice: '', startDate: '', aliasPago: '', cbuPago: '' })
   const [isPaid, setIsPaid] = useState(false)
   const [qrCodeUrl, setQrCodeUrl] = useState('')
   const [createdEventName, setCreatedEventName] = useState('')
@@ -49,6 +49,8 @@ export default function EventCreator({ onCreated }: Props) {
         registrations_open: true,
         max_capacity: null,
         start_date: new Date(form.startDate).toISOString(),
+        ticket_alias_pago: form.aliasPago.trim() || null,
+        ticket_cbu_pago: form.cbuPago.trim() || null,
       })
 
       const qrData = `${window.location.origin}/registro?event=${event.id}`
@@ -60,7 +62,7 @@ export default function EventCreator({ onCreated }: Props) {
 
       setQrCodeUrl(url)
       setCreatedEventName(form.name.trim())
-      setForm({ name: '', description: '', ticketPrice: '', startDate: '' })
+      setForm({ name: '', description: '', ticketPrice: '', startDate: '', aliasPago: '', cbuPago: '' })
     } catch (error) {
       setAlertModal({
         isOpen: true,
@@ -151,21 +153,44 @@ export default function EventCreator({ onCreated }: Props) {
         </div>
       </div>
       {isPaid && (
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">Precio de entrada</label>
-          <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">$</span>
+        <>
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Precio de entrada</label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">$</span>
+              <input
+                type="number"
+                min="0"
+                value={form.ticketPrice}
+                onChange={(e) => setForm(prev => ({ ...prev, ticketPrice: e.target.value }))}
+                placeholder="0"
+                className="w-full pl-8 pr-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              />
+            </div>
+            <p className="text-sm text-gray-500 mt-1">Se aplica igual para regular e invitado.</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Alias de pago (entradas)</label>
             <input
-              type="number"
-              min="0"
-              value={form.ticketPrice}
-              onChange={(e) => setForm(prev => ({ ...prev, ticketPrice: e.target.value }))}
-              placeholder="0"
-              className="w-full pl-8 pr-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              type="text"
+              value={form.aliasPago}
+              onChange={(e) => setForm(prev => ({ ...prev, aliasPago: e.target.value }))}
+              placeholder="Ej: PROD.NOCHE.123"
+              className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+            />
+            <p className="text-xs text-gray-500 mt-1">Opcional. Si no se especifica, se usará el alias general del venue.</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">CBU de pago (entradas)</label>
+            <input
+              type="text"
+              value={form.cbuPago}
+              onChange={(e) => setForm(prev => ({ ...prev, cbuPago: e.target.value }))}
+              placeholder="Opcional"
+              className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
             />
           </div>
-          <p className="text-sm text-gray-500 mt-1">Se aplica igual para regular e invitado.</p>
-        </div>
+        </>
       )}
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-2">Fecha y hora *</label>

@@ -16,6 +16,8 @@ interface ActiveEvent {
   is_paid: boolean
   regular_ticket_price: number
   start_date: string | null
+  ticket_alias_pago: string | null
+  ticket_cbu_pago: string | null
 }
 
 interface VenueConfig {
@@ -192,7 +194,7 @@ function EventoForm({ eventParam }: { eventParam: string }) {
       setLoadingEvent(true)
       const { data, error } = await supabase
         .from('events')
-        .select('id, name, registrations_open, max_capacity, is_paid, regular_ticket_price, start_date')
+        .select('id, name, registrations_open, max_capacity, is_paid, regular_ticket_price, start_date, ticket_alias_pago, ticket_cbu_pago')
         .eq('id', eventParam)
         .eq('is_active', true)
         .single()
@@ -206,6 +208,8 @@ function EventoForm({ eventParam }: { eventParam: string }) {
         is_paid: data.is_paid,
         regular_ticket_price: data.regular_ticket_price,
         start_date: data.start_date,
+        ticket_alias_pago: data.ticket_alias_pago,
+        ticket_cbu_pago: data.ticket_cbu_pago,
       })
 
       if (data.max_capacity !== null) {
@@ -360,7 +364,7 @@ function EventoForm({ eventParam }: { eventParam: string }) {
               </p>
               <div className="inline-block bg-white/5 border border-white/10 rounded-xl px-5 py-2.5">
                 <span className="text-white font-bold text-sm">Alias: </span>
-                <span className="text-white font-mono font-semibold tracking-wide">{venueConfig?.alias_pago || 'MANSO.CLUB'}</span>
+                <span className="text-white font-mono font-semibold tracking-wide">{activeEvent.ticket_alias_pago || venueConfig?.alias_pago || 'MANSO.CLUB'}</span>
               </div>
             </div>
           )}
@@ -453,30 +457,30 @@ function EventoForm({ eventParam }: { eventParam: string }) {
                         <span className="text-emerald-300 font-bold text-lg">${totalAmount.toLocaleString('es-AR')}</span>
                       </div>
 
-                      {venueConfig && (venueConfig.alias_pago || venueConfig.cbu_pago) && (
+                      {(activeEvent.ticket_alias_pago || venueConfig?.alias_pago || activeEvent.ticket_cbu_pago || venueConfig?.cbu_pago) && (
                         <div className="mt-3 pt-3 border-t border-emerald-800/30 text-xs space-y-1">
                           <p className="text-gray-400 font-medium mb-1">Datos para transferencia:</p>
-                          {venueConfig.alias_pago && (
+                          {(activeEvent.ticket_alias_pago || venueConfig?.alias_pago) && (
                             <p className="text-gray-300 flex justify-between">
                               <span>Alias:</span>
                               <button
                                 type="button"
-                                onClick={() => navigator.clipboard.writeText(venueConfig.alias_pago!)}
+                                onClick={() => navigator.clipboard.writeText(activeEvent.ticket_alias_pago || venueConfig?.alias_pago || '')}
                                 className="text-white font-mono hover:text-emerald-300 transition-colors"
                               >
-                                {venueConfig.alias_pago}
+                                {activeEvent.ticket_alias_pago || venueConfig?.alias_pago}
                               </button>
                             </p>
                           )}
-                          {venueConfig.cbu_pago && (
+                          {(activeEvent.ticket_cbu_pago || venueConfig?.cbu_pago) && (
                             <p className="text-gray-300 flex justify-between">
                               <span>CBU:</span>
                               <button
                                 type="button"
-                                onClick={() => navigator.clipboard.writeText(venueConfig.cbu_pago!)}
+                                onClick={() => navigator.clipboard.writeText(activeEvent.ticket_cbu_pago || venueConfig?.cbu_pago || '')}
                                 className="text-white font-mono hover:text-emerald-300 transition-colors text-xs"
                               >
-                                {venueConfig.cbu_pago}
+                                {activeEvent.ticket_cbu_pago || venueConfig?.cbu_pago}
                               </button>
                             </p>
                           )}

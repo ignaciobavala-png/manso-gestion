@@ -139,6 +139,8 @@ export interface Database {
           start_date?: string
           end_date?: string
           flyer_url?: string | null
+          ticket_alias_pago?: string | null
+          ticket_cbu_pago?: string | null
           closed_at?: string
           created_at: string
           updated_at: string
@@ -156,6 +158,8 @@ export interface Database {
           start_date?: string
           end_date?: string
           flyer_url?: string | null
+          ticket_alias_pago?: string | null
+          ticket_cbu_pago?: string | null
           closed_at?: string
           created_at?: string
           updated_at?: string
@@ -173,6 +177,8 @@ export interface Database {
           start_date?: string
           end_date?: string
           flyer_url?: string | null
+          ticket_alias_pago?: string | null
+          ticket_cbu_pago?: string | null
           closed_at?: string
           created_at?: string
           updated_at?: string
