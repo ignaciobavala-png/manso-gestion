@@ -348,7 +348,7 @@ function EventoForm({ eventParam }: { eventParam: string }) {
         </div>
 
         <div className="text-center mb-7">
-          <p className="text-white/70 text-sm font-semibold uppercase tracking-[0.25em] mb-2">
+          <p className="text-white/70 text-sm font-semibold uppercase mb-1">
             {activeEvent.start_date
               ? new Date(activeEvent.start_date).toLocaleString('es-AR', {
                   weekday: 'long', day: 'numeric', month: 'long',
@@ -373,10 +373,6 @@ function EventoForm({ eventParam }: { eventParam: string }) {
               Entrada gratuita
             </p>
           )}
-          <div className="mt-3 inline-flex items-center gap-2 bg-black/50 border border-white/15 rounded-full px-4 py-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-white/70 animate-pulse" />
-            <span className="text-white/80 text-xs font-semibold tracking-wide">Entrada disponible</span>
-          </div>
           {capacityInfo && (
             <p className={`mt-3 text-xs font-medium ${capacityInfo.current >= capacityInfo.max ? 'text-red-400' : 'text-gray-400'}`}>
               {capacityInfo.current} / {capacityInfo.max} lugares reservados

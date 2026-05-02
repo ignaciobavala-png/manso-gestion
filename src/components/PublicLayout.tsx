@@ -11,16 +11,11 @@ export default function PublicLayout({ children, showHeader = true }: PublicLayo
     <Background>
       <div className="flex flex-col flex-1 w-full min-h-screen">
         {showHeader && (
-          <header className="flex flex-col items-center pt-12 pb-6 px-6">
+          <header className="flex items-center justify-center pt-12 pb-6 px-6">
             <img
               src="/logo.png"
               alt="Manso"
-              className="h-16 w-auto object-contain mb-3"
-            />
-            <img
-              src="/manso-name-white.png"
-              alt="MANSO"
-              className="h-6 w-auto object-contain opacity-90"
+              className="h-20 w-auto object-contain"
             />
           </header>
         )}
