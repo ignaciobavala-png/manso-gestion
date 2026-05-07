@@ -132,6 +132,10 @@ function TicketCard({ ticket }: { ticket: TicketData }) {
 export default function MiEntrada() {
   const navigate = useNavigate()
   const [tickets, setTickets] = useState<TicketData[] | null>(null)
+  const [showEmailSearch, setShowEmailSearch] = useState(false)
+  const [email, setEmail] = useState('')
+  const [searching, setSearching] = useState(false)
+  const [searchError, setSearchError] = useState('')
 
   useEffect(() => {
     supabase.from('active_event').select('id').single().then(({ data, error }) => {
@@ -141,16 +145,114 @@ export default function MiEntrada() {
       }
 
       const saved = getTicketsForEvent(data.id)
-
-      setTickets(saved)
+      setTickets(saved.length > 0 ? saved : null)
     })
   }, [])
+
+  const handleEmailSearch = async () => {
+    if (!email.trim()) return
+    setSearching(true)
+    setSearchError('')
+
+    const { data, error } = await supabase
+      .from('ticket_registrations')
+      .select('token, name, event_id')
+      .eq('email', email.trim().toLowerCase())
+
+    if (error) {
+      setSearchError('Error al buscar. Intentá de nuevo.')
+      setSearching(false)
+      return
+    }
+
+    if (!data || data.length === 0) {
+      setSearchError('No encontramos entradas para ese email.')
+      setSearching(false)
+      return
+    }
+
+    const eventIds = [...new Set(data.map(r => r.event_id))]
+    const { data: events } = await supabase
+      .from('events')
+      .select('id, name')
+      .in('id', eventIds)
+
+    const eventMap = new Map(events?.map(e => [e.id, e.name]) ?? [])
+
+    const ticketsByEvent = new Map<string, TicketData[]>()
+    for (const row of data) {
+      const eventName = eventMap.get(row.event_id) ?? 'Evento'
+      const ticket: TicketData = { token: row.token, name: row.name, event_name: eventName, event_id: row.event_id }
+      const existing = ticketsByEvent.get(row.event_id) ?? []
+      existing.push(ticket)
+      ticketsByEvent.set(row.event_id, existing)
+    }
+
+    for (const [eid, tix] of ticketsByEvent) {
+      localStorage.setItem(`manso_tickets_${eid}`, JSON.stringify(tix))
+    }
+
+    setSearching(false)
+    setShowEmailSearch(false)
+
+    const allTickets = [...ticketsByEvent.values()].flat()
+    setTickets(allTickets)
+  }
 
   if (tickets === null) {
     return (
       <PublicLayout showHeader={false}>
-        <div className="flex-1 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-emerald-400" />
+        <div className="flex-1 flex flex-col items-center justify-center px-5 pb-10 -mt-12 max-w-sm w-full mx-auto text-center gap-5">
+          <span className="text-5xl">📲</span>
+          <div>
+            <h2 className="text-xl font-bold text-white">No tenés entradas guardadas</h2>
+            <p className="text-gray-400 text-sm mt-2 max-w-xs">
+              Las entradas se guardan solo en el dispositivo donde las registraste.
+            </p>
+          </div>
+
+          {!showEmailSearch ? (
+            <div className="w-full flex flex-col gap-3">
+              <button
+                onClick={() => navigate('/registro')}
+                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-4 rounded-2xl transition-all active:scale-95 text-sm"
+              >
+                Obtener entrada →
+              </button>
+              <button
+                onClick={() => setShowEmailSearch(true)}
+                className="w-full bg-white/10 hover:bg-white/20 text-white font-medium py-4 rounded-2xl transition-all active:scale-95 text-sm"
+              >
+                Ya me registré, buscar por email
+              </button>
+            </div>
+          ) : (
+            <div className="w-full flex flex-col gap-3">
+              <input
+                type="email"
+                placeholder="tu@email.com"
+                value={email}
+                onChange={e => { setEmail(e.target.value); setSearchError('') }}
+                className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-4 text-white text-sm placeholder-gray-500 outline-none focus:border-emerald-500 transition-all"
+              />
+              <button
+                onClick={handleEmailSearch}
+                disabled={searching || !email.trim()}
+                className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold py-4 rounded-2xl transition-all active:scale-95 text-sm"
+              >
+                {searching ? 'Buscando...' : 'Buscar entradas'}
+              </button>
+              {searchError && (
+                <p className="text-red-400 text-sm">{searchError}</p>
+              )}
+              <button
+                onClick={() => { setShowEmailSearch(false); setEmail(''); setSearchError('') }}
+                className="text-gray-500 hover:text-gray-300 text-sm underline transition-all"
+              >
+                ← Volver
+              </button>
+            </div>
+          )}
         </div>
       </PublicLayout>
     )

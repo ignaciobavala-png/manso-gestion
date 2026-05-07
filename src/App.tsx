@@ -62,8 +62,8 @@ function App() {
             />
           </Route>
 
-          {/* Cualquier otra ruta va a login */}
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          {/* Cualquier otra ruta va a la landing pública */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
