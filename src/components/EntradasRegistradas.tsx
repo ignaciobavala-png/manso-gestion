@@ -220,7 +220,6 @@ export default function EntradasRegistradas() {
               <div className="space-y-2 max-h-96 overflow-y-auto">
                 {rows.map(r => {
                   const isPending = !r.used_at && !r.payment_verified
-                  const isVerified = !r.used_at && r.payment_verified
 
                   return (
                     <div
