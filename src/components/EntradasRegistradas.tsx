@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
+import QRCode from 'qrcode'
 import { supabase } from '../lib/supabase'
 import { useAppStore } from '../store/useAppStore'
 
@@ -7,9 +8,11 @@ interface Registration {
   name: string
   email: string
   event_id: string
+  token: string
   registered_at: string
   used_at: string | null
   receipt_url: string | null
+  payment_verified: boolean
 }
 
 interface EnrichedRegistration extends Registration {
@@ -29,13 +32,15 @@ export default function EntradasRegistradas() {
   const [rows, setRows] = useState<EnrichedRegistration[]>([])
   const [loading, setLoading] = useState(false)
   const [loaded, setLoaded] = useState(false)
+  const [verifyingId, setVerifyingId] = useState<string | null>(null)
+  const [downloadingId, setDownloadingId] = useState<string | null>(null)
 
   const loadRegistrations = async () => {
     if (!activeEvent) return
     setLoading(true)
     const { data, error } = await supabase
       .from('ticket_registrations')
-      .select('id, name, email, event_id, registered_at, used_at, receipt_url')
+      .select('id, name, email, event_id, token, registered_at, used_at, receipt_url, payment_verified')
       .eq('event_id', activeEvent.id)
       .order('registered_at', { ascending: false })
 
@@ -75,8 +80,78 @@ export default function EntradasRegistradas() {
     }
   }
 
+  const handleVerify = async (id: string) => {
+    setVerifyingId(id)
+    const { error } = await supabase
+      .from('ticket_registrations')
+      .update({ payment_verified: true })
+      .eq('id', id)
+
+    if (!error) {
+      setRows(prev => prev.map(r => r.id === id ? { ...r, payment_verified: true } : r))
+    }
+    setVerifyingId(null)
+  }
+
+  const handleDownloadQr = useCallback(async (token: string, name: string) => {
+    setDownloadingId(token)
+    try {
+      const canvas = document.createElement('canvas')
+      canvas.width = 400
+      canvas.height = 520
+      const ctx = canvas.getContext('2d')!
+
+      ctx.fillStyle = '#0a0a0a'
+      ctx.fillRect(0, 0, 400, 520)
+      ctx.fillStyle = '#065f46'
+      ctx.fillRect(0, 0, 400, 5)
+
+      ctx.fillStyle = '#ffffff'
+      ctx.font = 'bold 28px system-ui, sans-serif'
+      ctx.textAlign = 'center'
+      ctx.fillText('MANSO', 200, 52)
+
+      ctx.fillStyle = '#6b7280'
+      ctx.font = '10px system-ui, sans-serif'
+      ctx.fillText('ENTRADA DIGITAL', 200, 70)
+
+      const qrCanvas = document.createElement('canvas')
+      await QRCode.toCanvas(qrCanvas, `manso-ticket|${token}`, {
+        width: 200,
+        margin: 2,
+        color: { dark: '#000000', light: '#ffffff' }
+      })
+      ctx.drawImage(qrCanvas, 100, 96)
+
+      ctx.fillStyle = '#f9fafb'
+      ctx.font = 'bold 18px system-ui, sans-serif'
+      ctx.fillText(name, 200, 400)
+
+      ctx.fillStyle = '#6b7280'
+      ctx.font = '11px system-ui, sans-serif'
+      ctx.fillText('Guardá esta imagen. No necesitás internet en la puerta.', 200, 426)
+
+      ctx.fillStyle = '#065f46'
+      ctx.fillRect(0, 448, 400, 5)
+
+      canvas.toBlob(blob => {
+        if (!blob) return
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `manso-entrada-${name.toLowerCase().replace(/\s+/g, '-')}.png`
+        a.click()
+        URL.revokeObjectURL(url)
+        setDownloadingId(null)
+      }, 'image/png')
+    } catch {
+      setDownloadingId(null)
+    }
+  }, [])
+
   const ingresados = rows.filter(r => r.used_at).length
   const pendientes = rows.filter(r => !r.used_at).length
+  const porVerificar = rows.filter(r => r.receipt_url && !r.payment_verified && !r.used_at).length
   const conComprobante = rows.filter(r => r.receipt_url).length
 
   if (!activeEvent) return null
@@ -128,6 +203,12 @@ export default function EntradasRegistradas() {
                   <span className="text-gray-400 text-xs">Pendientes: </span>
                   <span className="text-amber-400 text-xs font-semibold">{pendientes}</span>
                 </div>
+                {porVerificar > 0 && (
+                  <div className="bg-neutral-900 border border-orange-500/40 rounded-xl px-3 py-1.5">
+                    <span className="text-gray-400 text-xs">Por verificar: </span>
+                    <span className="text-orange-400 text-xs font-semibold">{porVerificar}</span>
+                  </div>
+                )}
                 {conComprobante > 0 && (
                   <div className="bg-neutral-900 border border-white/10 rounded-xl px-3 py-1.5">
                     <span className="text-gray-400 text-xs">Con comprobante: </span>
@@ -137,55 +218,84 @@ export default function EntradasRegistradas() {
               </div>
 
               <div className="space-y-2 max-h-96 overflow-y-auto">
-                {rows.map(r => (
-                  <div
-                    key={r.id}
-                    className="bg-neutral-900 border border-white/10 rounded-2xl px-4 py-3 flex items-center gap-3"
-                  >
-                    {r.signedReceiptUrl ? (
-                      <a
-                        href={r.signedReceiptUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-shrink-0 w-12 h-12 rounded-xl overflow-hidden border border-white/20 hover:border-emerald-400/50 transition-colors"
-                      >
-                        <img
-                          src={r.signedReceiptUrl}
-                          alt={`Comprobante de ${r.name}`}
-                          className="w-full h-full object-cover"
-                        />
-                      </a>
-                    ) : r.receipt_url ? (
-                      <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
-                        <span className="text-gray-600 text-lg">🖼</span>
-                      </div>
-                    ) : (
-                      <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
-                        <span className="text-gray-600 text-lg">👤</span>
-                      </div>
-                    )}
+                {rows.map(r => {
+                  const isPending = !r.used_at && !r.payment_verified
+                  const isVerified = !r.used_at && r.payment_verified
 
-                    <div className="flex-1 min-w-0">
-                      <p className="text-white font-medium text-sm truncate">{r.name}</p>
-                      <p className="text-gray-400 text-xs truncate">{r.email}</p>
-                      <p className="text-gray-600 text-xs mt-0.5">
-                        {new Date(r.registered_at).toLocaleString('es-AR', {
-                          day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
-                        })}
-                      </p>
-                    </div>
-
-                    <span
-                      className={`flex-shrink-0 text-xs px-2 py-0.5 rounded-full ${
-                        r.used_at
-                          ? 'bg-emerald-900/50 text-emerald-400'
-                          : 'bg-white/10 text-gray-400'
-                      }`}
+                  return (
+                    <div
+                      key={r.id}
+                      className="bg-neutral-900 border border-white/10 rounded-2xl px-4 py-3 flex items-center gap-3"
                     >
-                      {r.used_at ? 'Ingresó' : 'Pendiente'}
-                    </span>
-                  </div>
-                ))}
+                      {r.signedReceiptUrl ? (
+                        <a
+                          href={r.signedReceiptUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-shrink-0 w-12 h-12 rounded-xl overflow-hidden border border-white/20 hover:border-emerald-400/50 transition-colors"
+                        >
+                          <img
+                            src={r.signedReceiptUrl}
+                            alt={`Comprobante de ${r.name}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </a>
+                      ) : r.receipt_url ? (
+                        <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+                          <span className="text-gray-600 text-lg">🖼</span>
+                        </div>
+                      ) : (
+                        <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+                          <span className="text-gray-600 text-lg">👤</span>
+                        </div>
+                      )}
+
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white font-medium text-sm truncate">{r.name}</p>
+                        <p className="text-gray-400 text-xs truncate">{r.email}</p>
+                        <p className="text-gray-600 text-xs mt-0.5">
+                          {new Date(r.registered_at).toLocaleString('es-AR', {
+                            day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+                          })}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {isPending && r.receipt_url && (
+                          <button
+                            onClick={() => handleVerify(r.id)}
+                            disabled={verifyingId === r.id}
+                            className="bg-orange-700 hover:bg-orange-600 disabled:opacity-50 text-white text-xs px-2.5 py-1.5 rounded-lg transition-colors whitespace-nowrap"
+                          >
+                            {verifyingId === r.id ? '...' : 'Verificar pago'}
+                          </button>
+                        )}
+
+                        {!r.used_at && (
+                          <button
+                            onClick={() => handleDownloadQr(r.token, r.name)}
+                            disabled={downloadingId === r.token}
+                            className="bg-white/10 hover:bg-white/20 disabled:opacity-50 text-white text-xs px-2.5 py-1.5 rounded-lg transition-colors whitespace-nowrap"
+                          >
+                            {downloadingId === r.token ? '...' : 'QR'}
+                          </button>
+                        )}
+
+                        <span
+                          className={`text-xs px-2 py-0.5 rounded-full whitespace-nowrap ${
+                            r.used_at
+                              ? 'bg-emerald-900/50 text-emerald-400'
+                              : r.payment_verified
+                                ? 'bg-emerald-900/50 text-emerald-400'
+                                : 'bg-white/10 text-gray-400'
+                          }`}
+                        >
+                          {r.used_at ? 'Ingresó' : r.payment_verified ? 'Verificado' : 'Pendiente'}
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </>
           )}

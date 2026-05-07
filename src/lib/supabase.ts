@@ -192,6 +192,7 @@ export interface Database {
           email: string
           token: string
           receipt_url?: string | null
+          payment_verified: boolean
           registered_at: string
           used_at?: string | null
         }
@@ -202,6 +203,7 @@ export interface Database {
           email: string
           token: string
           receipt_url?: string | null
+          payment_verified?: boolean
           registered_at?: string
           used_at?: string
         }
@@ -212,6 +214,7 @@ export interface Database {
           email?: string
           token?: string
           receipt_url?: string | null
+          payment_verified?: boolean
           registered_at?: string
           used_at?: string
         }

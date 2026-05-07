@@ -33,7 +33,7 @@ export default function Entradas(): React.JSX.Element {
   const [showInvitadoInput, setShowInvitadoInput] = useState(false)
   const [invitadoName, setInvitadoName] = useState('')
   const [submittingInvitado, setSubmittingInvitado] = useState(false)
-  const [mansoTicketPending, setMansoTicketPending] = useState<{ token: string; name: string } | null>(null)
+  const [mansoTicketPending, setMansoTicketPending] = useState<{ token: string; name: string; paymentVerified: boolean } | null>(null)
   const [validating, setValidating] = useState(false)
   const [alertModal, setAlertModal] = useState({
     isOpen: false,
@@ -120,7 +120,7 @@ export default function Entradas(): React.JSX.Element {
 
     const { data, error } = await supabase
       .from('ticket_registrations')
-      .select('name, event_id, used_at')
+      .select('name, event_id, used_at, payment_verified')
       .eq('token', token)
       .single()
 
@@ -143,7 +143,7 @@ export default function Entradas(): React.JSX.Element {
       return
     }
 
-    setMansoTicketPending({ token, name: data.name })
+    setMansoTicketPending({ token, name: data.name, paymentVerified: data.payment_verified })
   }
 
   const handleConfirmMansoTicket = async () => {
@@ -329,6 +329,12 @@ export default function Entradas(): React.JSX.Element {
             {/* Estado: confirmar ticket de registro público */}
             {!validating && !showSuccess && mansoTicketPending && (
               <div className="space-y-4">
+                {activeEvent?.is_paid && !mansoTicketPending.paymentVerified && (
+                  <div className="bg-orange-900/30 border border-orange-600/50 rounded-2xl px-4 py-3 text-center">
+                    <p className="text-orange-400 text-sm font-medium">Comprobante no verificado</p>
+                    <p className="text-orange-300/70 text-xs mt-1">El pago aún no fue verificado por el staff</p>
+                  </div>
+                )}
                 <div className="bg-emerald-900/20 border border-emerald-700 rounded-2xl p-4 text-center">
                   <p className="text-sm text-emerald-500 mb-1 uppercase tracking-wider">Entrada Digital</p>
                   <p className="text-white font-semibold text-lg">{mansoTicketPending.name}</p>

@@ -221,7 +221,7 @@ export default function MiEntrada() {
               </button>
               <button
                 onClick={() => setShowEmailSearch(true)}
-                className="w-full bg-white/10 hover:bg-white/20 text-white font-medium py-4 rounded-2xl transition-all active:scale-95 text-sm"
+                className="w-full bg-orange-700 hover:bg-orange-600 text-white font-semibold py-4 rounded-2xl transition-all active:scale-95 text-sm border border-orange-500/50"
               >
                 Ya me registré, buscar por email
               </button>

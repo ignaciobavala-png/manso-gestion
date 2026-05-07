@@ -10,7 +10,6 @@ export default function Barra() {
     products,
     balance,
     addSaleBatch,
-    flushBalance,
     addProduct,
     deleteProduct,
     deleteSale,
@@ -110,7 +109,6 @@ export default function Barra() {
         })),
         paymentMethod
       )
-      flushBalance()
       setCart({})
       setPurchaseSuccess(true)
       setTimeout(() => setPurchaseSuccess(false), 2500)
