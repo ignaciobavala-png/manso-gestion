@@ -224,42 +224,56 @@ export default function EntradasRegistradas() {
                   return (
                     <div
                       key={r.id}
-                      className="bg-neutral-900 border border-white/10 rounded-2xl px-4 py-3 flex items-center gap-3"
+                      className="bg-neutral-900 border border-white/10 rounded-2xl px-4 py-3 flex flex-col gap-2"
                     >
-                      {r.signedReceiptUrl ? (
-                        <a
-                          href={r.signedReceiptUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex-shrink-0 w-12 h-12 rounded-xl overflow-hidden border border-white/20 hover:border-emerald-400/50 transition-colors"
-                        >
-                          <img
-                            src={r.signedReceiptUrl}
-                            alt={`Comprobante de ${r.name}`}
-                            className="w-full h-full object-cover"
-                          />
-                        </a>
-                      ) : r.receipt_url ? (
-                        <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
-                          <span className="text-gray-600 text-lg">🖼</span>
-                        </div>
-                      ) : (
-                        <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
-                          <span className="text-gray-600 text-lg">👤</span>
-                        </div>
-                      )}
+                      <div className="flex items-center gap-3 min-w-0">
+                        {r.signedReceiptUrl ? (
+                          <a
+                            href={r.signedReceiptUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-xl overflow-hidden border border-white/20 hover:border-emerald-400/50 transition-colors"
+                          >
+                            <img
+                              src={r.signedReceiptUrl}
+                              alt={`Comprobante de ${r.name}`}
+                              className="w-full h-full object-cover"
+                            />
+                          </a>
+                        ) : r.receipt_url ? (
+                          <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+                            <span className="text-gray-600 text-base">🖼</span>
+                          </div>
+                        ) : (
+                          <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+                            <span className="text-gray-600 text-base">👤</span>
+                          </div>
+                        )}
 
-                      <div className="flex-1 min-w-0">
-                        <p className="text-white font-medium text-sm truncate">{r.name}</p>
-                        <p className="text-gray-400 text-xs truncate">{r.email}</p>
-                        <p className="text-gray-600 text-xs mt-0.5">
-                          {new Date(r.registered_at).toLocaleString('es-AR', {
-                            day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
-                          })}
-                        </p>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white font-medium text-sm truncate">{r.name}</p>
+                          <p className="text-gray-400 text-xs truncate">{r.email}</p>
+                          <p className="text-gray-600 text-xs mt-0.5">
+                            {new Date(r.registered_at).toLocaleString('es-AR', {
+                              day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+                            })}
+                          </p>
+                        </div>
+
+                        <span
+                          className={`sm:hidden text-xs px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 ${
+                            r.used_at
+                              ? 'bg-emerald-900/50 text-emerald-400'
+                              : r.payment_verified
+                                ? 'bg-emerald-900/50 text-emerald-400'
+                                : 'bg-white/10 text-gray-400'
+                          }`}
+                        >
+                          {r.used_at ? 'Ingresó' : r.payment_verified ? 'Verificado' : 'Pendiente'}
+                        </span>
                       </div>
 
-                      <div className="flex items-center gap-2 flex-shrink-0">
+                      <div className="flex items-center gap-2 pl-[3.25rem] sm:pl-0">
                         {isPending && r.receipt_url && (
                           <button
                             onClick={() => handleVerify(r.id)}
@@ -281,7 +295,7 @@ export default function EntradasRegistradas() {
                         )}
 
                         <span
-                          className={`text-xs px-2 py-0.5 rounded-full whitespace-nowrap ${
+                          className={`hidden sm:inline text-xs px-2 py-0.5 rounded-full whitespace-nowrap ${
                             r.used_at
                               ? 'bg-emerald-900/50 text-emerald-400'
                               : r.payment_verified
