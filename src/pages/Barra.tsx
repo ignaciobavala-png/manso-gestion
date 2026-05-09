@@ -41,6 +41,8 @@ export default function Barra() {
   })
   const [confirmingSaleDelete, setConfirmingSaleDelete] = useState<string | null>(null)
   const [deletingSale, setDeletingSale] = useState(false)
+  const [editingPrice, setEditingPrice] = useState<string | null>(null)
+  const [editPriceValue, setEditPriceValue] = useState('')
 
   if (!isInitialized) {
     return (
@@ -147,6 +149,59 @@ export default function Barra() {
     }
   }
 
+  const moveProduct = async (productId: string, direction: 'up' | 'down') => {
+    const product = products.find(p => p.id === productId)
+    if (!product) return
+
+    const categoryProducts = products
+      .filter(p => p.category === product.category)
+      .sort((a, b) => a.sort_order - b.sort_order)
+
+    const idx = categoryProducts.findIndex(p => p.id === productId)
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1
+    if (swapIdx < 0 || swapIdx >= categoryProducts.length) return
+
+    const target = categoryProducts[swapIdx]
+    try {
+      await Promise.all([
+        updateProduct(product.id, { sort_order: target.sort_order }),
+        updateProduct(target.id, { sort_order: product.sort_order }),
+      ])
+    } catch (error) {
+      setAlertModal({
+        isOpen: true,
+        message: 'Error al reordenar: ' + (error as Error).message,
+        type: 'error'
+      })
+    }
+  }
+
+  const startEditPrice = (productId: string, currentPrice: number) => {
+    setEditingPrice(productId)
+    setEditPriceValue(String(currentPrice))
+  }
+
+  const cancelEditPrice = () => {
+    setEditingPrice(null)
+    setEditPriceValue('')
+  }
+
+  const saveEditPrice = async (productId: string) => {
+    const price = parseFloat(editPriceValue)
+    if (isNaN(price) || price <= 0) return
+    try {
+      await updateProduct(productId, { price })
+      setEditingPrice(null)
+      setEditPriceValue('')
+    } catch (error) {
+      setAlertModal({
+        isOpen: true,
+        message: 'Error al actualizar precio: ' + (error as Error).message,
+        type: 'error'
+      })
+    }
+  }
+
   const handleAddItem = async () => {
     if (!newItem.name || !newItem.price) {
       setAlertModal({
@@ -186,7 +241,8 @@ export default function Barra() {
     }
   }
 
-  const categories = Array.from(new Set(products.map(p => p.category)))
+  const CATEGORY_ORDER = ['bebida', 'comida', 'otro'] as const
+  const categories = CATEGORY_ORDER.filter(c => products.some(p => p.category === c))
 
   return (
     <Background>
@@ -331,9 +387,43 @@ export default function Barra() {
                         <div className="flex items-start justify-between mb-3">
                           <div>
                             <h3 className="font-medium text-lg text-white">{product.name}</h3>
-                            <p className="text-emerald-400 text-xl font-bold mt-1">
-                              {formatCurrency(product.price)}
-                            </p>
+                            {editingPrice === product.id ? (
+                              <div className="flex items-center gap-2 mt-1">
+                                <input
+                                  type="number"
+                                  value={editPriceValue}
+                                  onChange={(e) => setEditPriceValue(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') saveEditPrice(product.id)
+                                    if (e.key === 'Escape') cancelEditPrice()
+                                  }}
+                                  min="0"
+                                  step="100"
+                                  className="w-28 px-2 py-1 bg-neutral-800 border border-emerald-500 rounded-lg text-emerald-400 text-lg font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                  autoFocus
+                                />
+                                <button
+                                  onClick={() => saveEditPrice(product.id)}
+                                  className="w-7 h-7 flex items-center justify-center bg-emerald-600 hover:bg-emerald-500 rounded-lg transition-colors"
+                                >
+                                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                </button>
+                                <button
+                                  onClick={cancelEditPrice}
+                                  className="w-7 h-7 flex items-center justify-center bg-gray-600 hover:bg-gray-500 rounded-lg transition-colors"
+                                >
+                                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </div>
+                            ) : (
+                              <p className="text-emerald-400 text-xl font-bold mt-1">
+                                {formatCurrency(product.price)}
+                              </p>
+                            )}
                           </div>
                           <div className="flex items-start gap-3">
                             <div className="text-right">
@@ -344,7 +434,36 @@ export default function Barra() {
                                 {product.stock}
                               </p>
                             </div>
-                             <button
+                            <div className="flex flex-col gap-0.5">
+                              <button
+                                onClick={() => moveProduct(product.id, 'up')}
+                                className="w-7 h-5 flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 rounded-t-lg transition-colors"
+                                aria-label={`Mover ${product.name} arriba`}
+                              >
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={() => moveProduct(product.id, 'down')}
+                                className="w-7 h-5 flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 rounded-b-lg transition-colors"
+                                aria-label={`Mover ${product.name} abajo`}
+                              >
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                              </button>
+                            </div>
+                            <button
+                              onClick={() => startEditPrice(product.id, product.price)}
+                              className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-emerald-400 hover:bg-emerald-900 hover:bg-opacity-20 rounded-lg transition-colors"
+                              aria-label={`Editar precio de ${product.name}`}
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                              </svg>
+                            </button>
+                            <button
                               onClick={() => {
                                 setConfirmModal({
                                   isOpen: true,

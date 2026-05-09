@@ -97,7 +97,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         eventsResult,
         activeEventResult
       ] = await Promise.all([
-        supabase.from('products').select('*').order('name'),
+        supabase.from('products').select('*').order('sort_order'),
         supabase.from('guests').select('*').order('created_at', { ascending: false }),
         supabase.from('sales').select('*').order('created_at', { ascending: false }),
         supabase.from('ticket_sales').select('*').order('created_at', { ascending: false }),
@@ -179,7 +179,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       if (error) throw error
       
       set(state => ({
-        products: [...state.products, data].sort((a, b) => a.name.localeCompare(b.name))
+        products: [...state.products, data].sort((a, b) => a.sort_order - b.sort_order)
       }))
     } catch (error) {
       console.error('Error adding product:', error)

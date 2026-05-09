@@ -1,7 +1,9 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import QRCode from 'qrcode'
 import { supabase } from '../lib/supabase'
 import { useAppStore } from '../store/useAppStore'
+import Toast from './Toast'
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
 
 interface Registration {
   id: string
@@ -34,8 +36,9 @@ export default function EntradasRegistradas() {
   const [loaded, setLoaded] = useState(false)
   const [verifyingId, setVerifyingId] = useState<string | null>(null)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
+  const [toast, setToast] = useState({ isOpen: false, message: '', type: 'info' as 'info' | 'success' | 'warning', name: '' })
 
-  const loadRegistrations = async () => {
+  const loadRegistrations = useCallback(async () => {
     if (!activeEvent) return
     setLoading(true)
     const { data, error } = await supabase
@@ -70,7 +73,35 @@ export default function EntradasRegistradas() {
     setRows(enriched)
     setLoading(false)
     setLoaded(true)
-  }
+  }, [activeEvent])
+
+  useEffect(() => {
+    if (!activeEvent) return
+
+    const channel = supabase
+      .channel('registrations')
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'ticket_registrations', filter: `event_id=eq.${activeEvent.id}` },
+        (payload: RealtimePostgresChangesPayload<{ receipt_url: string | null; name: string }>) => {
+          const row = payload.new as { receipt_url: string | null; name: string }
+          if (!row.receipt_url) return
+
+          setToast({
+            isOpen: true,
+            message: `Nuevo comprobante de ${row.name}`,
+            type: 'success',
+            name: row.name
+          })
+
+          loadRegistrations()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [activeEvent, loadRegistrations])
 
   const handleToggle = () => {
     const next = !isExpanded
@@ -157,6 +188,14 @@ export default function EntradasRegistradas() {
   if (!activeEvent) return null
 
   return (
+    <>
+      <Toast
+        isOpen={toast.isOpen}
+        onClose={() => setToast(prev => ({ ...prev, isOpen: false }))}
+        message={toast.message}
+        type={toast.type}
+        action={{ label: 'Ver', onClick: () => { setIsExpanded(true); if (!loaded) loadRegistrations() } }}
+      />
     <div className="border-t-2 border-zinc-800">
       <button
         onClick={handleToggle}
@@ -315,5 +354,6 @@ export default function EntradasRegistradas() {
         </div>
       )}
     </div>
+    </>
   )
 }

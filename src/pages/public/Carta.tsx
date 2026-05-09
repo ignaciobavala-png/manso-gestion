@@ -8,6 +8,7 @@ type Product = {
   name: string
   price: number
   category: 'bebida' | 'comida' | 'otro'
+  sort_order: number
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -31,8 +32,8 @@ export default function Carta() {
   useEffect(() => {
     supabase
       .from('products')
-      .select('id, name, price, category')
-      .order('name')
+      .select('id, name, price, category, sort_order')
+      .order('sort_order')
       .then(({ data, error: fetchError }) => {
         if (fetchError) {
           setError('No pudimos cargar la carta. Verificá tu conexión e intentá de nuevo.')

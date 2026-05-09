@@ -16,6 +16,7 @@ export interface Database {
           stock: number
           price: number
           category: 'bebida' | 'comida' | 'otro'
+          sort_order: number
           created_at: string
           updated_at: string
         }
@@ -25,6 +26,7 @@ export interface Database {
           stock?: number
           price: number
           category: 'bebida' | 'comida' | 'otro'
+          sort_order?: number
           created_at?: string
           updated_at?: string
         }
@@ -34,6 +36,7 @@ export interface Database {
           stock?: number
           price?: number
           category?: 'bebida' | 'comida' | 'otro'
+          sort_order?: number
           created_at?: string
           updated_at?: string
         }

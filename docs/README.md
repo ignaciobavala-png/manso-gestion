@@ -50,10 +50,19 @@ La app soporta múltiples eventos en paralelo. Hay dos conceptos distintos:
 
 La vista `active_event` lee desde `venue_config.current_event_id` via JOIN. Todo el sistema apunta a esa vista.
 
+### Alias de pago por evento
+
+Cada evento puede tener su propio alias y CBU para cobro de entradas (`ticket_alias_pago`, `ticket_cbu_pago`). Esto permite que organizadores externos que usan el espacio reciban el dinero de sus entradas en su propia cuenta.
+
+- Se configura al crear el evento (campos opcionales en EventCreator, solo si es evento pago)
+- Se puede editar desde EventoActivo en cualquier momento
+- En el formulario público de registro, se prioriza el alias del evento. Si no tiene, se usa el alias general del venue (`venue_config.alias_pago`) como fallback
+- No afecta al alias de la barra (`venue_config.alias_pago`), que sigue siendo el del venue
+
 ### Flujo típico
 
 1. Ana crea los eventos de la semana desde antemano (todos quedan como "abiertos")
-2. Antes de cada evento, toca **Operar** en `GestionEventos` para poner ese evento en operación
+2. Antes de cada evento, toca **Operar** en `GestionEventos` para poner ese evento en operación. Cada card de evento tiene también un botón **Copiar link** para compartir la URL de registro
 3. Opera con barra y entradas; al terminar toca **Arqueo ↓** → va a la sección de arqueo → confirma el cierre
 4. El evento queda en el historial; el siguiente evento se puede poner en operación
 
@@ -66,12 +75,13 @@ La vista `active_event` lee desde `venue_config.current_event_id` via JOIN. Todo
 Tiene dos pestañas:
 
 **Operación:**
-- **GestionEventos**: lista de eventos abiertos con conteo de entradas y capacidad; botón "Operar" para cambiar el evento en operación; botón "Arqueo ↓" que hace scroll al arqueo; historial colapsable de eventos cerrados; formulario inline con subida de flyer para crear nuevo evento. Al crear, toggle **Gratuita / Entrada paga** que condiciona si se muestra el campo de precio y si el registro público pedirá comprobante.
+- **GestionEventos**: lista de eventos abiertos con conteo de entradas y capacidad; botón "Operar" para cambiar el evento en operación; botón "Copiar link" para compartir la URL de registro del evento; botón "Arqueo ↓" que hace scroll al arqueo; historial colapsable de eventos cerrados; formulario inline con subida de flyer para crear nuevo evento. Al crear, toggle **Gratuita / Entrada paga** que condiciona si se muestra el campo de precio, alias/CBU y si el registro público pedirá comprobante.
 - **EntradasRegistradas**: sección colapsable que muestra los registros del evento en operación con thumbnail del comprobante de pago (si aplica), nombre, email, fecha y estado (Pendiente/Ingresó). Usa signed URLs temporales para acceder al bucket `comprobantes` con RLS.
 - Balance total en tiempo real vía RPC `get_current_balance`
 - Gestión de stock inicial por producto con controles +/−
 - Ingresos desglosados por origen (barra / entradas) y método de pago
 - Arqueo de caja: resumen del evento activo (balance, ventas, entradas, recaudado) + cierre con confirmación
+- **EventoActivo**: sección dentro de Operación con QR del evento (descargable), conteo de registros vs capacidad máxima, toggle de pausa/reanudación de registro, y alias/CBU de pago editable para entradas del evento
 - Historial de eventos cerrados
 
 **Configuración:**
@@ -123,13 +133,14 @@ Cuando un evento se crea con el toggle **Entrada paga**, el flujo público de re
 - Las imágenes se almacenan en el bucket `comprobantes` de Supabase Storage (público para INSERT)
 - La URL del comprobante se guarda en `ticket_registrations.receipt_url`
 - En el panel Control, la sección **Entradas registradas** muestra thumbnails de los comprobantes usando signed URLs (1h de validez) generadas con la sesión autenticada del staff
-- La vista **Comunidad** (`/admin/comunidad`) también incluye un ícono 📷 para abrir el comprobante en pestaña nueva
+- La vista **Comunidad** (`/admin/comunidad`) también incluye un ícono 📷 para abrir el comprobante en pestaña nueva. La página es responsive: en mobile los registros se muestran apilados verticalmente; en desktop en fila horizontal. Incluye filtro por evento y exportación a Excel (.xlsx)
 - Las políticas RLS del bucket restringen: SELECT y DELETE solo para staff (`control@` / `empleado@`), INSERT público para que los asistentes puedan subir
 
 Los archivos de migración están en:
 - `supabase-schema.sql` — esquema base
 - `supabase-rls-migration.sql` — políticas RLS granulares
 - `supabase-payments-migration.sql` — columnas `is_paid` + `receipt_url` y bucket `comprobantes`
+- `supabase-event-alias-migration.sql` — columnas `ticket_alias_pago` y `ticket_cbu_pago` en events
 
 ---
 
@@ -146,7 +157,7 @@ Los archivos de migración están en:
 
 | Tabla / Vista | Campos clave |
 |---|---|
-| `events` | id, name, is_active, registrations_open, max_capacity, is_paid, flyer_url, closed_at |
+| `events` | id, name, is_active, registrations_open, max_capacity, is_paid, flyer_url, ticket_alias_pago, ticket_cbu_pago, closed_at |
 | `products` | id, name, price, category, stock, visible_en_carta |
 | `sales` | id, product_id, product_name, quantity, total, payment_method, event_id |
 | `ticket_sales` | id, guest_name, type (regular/invitado), price, event_id |
@@ -232,3 +243,4 @@ Ver `DEBUGGING.md` para el detalle completo.
 | v2.1 | Multievento, landing pública `/`, vistas públicas para admin, carta simplificada a solo lectura, gestión de eventos |
 | v2.2 | RLS policies granulares por email, migración de seguridad, flyers de eventos |
 | v2.3 | Eventos pagos con subida de comprobante, bucket `comprobantes`, verificación de pagos en panel Control y Comunidad |
+| v2.4 | Alias de pago por evento (ticket_alias_pago, ticket_cbu_pago), botón "Copiar link" en cards de evento, página Comunidad responsive |

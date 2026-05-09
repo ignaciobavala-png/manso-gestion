@@ -1,6 +1,17 @@
 # Bugs pendientes
 
-Última auditoría: 2026-04-23.
+Última auditoría: 2026-05-07.
+
+---
+
+## ✔️ Corregidos en sesión 2026-05-07
+
+- **#14 — Catch-all redirigía a `/login`**: ahora redirige a `/` (landing pública). Fix en `src/App.tsx`.
+- **#15 — Sin recuperación de QR por email**: MiEntrada ahora permite buscar entradas por email desde la DB. Fix en `src/pages/public/MiEntrada.tsx`.
+- **#16 — `flushBalance()` reseteaba balance a 0**: eliminado el llamado en `Barra.tsx`. El balance se acumula correctamente.
+- **#17 — QR de descarga con token `undefined` en EntradasRegistradas**: faltaba `token` en la query SELECT y la interfaz. Fix en `src/components/EntradasRegistradas.tsx`.
+- **#18 — `payment_verified`**: nueva columna en DB + UI de 3 estados (Pendiente / Verificado / Ingresó) + botón Verificar pago + advertencia en scanner.
+- **#19 — Comunidad mostraba comprobantes**: eliminados, solo contactos (nombre, email, evento, fecha).
 
 ---
 
@@ -42,9 +53,9 @@ Al eliminar un evento se limpian `sales` y `ticketSales` del estado local, pero 
 **Severidad:** 🟢 Menor
 **Ubicación:** `src/components/EventoActivo.tsx`
 
-El `setTimeout` para el toast de "capacidad guardada" no retorna cleanup en el `useEffect`. En React Strict Mode puede dispararse dos veces.
+Hay dos timers que comparten `capacityTimerRef`: el de "capacidad guardada" y el de "alias guardado". Ambos se limpian mutuamente al guardar el otro. No causa error funcional pero es desprolijo.
 
-**Fix:** El timer ya usa `capacityTimerRef` — solo falta retornar `() => clearTimeout(capacityTimerRef.current)` en el efecto de cleanup.
+**Fix:** Crear un ref separado para el timer de alias, o un ref genérico para el último timer activo.
 
 ---
 

@@ -116,7 +116,8 @@ CREATE TRIGGER update_guests_updated_at BEFORE UPDATE ON guests FOR EACH ROW EXE
 CREATE TRIGGER update_events_updated_at BEFORE UPDATE ON events FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- View for current active event (driven by venue_config.current_event_id)
-CREATE OR REPLACE VIEW active_event AS
+CREATE OR REPLACE VIEW active_event
+WITH (security_invoker = true) AS
   SELECT e.*
   FROM events e
   JOIN venue_config vc ON vc.current_event_id = e.id
