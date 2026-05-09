@@ -93,6 +93,14 @@ export default function EntradasRegistradas() {
             name: row.name
           })
 
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('Manso Club', {
+              body: `Nuevo comprobante de ${row.name}`,
+              icon: '/icon-192.png',
+              tag: 'new-comprobante',
+            })
+          }
+
           loadRegistrations()
         }
       )
@@ -108,6 +116,9 @@ export default function EntradasRegistradas() {
     setIsExpanded(next)
     if (next && !loaded) {
       loadRegistrations()
+    }
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission()
     }
   }
 

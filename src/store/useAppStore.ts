@@ -199,7 +199,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       if (error) throw error
       
       set(state => ({
-        products: state.products.map(p => p.id === id ? data : p)
+        products: state.products.map(p => p.id === id ? data : p).sort((a, b) => a.sort_order - b.sort_order)
       }))
     } catch (error) {
       console.error('Error updating product:', error)

@@ -11,6 +11,7 @@ export default function Barra() {
     balance,
     addSaleBatch,
     addProduct,
+    updateProduct,
     deleteProduct,
     deleteSale,
     sales,
