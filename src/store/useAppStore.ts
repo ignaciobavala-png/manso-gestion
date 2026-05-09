@@ -30,7 +30,7 @@ interface AppState {
   calculateBalance: (eventId?: string | null) => Promise<void>
   
   // Acciones de productos
-  addProduct: (product: Omit<Product, 'id' | 'created_at' | 'updated_at'>) => Promise<void>
+  addProduct: (product: Omit<Database['public']['Tables']['products']['Insert'], 'id' | 'created_at' | 'updated_at'>) => Promise<void>
   updateProduct: (id: string, updates: Partial<Product>) => Promise<void>
   deleteProduct: (id: string) => Promise<void>
   
@@ -171,7 +171,8 @@ export const useAppStore = create<AppState>((set, get) => ({
         .from('products')
         .insert([{
           ...productData,
-          stock: productData.stock || 0
+          stock: productData.stock || 0,
+          sort_order: productData.sort_order ?? 0
         }])
         .select()
         .single()
