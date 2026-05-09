@@ -164,10 +164,8 @@ export default function Barra() {
 
     const target = categoryProducts[swapIdx]
     try {
-      await Promise.all([
-        updateProduct(product.id, { sort_order: target.sort_order }),
-        updateProduct(target.id, { sort_order: product.sort_order }),
-      ])
+      await updateProduct(product.id, { sort_order: target.sort_order })
+      await updateProduct(target.id, { sort_order: product.sort_order })
     } catch (error) {
       setAlertModal({
         isOpen: true,
