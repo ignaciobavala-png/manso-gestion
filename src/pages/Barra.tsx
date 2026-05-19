@@ -10,7 +10,6 @@ export default function Barra() {
     products,
     balance,
     addSaleBatch,
-    addProduct,
     updateProduct,
     deleteProduct,
     deleteSale,
@@ -23,12 +22,6 @@ export default function Barra() {
   const [confirming, setConfirming] = useState(false)
   const [purchaseSuccess, setPurchaseSuccess] = useState(false)
   const [purchaseError, setPurchaseError] = useState<string | null>(null)
-  const [showAddItem, setShowAddItem] = useState(false)
-  const [newItem, setNewItem] = useState({
-    name: '',
-    price: '',
-    category: 'bebida' as 'bebida' | 'comida' | 'otro'
-  })
   const [alertModal, setAlertModal] = useState({
     isOpen: false,
     message: '',
@@ -42,8 +35,8 @@ export default function Barra() {
   })
   const [confirmingSaleDelete, setConfirmingSaleDelete] = useState<string | null>(null)
   const [deletingSale, setDeletingSale] = useState(false)
-  const [editingPrice, setEditingPrice] = useState<string | null>(null)
-  const [editPriceValue, setEditPriceValue] = useState('')
+  const [activeCategory, setActiveCategory] = useState<'bebida' | 'comida' | 'otro'>('bebida')
+  const [searchQuery, setSearchQuery] = useState('')
 
   if (!isInitialized) {
     return (
@@ -96,8 +89,9 @@ export default function Barra() {
   const handleConfirmPurchase = async () => {
     if (cartItems.length === 0) return
     for (const { product, qty } of cartItems) {
-      if (product.stock < qty) {
-        showError(`Stock insuficiente para "${product.name}". Disponible: ${product.stock}`)
+      const available = getDisplayStock(product)
+      if (available < qty) {
+        showError(`Stock insuficiente para "${product.name}". Disponible: ${available}`)
         return
       }
     }
@@ -175,73 +169,28 @@ export default function Barra() {
     }
   }
 
-  const startEditPrice = (productId: string, currentPrice: number) => {
-    setEditingPrice(productId)
-    setEditPriceValue(String(currentPrice))
-  }
-
-  const cancelEditPrice = () => {
-    setEditingPrice(null)
-    setEditPriceValue('')
-  }
-
-  const saveEditPrice = async (productId: string) => {
-    const price = parseFloat(editPriceValue)
-    if (isNaN(price) || price <= 0) return
-    try {
-      await updateProduct(productId, { price })
-      setEditingPrice(null)
-      setEditPriceValue('')
-    } catch (error) {
-      setAlertModal({
-        isOpen: true,
-        message: 'Error al actualizar precio: ' + (error as Error).message,
-        type: 'error'
-      })
-    }
-  }
-
-  const handleAddItem = async () => {
-    if (!newItem.name || !newItem.price) {
-      setAlertModal({
-        isOpen: true,
-        message: 'Por favor completa todos los campos',
-        type: 'warning'
-      })
-      return
-    }
-
-    const price = parseFloat(newItem.price)
-    if (isNaN(price) || price <= 0) {
-      setAlertModal({
-        isOpen: true,
-        message: 'Por favor ingresa un precio válido',
-        type: 'warning'
-      })
-      return
-    }
-
-    try {
-      await addProduct({
-        name: newItem.name,
-        price: price,
-        category: newItem.category,
-        stock: 0
-      })
-
-      setNewItem({ name: '', price: '', category: 'bebida' })
-      setShowAddItem(false)
-    } catch (error) {
-      setAlertModal({
-        isOpen: true,
-        message: 'Error al agregar producto: ' + (error as Error).message,
-        type: 'error'
-      })
-    }
-  }
-
   const CATEGORY_ORDER = ['bebida', 'comida', 'otro'] as const
-  const categories = CATEGORY_ORDER.filter(c => products.some(p => p.category === c))
+
+  const containerIds = new Set(
+    products.filter(p => p.container_product_id).map(p => p.container_product_id!)
+  )
+  const barraProducts = products.filter(p => !containerIds.has(p.id))
+
+  const categories = CATEGORY_ORDER.filter(c => barraProducts.some(p => p.category === c))
+  const filteredByCategory = barraProducts.filter(p => p.category === activeCategory)
+  const filteredProducts = searchQuery
+    ? filteredByCategory.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    : filteredByCategory
+
+  const getDisplayStock = (product: typeof products[number]): number => {
+    if (!product.container_product_id || !product.units_per_container) return product.stock
+    const container = products.find(p => p.id === product.container_product_id)
+    if (!container) return 0
+    const soldInEvent = activeSales
+      .filter(s => s.product_id === product.id)
+      .reduce((sum, s) => sum + s.quantity, 0)
+    return Math.max(0, container.stock * product.units_per_container - soldInEvent)
+  }
 
   return (
     <Background>
@@ -278,190 +227,113 @@ export default function Barra() {
       <main className="flex flex-col flex-grow">
         <div className="flex flex-col flex-grow bg-black">
           {/* Quick Stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-6 sm:p-8 bg-gradient-to-b from-zinc-900/50 to-black border-b-2 border-zinc-800">
-            <div className="bg-neutral-900 border border-white/10 rounded-2xl p-4">
-              <p className="text-sm text-gray-400">Productos</p>
-              <p className="text-2xl font-bold mt-1 text-white">{products.length}</p>
+          <div className="grid grid-cols-4 gap-2 px-4 py-3 bg-gradient-to-b from-zinc-900/50 to-black border-b border-zinc-800">
+            <div className="bg-neutral-900 border border-white/10 rounded-xl px-3 py-2">
+              <p className="text-[10px] text-gray-500 uppercase tracking-wider">Productos</p>
+              <p className="text-lg font-bold mt-0.5 text-white">{barraProducts.length}</p>
             </div>
-            <div className="bg-neutral-900 border border-white/10 rounded-2xl p-4">
-              <p className="text-sm text-gray-400">Stock Total</p>
-              <p className="text-2xl font-bold mt-1 text-white">
-                {products.reduce((sum, product) => sum + product.stock, 0)}
+            <div className="bg-neutral-900 border border-white/10 rounded-xl px-3 py-2">
+              <p className="text-[10px] text-gray-500 uppercase tracking-wider">Stock</p>
+              <p className="text-lg font-bold mt-0.5 text-white">
+                {barraProducts.reduce((sum, p) => sum + getDisplayStock(p), 0)}
               </p>
             </div>
-            <div className="bg-neutral-900 border border-white/10 rounded-2xl p-4">
-              <p className="text-sm text-gray-400">Ventas</p>
-              <p className="text-2xl font-bold mt-1 text-white">{activeSales.length}</p>
+            <div className="bg-neutral-900 border border-white/10 rounded-xl px-3 py-2">
+              <p className="text-[10px] text-gray-500 uppercase tracking-wider">Ventas</p>
+              <p className="text-lg font-bold mt-0.5 text-white">{activeSales.length}</p>
             </div>
-            <div className="bg-neutral-900 border border-white/10 rounded-2xl p-4">
-              <p className="text-sm text-gray-400">Ingresos</p>
-              <p className="text-2xl font-bold mt-1 text-emerald-400">{formatCurrency(activeSales.reduce((sum, s) => sum + s.total, 0))}</p>
+            <div className="bg-neutral-900 border border-white/10 rounded-xl px-3 py-2">
+              <p className="text-[10px] text-gray-500 uppercase tracking-wider">Ingresos</p>
+              <p className="text-lg font-bold mt-0.5 text-emerald-400">{formatCurrency(activeSales.reduce((sum, s) => sum + s.total, 0))}</p>
             </div>
           </div>
 
-          {/* Add Item Section */}
-          <div className="p-6 sm:p-8 border-t-2 border-zinc-800">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-white">Agregar Nuevo Item</h2>
-              <button
-                onClick={() => setShowAddItem(!showAddItem)}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl transition-colors"
-              >
-                {showAddItem ? 'Cancelar' : 'Agregar Item'}
-              </button>
-            </div>
-
-            {showAddItem && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2" htmlFor="barra-item-name">
-                      Nombre del Item
-                    </label>
-                    <input
-                      id="barra-item-name"
-                      type="text"
-                      value={newItem.name}
-                      onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
-                      placeholder="Ej: Coca Cola"
-                      className="w-full px-4 py-2 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2" htmlFor="barra-item-price">
-                      Precio (ARS)
-                    </label>
-                    <input
-                      id="barra-item-price"
-                      type="number"
-                      value={newItem.price}
-                      onChange={(e) => setNewItem({ ...newItem, price: e.target.value })}
-                      placeholder="Ej: 1500"
-                      min="0"
-                      step="100"
-                      className="w-full px-4 py-2 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2" htmlFor="barra-item-cat">
-                      Categoría
-                    </label>
-                    <select
-                      id="barra-item-cat"
-                      value={newItem.category}
-                      onChange={(e) => setNewItem({ ...newItem, category: e.target.value as 'bebida' | 'comida' | 'otro' })}
-                      className="w-full px-4 py-2 bg-neutral-900/80 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                    >
-                      <option value="bebida">Bebida</option>
-                      <option value="comida">Comida</option>
-                      <option value="otro">Otro</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="flex justify-end">
+          {/* Tabs + Search */}
+          <div className="sticky top-[73px] z-40 bg-black/95 border-b border-zinc-800 px-4 py-2">
+            <div className="flex items-center gap-2 max-w-6xl mx-auto">
+              <div className="flex gap-1 bg-white/5 rounded-xl p-1">
+                {categories.map(cat => (
                   <button
-                    onClick={handleAddItem}
-                    className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl transition-colors"
+                    key={cat}
+                    onClick={() => setActiveCategory(cat)}
+                    className={`px-4 py-1.5 text-sm font-medium rounded-lg capitalize transition-colors ${
+                      activeCategory === cat
+                        ? 'bg-emerald-700 text-white'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
                   >
-                    Agregar Producto
+                    {cat}
                   </button>
-                </div>
+                ))}
               </div>
-            )}
+              <div className="relative flex-1 max-w-xs">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  placeholder="Buscar..."
+                  className="w-full pl-9 pr-3 py-1.5 bg-neutral-900/80 border border-white/10 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+            </div>
           </div>
 
           {/* Product Grid */}
-          <div className="divide-y divide-white/10">
-            {categories.map(category => (
-              <div key={category} className="p-6 sm:p-8">
-                <h2 className="text-xl font-semibold mb-6 capitalize text-white">{category}</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {products
-                    .filter(product => product.category === category)
-                    .map((product) => (
+          <div className="px-4 py-4">
+            {filteredProducts.length === 0 ? (
+              <p className="text-center text-gray-500 py-12 text-sm">
+                {searchQuery ? 'Sin resultados para esa búsqueda' : 'No hay productos en esta categoría'}
+              </p>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+                {filteredProducts
+                  .sort((a, b) => a.name.localeCompare(b.name))
+                  .map((product) => {
+                    const displayStock = getDisplayStock(product)
+                    const isServing = !!product.container_product_id
+                    const containerName = isServing
+                      ? products.find(p => p.id === product.container_product_id)?.name
+                      : null
+                    return (
                       <div
                         key={product.id}
-                        className="bg-neutral-900 border border-white/10 rounded-2xl p-4"
+                        className="bg-neutral-900 border border-white/10 rounded-xl p-3"
                       >
-                        <div className="flex items-start justify-between mb-3">
-                          <div>
-                            <h3 className="font-medium text-lg text-white">{product.name}</h3>
-                            {editingPrice === product.id ? (
-                              <div className="flex items-center gap-2 mt-1">
-                                <input
-                                  type="number"
-                                  value={editPriceValue}
-                                  onChange={(e) => setEditPriceValue(e.target.value)}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') saveEditPrice(product.id)
-                                    if (e.key === 'Escape') cancelEditPrice()
-                                  }}
-                                  min="0"
-                                  step="100"
-                                  className="w-28 px-2 py-1 bg-neutral-800 border border-emerald-500 rounded-lg text-emerald-400 text-lg font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                                  autoFocus
-                                />
-                                <button
-                                  onClick={() => saveEditPrice(product.id)}
-                                  className="w-7 h-7 flex items-center justify-center bg-emerald-600 hover:bg-emerald-500 rounded-lg transition-colors"
-                                >
-                                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                  </svg>
-                                </button>
-                                <button
-                                  onClick={cancelEditPrice}
-                                  className="w-7 h-7 flex items-center justify-center bg-gray-600 hover:bg-gray-500 rounded-lg transition-colors"
-                                >
-                                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                  </svg>
-                                </button>
-                              </div>
-                            ) : (
-                              <p className="text-emerald-400 text-xl font-bold mt-1">
-                                {formatCurrency(product.price)}
-                              </p>
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="min-w-0 flex-1">
+                            <h3 className="font-medium text-sm text-white truncate">{product.name}</h3>
+                            {isServing && containerName && (
+                              <p className="text-[10px] text-indigo-400 truncate">Porción de {containerName}</p>
                             )}
+                            <p className="text-emerald-400 text-sm font-bold mt-1">
+                              {formatCurrency(product.price)}
+                            </p>
                           </div>
-                          <div className="flex items-start gap-3">
-                            <div className="text-right">
-                              <p className="text-sm text-gray-400">Stock</p>
-                              <p className={`text-lg font-bold ${
-                                product.stock < 10 ? 'text-amber-400' : 'text-emerald-400'
-                              }`}>
-                                {product.stock}
-                              </p>
-                            </div>
-                            <div className="flex flex-col gap-0.5">
+                          <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                            <div className="flex items-center gap-1">
                               <button
                                 onClick={() => moveProduct(product.id, 'up')}
-                                className="w-7 h-5 flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 rounded-t-lg transition-colors"
-                                aria-label={`Mover ${product.name} arriba`}
+                                className="w-5 h-4 flex items-center justify-center text-gray-600 hover:text-white transition-colors"
+                                aria-label="Arriba"
                               >
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
                                 </svg>
                               </button>
                               <button
                                 onClick={() => moveProduct(product.id, 'down')}
-                                className="w-7 h-5 flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 rounded-b-lg transition-colors"
-                                aria-label={`Mover ${product.name} abajo`}
+                                className="w-5 h-4 flex items-center justify-center text-gray-600 hover:text-white transition-colors"
+                                aria-label="Abajo"
                               >
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                 </svg>
                               </button>
                             </div>
-                            <button
-                              onClick={() => startEditPrice(product.id, product.price)}
-                              className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-emerald-400 hover:bg-emerald-900 hover:bg-opacity-20 rounded-lg transition-colors"
-                              aria-label={`Editar precio de ${product.name}`}
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                              </svg>
-                            </button>
+                            <p className={`text-xs font-bold ${displayStock < 10 ? 'text-amber-400' : 'text-gray-400'}`}>{displayStock}</p>
                             <button
                               onClick={() => {
                                 setConfirmModal({
@@ -471,43 +343,37 @@ export default function Barra() {
                                   productName: product.name
                                 })
                               }}
-                              className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-red-400 hover:bg-red-900 hover:bg-opacity-20 rounded-lg transition-colors"
-                              aria-label={`Eliminar ${product.name}`}
+                              className="w-5 h-5 flex items-center justify-center text-gray-600 hover:text-red-400 transition-colors"
+                              aria-label="Eliminar"
                             >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                               </svg>
                             </button>
                           </div>
                         </div>
-
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-400">Cantidad</span>
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => setCartQty(product.id, (cart[product.id] || 0) - 1)}
-                                className="w-11 h-11 flex items-center justify-center bg-gray-600 hover:bg-gray-500 active:bg-gray-400 rounded-lg transition-colors"
-                              >
-                                <span className="text-xl leading-none">−</span>
-                              </button>
-                              <span className={`text-xl font-bold w-10 text-center ${cart[product.id] ? 'text-emerald-400' : 'text-gray-500'}`}>
-                                {cart[product.id] || 0}
-                              </span>
-                              <button
-                                onClick={() => setCartQty(product.id, (cart[product.id] || 0) + 1)}
-                                className="w-11 h-11 flex items-center justify-center bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-500 rounded-lg transition-colors"
-                              >
-                                <span className="text-xl leading-none">+</span>
-                              </button>
-                            </div>
-                          </div>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => setCartQty(product.id, (cart[product.id] || 0) - 1)}
+                            className="w-8 h-8 flex items-center justify-center bg-gray-700 hover:bg-gray-600 active:bg-gray-500 rounded-lg transition-colors text-white text-sm font-bold"
+                          >
+                            −
+                          </button>
+                          <span className={`text-base font-bold w-7 text-center ${cart[product.id] ? 'text-emerald-400' : 'text-gray-600'}`}>
+                            {cart[product.id] || 0}
+                          </span>
+                          <button
+                            onClick={() => setCartQty(product.id, (cart[product.id] || 0) + 1)}
+                            className="w-8 h-8 flex items-center justify-center bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-500 rounded-lg transition-colors text-white text-sm font-bold"
+                          >
+                            +
+                          </button>
                         </div>
                       </div>
-                    ))}
-                </div>
+                    )
+                  })}
               </div>
-            ))}
+            )}
           </div>
 
         {/* Resumen del carrito */}

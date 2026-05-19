@@ -273,11 +273,35 @@ export const useAppStore = create<AppState>((set, get) => ({
     set(state => ({
       sales: [...inserted, ...state.sales],
       balance: state.balance + totalSum,
-      // Actualizar stock localmente para reflejar el decremento del trigger
       products: state.products.map(p => {
         const sold = items.find(i => i.product_id === p.id)
-        if (!sold) return p
-        return { ...p, stock: Math.max(0, p.stock - sold.quantity) }
+
+        if (sold) {
+          const sp = state.products.find(pr => pr.id === p.id)!
+          // Serving products have no own stock — skip
+          if (sp.container_product_id) return p
+          return { ...p, stock: Math.max(0, p.stock - sold.quantity) }
+        }
+
+        // Check if this product is a container for any sold serving product
+        const servingItems = items.filter(i => {
+          const sp = state.products.find(pr => pr.id === i.product_id)
+          return sp?.container_product_id === p.id
+        })
+        if (servingItems.length === 0) return p
+
+        // Mirror the floor-based deduction the DB trigger already applied
+        let bottlesToDeduct = 0
+        for (const si of servingItems) {
+          const sp = state.products.find(pr => pr.id === si.product_id)!
+          const upc = sp.units_per_container ?? 1
+          const soldBefore = state.sales
+            .filter(s => s.product_id === si.product_id && s.event_id === state.activeEvent?.id)
+            .reduce((sum, s) => sum + s.quantity, 0)
+          bottlesToDeduct +=
+            Math.floor((soldBefore + si.quantity) / upc) - Math.floor(soldBefore / upc)
+        }
+        return { ...p, stock: Math.max(0, p.stock - bottlesToDeduct) }
       }),
     }))
   },

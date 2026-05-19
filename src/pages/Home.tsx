@@ -17,6 +17,7 @@ export default function Home() {
     products,
     balance,
     updateProduct,
+    addProduct,
     activeEvent,
     closeEvent,
     sales,
@@ -32,6 +33,8 @@ export default function Home() {
     message: '',
     type: 'info' as 'info' | 'error' | 'warning' | 'success'
   })
+  const [showNewProduct, setShowNewProduct] = useState(false)
+  const [newProduct, setNewProduct] = useState({ name: '', price: '', category: 'bebida' as 'bebida' | 'comida' | 'otro' })
 
   useEffect(() => {
     const initial: Record<string, number> = {}
@@ -82,6 +85,30 @@ export default function Home() {
         message: 'Error al actualizar stock: ' + (error as Error).message,
         type: 'error'
       })
+    }
+  }
+
+  const handleAddProduct = async () => {
+    if (!newProduct.name || !newProduct.price) {
+      setAlertModal({ isOpen: true, message: 'Completá nombre y precio del producto', type: 'warning' })
+      return
+    }
+    const price = parseFloat(newProduct.price)
+    if (isNaN(price) || price <= 0) {
+      setAlertModal({ isOpen: true, message: 'Precio inválido', type: 'warning' })
+      return
+    }
+    try {
+      await addProduct({
+        name: newProduct.name,
+        price,
+        category: newProduct.category,
+        stock: 0,
+      })
+      setNewProduct({ name: '', price: '', category: 'bebida' })
+      setShowNewProduct(false)
+    } catch (error) {
+      setAlertModal({ isOpen: true, message: 'Error al agregar producto: ' + (error as Error).message, type: 'error' })
     }
   }
 
@@ -232,6 +259,52 @@ export default function Home() {
                           </div>
                         </div>
                       ))}
+                    </div>
+
+                    <div className="mt-6 border-t border-white/10 pt-4">
+                      <button
+                        onClick={() => setShowNewProduct(!showNewProduct)}
+                        className="flex items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 transition-colors font-medium"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                        Agregar producto independiente
+                      </button>
+                      {showNewProduct && (
+                        <div className="mt-3 flex flex-col sm:flex-row gap-2">
+                          <input
+                            type="text"
+                            value={newProduct.name}
+                            onChange={e => setNewProduct(p => ({ ...p, name: e.target.value }))}
+                            placeholder="Nombre del producto"
+                            className="flex-1 px-3 py-2 bg-neutral-900 border border-white/20 rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500 placeholder-gray-600"
+                          />
+                          <input
+                            type="number"
+                            value={newProduct.price}
+                            onChange={e => setNewProduct(p => ({ ...p, price: e.target.value }))}
+                            placeholder="Precio"
+                            min="0"
+                            className="w-full sm:w-28 px-3 py-2 bg-neutral-900 border border-white/20 rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500 placeholder-gray-600"
+                          />
+                          <select
+                            value={newProduct.category}
+                            onChange={e => setNewProduct(p => ({ ...p, category: e.target.value as 'bebida' | 'comida' | 'otro' }))}
+                            className="w-full sm:w-28 px-3 py-2 bg-neutral-900 border border-white/20 rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500"
+                          >
+                            <option value="bebida">Bebida</option>
+                            <option value="comida">Comida</option>
+                            <option value="otro">Otro</option>
+                          </select>
+                          <button
+                            onClick={handleAddProduct}
+                            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-xl transition-colors"
+                          >
+                            Agregar
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

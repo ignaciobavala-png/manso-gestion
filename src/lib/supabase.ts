@@ -17,6 +17,9 @@ export interface Database {
           price: number
           category: 'bebida' | 'comida' | 'otro'
           sort_order: number
+          visible_en_carta: boolean | null
+          container_product_id: string | null
+          units_per_container: number | null
           created_at: string
           updated_at: string
         }
@@ -27,6 +30,9 @@ export interface Database {
           price: number
           category: 'bebida' | 'comida' | 'otro'
           sort_order?: number
+          visible_en_carta?: boolean | null
+          container_product_id?: string | null
+          units_per_container?: number | null
           created_at?: string
           updated_at?: string
         }
@@ -37,6 +43,9 @@ export interface Database {
           price?: number
           category?: 'bebida' | 'comida' | 'otro'
           sort_order?: number
+          visible_en_carta?: boolean | null
+          container_product_id?: string | null
+          units_per_container?: number | null
           created_at?: string
           updated_at?: string
         }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import * as XLSX from 'xlsx'
 import { supabase } from '../../lib/supabase'
@@ -15,6 +15,14 @@ interface Registration {
   event_name?: string
 }
 
+interface UniqueEmail {
+  email: string
+  tickets: number
+  eventCount: number
+  lastEvent: string
+  lastDate: string
+}
+
 export default function Comunidad() {
   const navigate = useNavigate()
   const { events } = useAppStore()
@@ -22,6 +30,8 @@ export default function Comunidad() {
   const [loading, setLoading] = useState(true)
   const [selectedEvent, setSelectedEvent] = useState<string>('todos')
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useState<'emails' | 'registros'>('emails')
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -51,6 +61,25 @@ export default function Comunidad() {
     ? rows
     : rows.filter(r => r.event_id === selectedEvent)
 
+  const uniqueEmails = useMemo<UniqueEmail[]>(() => {
+    const map = new Map<string, { email: string; tickets: number; eventIds: Set<string>; lastEvent: string; lastDate: string }>()
+    for (const r of filtered) {
+      if (!map.has(r.email)) {
+        map.set(r.email, { email: r.email, tickets: 0, eventIds: new Set(), lastEvent: '', lastDate: '' })
+      }
+      const entry = map.get(r.email)!
+      entry.tickets++
+      entry.eventIds.add(r.event_id)
+      if (!entry.lastDate || r.registered_at > entry.lastDate) {
+        entry.lastDate = r.registered_at
+        entry.lastEvent = r.event_name ?? ''
+      }
+    }
+    return Array.from(map.values())
+      .map(e => ({ email: e.email, tickets: e.tickets, eventCount: e.eventIds.size, lastEvent: e.lastEvent, lastDate: e.lastDate }))
+      .sort((a, b) => b.lastDate.localeCompare(a.lastDate))
+  }, [filtered])
+
   const handleDelete = async (id: string) => {
     setDeletingId(id)
     const { error } = await supabase
@@ -64,13 +93,20 @@ export default function Comunidad() {
     setDeletingId(null)
   }
 
+  const handleCopyEmails = async () => {
+    const list = uniqueEmails.map(u => u.email).join('; ')
+    await navigator.clipboard.writeText(list)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
   const handleExport = () => {
-    const data = filtered.map(r => ({
-      Nombre: r.name,
-      Email: r.email,
-      Evento: r.event_name ?? '',
-      Registrado: new Date(r.registered_at).toLocaleString('es-AR'),
-      'Ingresó': r.used_at ? new Date(r.used_at).toLocaleString('es-AR') : 'No',
+    const data = uniqueEmails.map(u => ({
+      Email: u.email,
+      Entradas: u.tickets,
+      Eventos: u.eventCount,
+      'Último evento': u.lastEvent,
+      'Último registro': new Date(u.lastDate).toLocaleString('es-AR'),
     }))
 
     const ws = XLSX.utils.json_to_sheet(data)
@@ -94,12 +130,16 @@ export default function Comunidad() {
           </button>
           <div>
             <h2 className="text-xl font-bold text-white">Comunidad</h2>
-            <p className="text-gray-500 text-sm">{rows.length} registros totales</p>
+            <p className="text-gray-500 text-sm">
+              {viewMode === 'emails'
+                ? `${uniqueEmails.length} personas`
+                : `${filtered.length} registros`}
+            </p>
           </div>
         </div>
 
         {/* Controles */}
-        <div className="flex gap-3 mb-4">
+        <div className="flex gap-3 mb-3">
           <select
             value={selectedEvent}
             onChange={e => setSelectedEvent(e.target.value)}
@@ -114,19 +154,79 @@ export default function Comunidad() {
           </select>
 
           <button
+            onClick={handleCopyEmails}
+            disabled={uniqueEmails.length === 0}
+            className="bg-neutral-800 hover:bg-neutral-700 disabled:opacity-40 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap"
+          >
+            {copied ? '¡Copiado!' : 'Copiar mails'}
+          </button>
+          <button
             onClick={handleExport}
-            disabled={filtered.length === 0}
+            disabled={uniqueEmails.length === 0}
             className="bg-emerald-700 hover:bg-emerald-600 disabled:opacity-40 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap"
           >
             Exportar .xlsx
           </button>
         </div>
 
-        {/* Tabla */}
+        {/* Toggle vista */}
+        <div className="flex gap-1 mb-4 bg-white/5 rounded-xl p-1">
+          <button
+            onClick={() => setViewMode('emails')}
+            className={`flex-1 text-sm py-1.5 rounded-lg font-medium transition-colors ${
+              viewMode === 'emails'
+                ? 'bg-emerald-700 text-white'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            Emails únicos
+          </button>
+          <button
+            onClick={() => setViewMode('registros')}
+            className={`flex-1 text-sm py-1.5 rounded-lg font-medium transition-colors ${
+              viewMode === 'registros'
+                ? 'bg-white/15 text-white'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            Todos los registros
+          </button>
+        </div>
+
+        {/* Lista */}
         {loading ? (
           <div className="flex justify-center items-center h-48">
             <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-emerald-500" />
           </div>
+        ) : viewMode === 'emails' ? (
+          uniqueEmails.length === 0 ? (
+            <div className="text-center text-gray-500 py-16 text-sm">
+              No hay registros{selectedEvent !== 'todos' ? ' para este evento' : ''}.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {uniqueEmails.map(u => (
+                <div key={u.email} className="bg-neutral-900 border border-white/10 rounded-2xl px-4 py-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-white font-medium text-sm truncate">{u.email}</p>
+                      <p className="text-gray-600 text-xs mt-0.5">{u.lastEvent} · {new Date(u.lastDate).toLocaleDateString('es-AR')}</p>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <span className="text-xs bg-white/10 text-gray-300 px-2 py-0.5 rounded-full whitespace-nowrap">
+                        {u.tickets} {u.tickets === 1 ? 'entrada' : 'entradas'}
+                      </span>
+                      {u.eventCount > 1 && (
+                        <span className="text-xs bg-emerald-900/50 text-emerald-400 px-2 py-0.5 rounded-full whitespace-nowrap">
+                          {u.eventCount} eventos
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
         ) : filtered.length === 0 ? (
           <div className="text-center text-gray-500 py-16 text-sm">
             No hay registros{selectedEvent !== 'todos' ? ' para este evento' : ''}.
@@ -152,22 +252,20 @@ export default function Comunidad() {
                     <p className="text-gray-600 text-sm">
                       {new Date(r.registered_at).toLocaleDateString('es-AR')}
                     </p>
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => handleDelete(r.id)}
-                        disabled={deletingId === r.id}
-                        className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-40"
-                        aria-label="Eliminar registro"
-                      >
-                        {deletingId === r.id ? (
-                          <div className="animate-spin h-4 w-4 border-t-2 border-b-2 border-red-400 rounded-full" />
-                        ) : (
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        )}
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => handleDelete(r.id)}
+                      disabled={deletingId === r.id}
+                      className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-40"
+                      aria-label="Eliminar registro"
+                    >
+                      {deletingId === r.id ? (
+                        <div className="animate-spin h-4 w-4 border-t-2 border-b-2 border-red-400 rounded-full" />
+                      ) : (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      )}
+                    </button>
                   </div>
                 </div>
               </div>
