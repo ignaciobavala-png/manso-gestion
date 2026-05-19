@@ -295,7 +295,6 @@ export default function Home() {
                     </div>
                     <div className="space-y-4">
                       {products.map((product) => {
-                        const isContainer = products.some(p => p.container_product_id === product.id)
                         const isServing = !!product.container_product_id
                         const containerName = isServing
                           ? products.find(p => p.id === product.container_product_id)?.name
