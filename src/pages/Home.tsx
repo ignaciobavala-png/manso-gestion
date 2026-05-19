@@ -296,6 +296,7 @@ export default function Home() {
                     <div className="space-y-4">
                       {products.map((product) => {
                         const isServing = !!product.container_product_id
+                        const isContainer = products.some(p => p.container_product_id === product.id)
                         const containerName = isServing
                           ? products.find(p => p.id === product.container_product_id)?.name
                           : null
@@ -315,9 +316,14 @@ export default function Home() {
                                     Porción de {containerName}
                                   </span>
                                 )}
-                                {!isServing && (
+                                {!isServing && isContainer && (
                                   <span className="px-2 py-0.5 bg-amber-900/50 text-amber-300 text-xs rounded-full">
                                     Contenedor
+                                  </span>
+                                )}
+                                {!isServing && !isContainer && (
+                                  <span className="px-2 py-0.5 bg-gray-700/50 text-gray-400 text-xs rounded-full">
+                                    Independiente
                                   </span>
                                 )}
                                 {!isServing && (
