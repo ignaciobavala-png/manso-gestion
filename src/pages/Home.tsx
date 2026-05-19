@@ -316,17 +316,12 @@ export default function Home() {
                                     Porción de {containerName}
                                   </span>
                                 )}
-                                {isContainer && !isServing && (
+                                {!isServing && (
                                   <span className="px-2 py-0.5 bg-amber-900/50 text-amber-300 text-xs rounded-full">
                                     Contenedor
                                   </span>
                                 )}
-                                {!isContainer && !isServing && (
-                                  <span className="px-2 py-0.5 bg-gray-700/50 text-gray-400 text-xs rounded-full">
-                                    Independiente
-                                  </span>
-                                )}
-                                {isContainer && !isServing && (
+                                {!isServing && (
                                   <button
                                     onClick={() => setPortionsExpanded(isPortionOpen ? null : product.id)}
                                     className="ml-1 text-indigo-400 hover:text-indigo-300 transition-colors"
