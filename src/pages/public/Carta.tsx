@@ -157,12 +157,10 @@ export default function Carta() {
           <h1 className="text-white font-bold text-2xl text-center -mt-10 mb-6">Carta</h1>
         </div>
 
-        <div className="flex items-center gap-4 mb-8 px-6 w-full max-w-md mx-auto">
-          <div className="h-20 w-20 flex-shrink-0" />
-
+        <div className="mb-8 px-6 w-full max-w-md mx-auto">
           <button
             onClick={copyAlias}
-            className="flex-1 bg-white/5 border border-white/10 hover:border-emerald-500/50 rounded-2xl px-4 py-4 text-center transition-all active:scale-95"
+            className="w-full bg-white/5 border border-white/10 hover:border-emerald-500/50 rounded-2xl px-4 py-4 text-center transition-all active:scale-95"
           >
             <p className="text-white/40 text-xs uppercase tracking-widest mb-1">Alias de pago</p>
             <p className="text-white font-mono text-xl font-bold">
@@ -170,8 +168,6 @@ export default function Carta() {
             </p>
             {!aliasCopied && <p className="text-white/30 text-xs mt-1">Tocá para copiar</p>}
           </button>
-
-          <img src="/marcas/warsteiner_transparent.png" alt="Warsteiner" className="h-20 w-20 object-contain flex-shrink-0" style={{ filter: 'invert(1)' }} />
         </div>
 
         <div className="px-4 space-y-3 max-w-md mx-auto w-full">
@@ -184,8 +180,9 @@ export default function Carta() {
           )}
         </div>
 
-        <div className="mt-10 flex justify-center">
+        <div className="mt-10 flex justify-center items-center gap-8 px-6">
           <img src="/marcas/gin.png" alt="Heredero" className="h-56 w-auto object-contain" />
+          <img src="/marcas/warsteiner_transparent.png" alt="Warsteiner" className="h-56 w-auto object-contain" style={{ filter: 'invert(1)' }} />
         </div>
       </div>
     </PublicLayout>
