@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import PublicLayout from '../../components/PublicLayout'
@@ -43,9 +43,20 @@ function buildGroups(products: Product[]): Group[] {
 
 function AccordionGroup({ group }: { group: Group }) {
   const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  const toggle = () => {
+    const next = !open
+    setOpen(next)
+    if (next) {
+      setTimeout(() => {
+        ref.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      }, 250)
+    }
+  }
 
   return (
-    <div className={`relative rounded-2xl ${!open ? 'p-[1.5px] overflow-hidden' : 'border border-white/10'}`}>
+    <div ref={ref} className={`relative rounded-2xl ${!open ? 'p-[1.5px] overflow-hidden' : 'border border-white/10'}`}>
       {!open && (
         <div
           className="absolute animate-spin pointer-events-none"
@@ -57,30 +68,52 @@ function AccordionGroup({ group }: { group: Group }) {
           }}
         />
       )}
-      <div className="relative bg-neutral-900 rounded-2xl overflow-hidden">
+      <div className="relative rounded-2xl overflow-hidden">
         <button
-          onClick={() => setOpen(v => !v)}
-          className="w-full flex items-center justify-between px-5 py-4 bg-neutral-800 hover:bg-neutral-700 transition-colors"
+          onClick={toggle}
+          className="w-full flex items-center justify-center relative px-5 py-[14px] transition-all duration-200"
+          style={{
+            background: 'rgba(10,10,10,0.45)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            borderBottom: open ? '1px solid rgba(255,255,255,0.07)' : 'none',
+          }}
         >
-          <span className="text-white font-semibold text-sm tracking-wide">{group.label}</span>
-          <div className="flex items-center gap-2">
-            <span className="text-gray-500 text-xs">{group.items.length} {group.items.length === 1 ? 'item' : 'items'}</span>
-            <span className={`text-gray-400 text-sm transition-transform duration-200 inline-block ${open ? 'rotate-180' : ''}`}>
+          <span
+            className="text-white font-bold uppercase"
+            style={{ fontSize: 13, letterSpacing: '0.18em' }}
+          >
+            {group.label}
+          </span>
+          <div className="absolute right-5 flex items-center gap-2">
+            <span className={`text-gray-500 text-sm transition-transform duration-200 inline-block ${open ? 'rotate-180' : ''}`}>
               ▾
             </span>
           </div>
         </button>
 
-        {open && (
-          <div className="divide-y divide-white/5">
-            {group.items.map(product => (
-              <div key={product.id} className="flex items-center justify-between px-5 py-4">
-                <p className="text-white text-sm font-medium">{product.name}</p>
-                <p className="text-emerald-400 text-base font-bold ml-4 flex-shrink-0">{formatPrice(product.price)}</p>
-              </div>
-            ))}
+        <div
+          className="grid transition-[grid-template-rows] duration-300 ease-in-out"
+          style={{ gridTemplateRows: open ? '1fr' : '0fr' }}
+        >
+          <div className="overflow-hidden">
+            <div
+              className="divide-y divide-white/5"
+              style={{
+                background: 'rgba(10,10,10,0.75)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+              }}
+            >
+              {group.items.map(product => (
+                <div key={product.id} className="flex items-center justify-between px-5 py-4">
+                  <p className="text-white text-sm font-medium">{product.name}</p>
+                  <p className="text-emerald-400 text-base font-bold ml-4 flex-shrink-0">{formatPrice(product.price)}</p>
+                </div>
+              ))}
+            </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   )
@@ -163,7 +196,10 @@ export default function Carta() {
             className="w-full bg-white/5 border border-white/10 hover:border-emerald-500/50 rounded-2xl px-4 py-4 text-center transition-all active:scale-95"
           >
             <p className="text-white/40 text-xs uppercase tracking-widest mb-1">Alias de pago</p>
-            <p className="text-white font-mono text-xl font-bold">
+            <p
+              className="text-white text-xl font-bold"
+              style={{ fontFamily: "'Space Mono', monospace", letterSpacing: '0.05em' }}
+            >
               {aliasCopied ? '✓ Copiado' : 'MANSO.CLUB'}
             </p>
             {!aliasCopied && <p className="text-white/30 text-xs mt-1">Tocá para copiar</p>}

@@ -11,6 +11,23 @@ interface TicketData {
   event_id: string
 }
 
+function GlowBorder({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={`relative rounded-2xl p-[1.5px] overflow-hidden ${className}`}>
+      <div
+        className="absolute animate-spin pointer-events-none"
+        style={{
+          inset: '-50%',
+          background: 'conic-gradient(from 0deg, transparent 0%, transparent 88%, rgba(16,185,129,0.5) 94%, rgba(110,231,183,0.7) 97%, transparent 100%)',
+          animationDuration: '4s',
+          animationTimingFunction: 'linear',
+        }}
+      />
+      {children}
+    </div>
+  )
+}
+
 function getTicketsForEvent(eventId: string): TicketData[] {
   try {
     const raw = localStorage.getItem(`manso_tickets_${eventId}`)
@@ -114,14 +131,16 @@ function TicketCard({ ticket }: { ticket: TicketData }) {
         <p className="text-gray-500 text-xs mt-1">Mostrá este QR en la puerta de ingreso.</p>
       </div>
 
-      <div className="border-t border-white/5 px-6 py-3 flex">
-        <button
-          onClick={handleDownload}
-          disabled={downloading}
-          className="w-full bg-emerald-700 hover:bg-emerald-600 disabled:opacity-60 text-white font-medium py-2.5 rounded-xl transition-all active:scale-95 text-sm"
-        >
-          {downloading ? 'Generando...' : 'Descargar entrada'}
-        </button>
+      <div className="border-t border-white/5 px-6 py-3">
+        <GlowBorder>
+          <button
+            onClick={handleDownload}
+            disabled={downloading}
+            className="relative w-full bg-neutral-900 hover:bg-neutral-800 disabled:opacity-40 text-white font-medium py-2.5 rounded-2xl transition-all active:scale-95 text-sm"
+          >
+            {downloading ? 'Generando...' : 'Descargar entrada'}
+          </button>
+        </GlowBorder>
       </div>
 
       <div className="h-1 bg-gradient-to-r from-emerald-700 via-emerald-500 to-emerald-700" />
@@ -202,7 +221,16 @@ export default function MiEntrada() {
   if (tickets === null) {
     return (
       <PublicLayout showHeader={false}>
-        <div className="flex-1 flex flex-col items-center justify-center px-5 pb-10 -mt-12 max-w-sm w-full mx-auto text-center gap-5">
+        <div className="flex-1 flex flex-col items-center justify-center px-5 pb-10 max-w-sm w-full mx-auto text-center gap-5">
+          <div className="w-full flex justify-start -mb-2">
+            <button
+              onClick={() => navigate('/')}
+              className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all text-lg"
+            >
+              ←
+            </button>
+          </div>
+
           <span className="text-5xl">📲</span>
           <div>
             <h2 className="text-xl font-bold text-white">No tenés entradas guardadas</h2>
@@ -213,15 +241,17 @@ export default function MiEntrada() {
 
           {!showEmailSearch ? (
             <div className="w-full flex flex-col gap-3">
-              <button
-                onClick={() => navigate('/registro')}
-                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-4 rounded-2xl transition-all active:scale-95 text-sm"
-              >
-                Obtener entrada →
-              </button>
+              <GlowBorder>
+                <button
+                  onClick={() => navigate('/registro')}
+                  className="relative w-full bg-neutral-900 hover:bg-neutral-800 text-white font-semibold py-4 rounded-2xl transition-all active:scale-95 text-sm"
+                >
+                  Obtener entrada →
+                </button>
+              </GlowBorder>
               <button
                 onClick={() => setShowEmailSearch(true)}
-                className="w-full bg-orange-700 hover:bg-orange-600 text-white font-semibold py-4 rounded-2xl transition-all active:scale-95 text-sm border border-orange-500/50"
+                className="w-full bg-neutral-900/80 hover:bg-neutral-800 text-white/55 hover:text-white/80 font-semibold py-4 rounded-2xl transition-all active:scale-95 text-sm"
               >
                 Ya me registré, buscar por email
               </button>
@@ -233,21 +263,23 @@ export default function MiEntrada() {
                 placeholder="tu@email.com"
                 value={email}
                 onChange={e => { setEmail(e.target.value); setSearchError('') }}
-                className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-4 text-white text-sm placeholder-gray-500 outline-none focus:border-emerald-500 transition-all"
+                className="w-full bg-neutral-900 border border-white/10 rounded-2xl px-4 py-4 text-white text-sm placeholder-gray-600 outline-none focus:border-white/30 transition-all"
               />
-              <button
-                onClick={handleEmailSearch}
-                disabled={searching || !email.trim()}
-                className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold py-4 rounded-2xl transition-all active:scale-95 text-sm"
-              >
-                {searching ? 'Buscando...' : 'Buscar entradas'}
-              </button>
+              <GlowBorder>
+                <button
+                  onClick={handleEmailSearch}
+                  disabled={searching || !email.trim()}
+                  className="relative w-full bg-neutral-900 hover:bg-neutral-800 disabled:opacity-40 text-white font-semibold py-4 rounded-2xl transition-all active:scale-95 text-sm"
+                >
+                  {searching ? 'Buscando...' : 'Buscar entradas'}
+                </button>
+              </GlowBorder>
               {searchError && (
                 <p className="text-red-400 text-sm">{searchError}</p>
               )}
               <button
                 onClick={() => { setShowEmailSearch(false); setEmail(''); setSearchError('') }}
-                className="text-gray-500 hover:text-gray-300 text-sm underline transition-all"
+                className="text-white/40 hover:text-white/70 text-sm transition-all"
               >
                 ← Volver
               </button>
@@ -262,7 +294,15 @@ export default function MiEntrada() {
     <PublicLayout>
       <div className="flex-1 flex flex-col items-center px-5 pb-10">
         {tickets.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-center gap-5 -mt-12 max-w-sm w-full">
+          <div className="flex-1 flex flex-col items-center justify-center text-center gap-5 max-w-sm w-full">
+            <div className="w-full flex justify-start -mb-2">
+              <button
+                onClick={() => navigate('/')}
+                className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all text-lg"
+              >
+                ←
+              </button>
+            </div>
             <span className="text-5xl">📲</span>
             <div>
               <h2 className="text-xl font-bold text-white">No tenés entradas guardadas</h2>
@@ -270,12 +310,14 @@ export default function MiEntrada() {
                 Las entradas se guardan solo en el dispositivo donde las registraste.
               </p>
             </div>
-            <button
-              onClick={() => navigate('/registro')}
-              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-4 rounded-2xl transition-all active:scale-95 text-sm"
-            >
-              Obtener entrada →
-            </button>
+            <GlowBorder className="w-full">
+              <button
+                onClick={() => navigate('/registro')}
+                className="relative w-full bg-neutral-900 hover:bg-neutral-800 text-white font-semibold py-4 rounded-2xl transition-all active:scale-95 text-sm"
+              >
+                Obtener entrada →
+              </button>
+            </GlowBorder>
           </div>
         ) : (
           <div className="w-full max-w-sm space-y-5">
