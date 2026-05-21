@@ -35,7 +35,7 @@ export default function Home() {
     type: 'info' as 'info' | 'error' | 'warning' | 'success'
   })
   const [showNewProduct, setShowNewProduct] = useState(false)
-  const [newProduct, setNewProduct] = useState({ name: '', price: '', category: 'bebida' as 'bebida' | 'comida' | 'otro' })
+  const [newProduct, setNewProduct] = useState({ name: '', price: '', category: 'bebida' as 'bebida' | 'comida' | 'otro', subcategory: '' })
   const [portionsExpanded, setPortionsExpanded] = useState<string | null>(null)
   const [newPortion, setNewPortion] = useState({ name: '', price: '', units: '5' })
   const [editingPrice, setEditingPrice] = useState<string | null>(null)
@@ -108,9 +108,10 @@ export default function Home() {
         name: newProduct.name,
         price,
         category: newProduct.category,
+        subcategory: newProduct.subcategory || null,
         stock: 0,
       })
-      setNewProduct({ name: '', price: '', category: 'bebida' })
+      setNewProduct({ name: '', price: '', category: 'bebida', subcategory: '' })
       setShowNewProduct(false)
     } catch (error) {
       setAlertModal({ isOpen: true, message: 'Error al agregar producto: ' + (error as Error).message, type: 'error' })
@@ -382,6 +383,21 @@ export default function Home() {
                                   </button>
                                 </p>
                               )}
+                              {product.category === 'bebida' && (
+                                <div className="flex items-center gap-1.5 mt-1.5">
+                                  <span className="text-xs text-gray-600">Carta:</span>
+                                  <select
+                                    value={product.subcategory || ''}
+                                    onChange={e => updateProduct(product.id, { subcategory: e.target.value || null })}
+                                    className="text-xs bg-neutral-800 border border-white/10 rounded-lg px-2 py-0.5 text-gray-300 focus:outline-none focus:border-emerald-500 cursor-pointer"
+                                  >
+                                    <option value="">Sin clasificar</option>
+                                    <option value="trago">Trago</option>
+                                    <option value="cerveza">Cerveza</option>
+                                    <option value="sin_alcohol">Sin alcohol</option>
+                                  </select>
+                                </div>
+                              )}
                             </div>
                             <div className="flex items-center gap-3">
                               <button
@@ -504,13 +520,25 @@ export default function Home() {
                           />
                           <select
                             value={newProduct.category}
-                            onChange={e => setNewProduct(p => ({ ...p, category: e.target.value as 'bebida' | 'comida' | 'otro' }))}
+                            onChange={e => setNewProduct(p => ({ ...p, category: e.target.value as 'bebida' | 'comida' | 'otro', subcategory: '' }))}
                             className="w-full sm:w-28 px-3 py-2 bg-neutral-900 border border-white/20 rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500"
                           >
                             <option value="bebida">Bebida</option>
                             <option value="comida">Comida</option>
                             <option value="otro">Otro</option>
                           </select>
+                          {newProduct.category === 'bebida' && (
+                            <select
+                              value={newProduct.subcategory}
+                              onChange={e => setNewProduct(p => ({ ...p, subcategory: e.target.value }))}
+                              className="w-full sm:w-36 px-3 py-2 bg-neutral-900 border border-white/20 rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500"
+                            >
+                              <option value="">Sin clasificar</option>
+                              <option value="trago">Trago</option>
+                              <option value="cerveza">Cerveza</option>
+                              <option value="sin_alcohol">Sin alcohol</option>
+                            </select>
+                          )}
                           <button
                             onClick={handleAddProduct}
                             className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-xl transition-colors"

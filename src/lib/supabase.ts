@@ -16,6 +16,7 @@ export interface Database {
           stock: number
           price: number
           category: 'bebida' | 'comida' | 'otro'
+          subcategory: string | null
           sort_order: number
           visible_en_carta: boolean | null
           container_product_id: string | null
@@ -29,6 +30,7 @@ export interface Database {
           stock?: number
           price: number
           category: 'bebida' | 'comida' | 'otro'
+          subcategory?: string | null
           sort_order?: number
           visible_en_carta?: boolean | null
           container_product_id?: string | null
@@ -42,6 +44,7 @@ export interface Database {
           stock?: number
           price?: number
           category?: 'bebida' | 'comida' | 'otro'
+          subcategory?: string | null
           sort_order?: number
           visible_en_carta?: boolean | null
           container_product_id?: string | null
