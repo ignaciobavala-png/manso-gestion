@@ -170,19 +170,33 @@ export default function Carta() {
           </button>
         </div>
 
-        <div className="px-4 space-y-3 max-w-md mx-auto w-full">
-          {groups.length === 0 ? (
-            <div className="text-center py-16">
-              <p className="text-gray-600 text-sm">No hay productos disponibles</p>
-            </div>
-          ) : (
-            groups.map(group => <AccordionGroup key={group.key} group={group} />)
-          )}
-        </div>
+        <div className="px-4 max-w-md mx-auto w-full">
+          <div className="space-y-3">
+            {groups.length === 0 ? (
+              <div className="text-center py-16">
+                <p className="text-gray-600 text-sm">No hay productos disponibles</p>
+              </div>
+            ) : (
+              groups.map(group => <AccordionGroup key={group.key} group={group} />)
+            )}
+          </div>
 
-        <div className="mt-10 flex justify-center items-center gap-8 px-6">
-          <img src="/marcas/gin.png" alt="Heredero" className="h-56 w-auto object-contain" />
-          <img src="/marcas/warsteiner_transparent.png" alt="Warsteiner" className="h-56 w-auto object-contain" style={{ filter: 'invert(1)' }} />
+          <div className="flex justify-center items-center gap-4 mt-3 mb-4">
+            {/* Gin: imagen vertical, ocupa bien su espacio */}
+            <img
+              src="/marcas/gin.png"
+              alt="Heredero"
+              style={{ width: '40vw', maxWidth: 160, height: 'auto' }}
+            />
+            {/* Warsteiner: imagen cuadrada con mucho padding — recortamos con overflow hidden */}
+            <div style={{ width: '40vw', maxWidth: 160, overflow: 'hidden' }}>
+              <img
+                src="/marcas/warsteiner_transparent.png"
+                alt="Warsteiner"
+                style={{ width: '100%', transform: 'scale(2)', transformOrigin: 'center center', filter: 'invert(1)', display: 'block' }}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </PublicLayout>
