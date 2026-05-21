@@ -42,7 +42,7 @@ function buildGroups(products: Product[]): Group[] {
 }
 
 function AccordionGroup({ group }: { group: Group }) {
-  const [open, setOpen] = useState(true)
+  const [open, setOpen] = useState(false)
 
   return (
     <div className="bg-neutral-900 border border-white/10 rounded-2xl overflow-hidden">
@@ -145,17 +145,17 @@ export default function Carta() {
         </div>
 
         <div className="flex items-center justify-center gap-4 mb-8 px-6 w-full max-w-md mx-auto">
-          <img src="/marcas/gin.png" alt="Gin" className="h-14 w-auto object-contain opacity-90 flex-shrink-0" />
+          <div className="w-14 flex-shrink-0" />
 
           <button
             onClick={copyAlias}
-            className="flex-1 bg-white/5 border border-white/10 hover:border-emerald-500/50 rounded-2xl px-4 py-3 text-center transition-all active:scale-95"
+            className="flex-1 bg-white/5 border border-white/10 hover:border-emerald-500/50 rounded-2xl px-4 py-4 text-center transition-all active:scale-95"
           >
             <p className="text-white/40 text-xs uppercase tracking-widest mb-1">Alias de pago</p>
-            <p className="text-white font-mono text-sm font-bold">
+            <p className="text-white font-mono text-xl font-bold">
               {aliasCopied ? '✓ Copiado' : 'MANSO.CLUB'}
             </p>
-            {!aliasCopied && <p className="text-white/30 text-xs mt-0.5">Tocá para copiar</p>}
+            {!aliasCopied && <p className="text-white/30 text-xs mt-1">Tocá para copiar</p>}
           </button>
 
           <img src="/marcas/warsteiner_transparent.png" alt="Warsteiner" className="h-14 w-auto object-contain opacity-90 flex-shrink-0" />
@@ -169,6 +169,10 @@ export default function Carta() {
           ) : (
             groups.map(group => <AccordionGroup key={group.key} group={group} />)
           )}
+        </div>
+
+        <div className="mt-10 flex justify-center">
+          <img src="/marcas/gin.png" alt="Heredero" className="h-28 w-auto object-contain opacity-85" />
         </div>
       </div>
     </PublicLayout>
