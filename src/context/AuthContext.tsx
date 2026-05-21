@@ -49,7 +49,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    Promise.all([
+      supabase.auth.getSession(),
+      refreshUsernames(),
+    ]).then(([{ data: { session } }]) => {
       setSession(session)
       setIsLoading(false)
     })
@@ -57,8 +60,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
     })
-
-    refreshUsernames()
 
     return () => subscription.unsubscribe()
   }, [])

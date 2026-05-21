@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Background from '../components/Background'
 
@@ -9,8 +9,12 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const { signIn } = useAuth()
+  const { signIn, session, role } = useAuth()
   const navigate = useNavigate()
+
+  if (session) {
+    return <Navigate to={role === 'control' ? '/admin/home' : '/admin/barra'} replace />
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -65,7 +69,7 @@ export default function Login() {
                   onChange={e => { setUsername(e.target.value); setError('') }}
                   autoComplete="username"
                   autoCapitalize="none"
-                  placeholder="control / empleados"
+                  placeholder="Tu usuario"
                   className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
                 />
               </div>

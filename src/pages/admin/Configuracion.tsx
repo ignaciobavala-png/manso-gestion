@@ -44,8 +44,8 @@ export default function Configuracion() {
       setUsernameError('El usuario debe tener al menos 3 caracteres')
       return
     }
-    if (/\s/.test(trimmed)) {
-      setUsernameError('El usuario no puede tener espacios')
+    if (!/^[a-z0-9_-]+$/i.test(trimmed)) {
+      setUsernameError('Solo letras, números, guiones y underscores')
       return
     }
 
