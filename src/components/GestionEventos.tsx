@@ -198,7 +198,10 @@ export default function GestionEventos() {
                     )}
                     <button
                       onClick={() => {
-                        navigator.clipboard.writeText(`${window.location.origin}/registro?event=${e.id}`)
+                        const url = e.slug
+                          ? `${window.location.origin}/registro/${e.slug}`
+                          : `${window.location.origin}/registro?event=${e.id}`
+                        navigator.clipboard.writeText(url)
                         setCopiedId(e.id)
                         setTimeout(() => setCopiedId(null), 2000)
                       }}

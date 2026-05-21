@@ -7,10 +7,19 @@ interface Props {
   onCreated?: () => void
 }
 
+const slugify = (text: string) =>
+  text.toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+
 export default function EventCreator({ onCreated }: Props) {
   const { addEvent } = useAppStore()
 
-  const [form, setForm] = useState({ name: '', description: '', ticketPrice: '', startDate: '', aliasPago: '', cbuPago: '' })
+  const [form, setForm] = useState({ name: '', slug: '', description: '', ticketPrice: '', startDate: '', aliasPago: '', cbuPago: '' })
+  const [slugEdited, setSlugEdited] = useState(false)
   const [isPaid, setIsPaid] = useState(false)
   const [qrCodeUrl, setQrCodeUrl] = useState('')
   const [createdEventName, setCreatedEventName] = useState('')
@@ -39,6 +48,7 @@ export default function EventCreator({ onCreated }: Props) {
         setSaving(false)
         return
       }
+      const finalSlug = form.slug.trim() || slugify(form.name.trim())
       const event = await addEvent({
         name: form.name.trim(),
         description: form.description.trim() || undefined,
@@ -51,9 +61,12 @@ export default function EventCreator({ onCreated }: Props) {
         start_date: new Date(form.startDate).toISOString(),
         ticket_alias_pago: form.aliasPago.trim() || null,
         ticket_cbu_pago: form.cbuPago.trim() || null,
+        slug: finalSlug || null,
       })
 
-      const qrData = `${window.location.origin}/registro?event=${event.id}`
+      const qrData = event.slug
+        ? `${window.location.origin}/registro/${event.slug}`
+        : `${window.location.origin}/registro?event=${event.id}`
       const url = await QRCode.toDataURL(qrData, {
         width: 300,
         margin: 2,
@@ -62,7 +75,8 @@ export default function EventCreator({ onCreated }: Props) {
 
       setQrCodeUrl(url)
       setCreatedEventName(form.name.trim())
-      setForm({ name: '', description: '', ticketPrice: '', startDate: '', aliasPago: '', cbuPago: '' })
+      setForm({ name: '', slug: '', description: '', ticketPrice: '', startDate: '', aliasPago: '', cbuPago: '' })
+      setSlugEdited(false)
     } catch (error) {
       setAlertModal({
         isOpen: true,
@@ -119,11 +133,36 @@ export default function EventCreator({ onCreated }: Props) {
         <input
           type="text"
           value={form.name}
-          onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
-          placeholder="Ej: Fiesta de verano"
+          onChange={(e) => {
+            const name = e.target.value
+            setForm(prev => ({
+              ...prev,
+              name,
+              slug: slugEdited ? prev.slug : slugify(name),
+            }))
+          }}
+          placeholder="Ej: La Nube — Vinilos"
           className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
           onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
         />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-1">Link del evento</label>
+        <div className="flex items-center gap-2 bg-neutral-900/80 border border-white/20 rounded-xl px-4 py-3 focus-within:ring-2 focus-within:ring-emerald-500 focus-within:border-transparent">
+          <span className="text-gray-500 text-sm whitespace-nowrap">/registro/</span>
+          <input
+            type="text"
+            value={form.slug}
+            onChange={(e) => {
+              setSlugEdited(true)
+              setForm(prev => ({ ...prev, slug: slugify(e.target.value) }))
+            }}
+            placeholder="la-nube-vinilos"
+            className="flex-1 bg-transparent text-white text-sm placeholder-gray-600 focus:outline-none min-w-0"
+          />
+        </div>
+        <p className="text-xs text-gray-600 mt-1">Se genera automáticamente desde el nombre. Podés editarlo.</p>
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-3">Tipo de entrada</label>

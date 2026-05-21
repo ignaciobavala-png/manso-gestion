@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams, useParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import PublicLayout from '../../components/PublicLayout'
 
@@ -8,6 +8,7 @@ interface EventCard {
   name: string
   start_date: string | null
   flyer_url: string | null
+  slug: string | null
 }
 
 interface ActiveEvent {
@@ -35,17 +36,21 @@ function Cartelera() {
   const [loading, setLoading] = useState(true)
   const [copiedId, setCopiedId] = useState<string | null>(null)
 
-  const copyLink = (eventId: string) => {
-    const url = `${window.location.origin}/registro?event=${eventId}`
-    navigator.clipboard.writeText(url)
-    setCopiedId(eventId)
+  const eventUrl = (event: EventCard) =>
+    event.slug
+      ? `${window.location.origin}/registro/${event.slug}`
+      : `${window.location.origin}/registro?event=${event.id}`
+
+  const copyLink = (event: EventCard) => {
+    navigator.clipboard.writeText(eventUrl(event))
+    setCopiedId(event.id)
     setTimeout(() => setCopiedId(null), 2000)
   }
 
   useEffect(() => {
     supabase
       .from('events')
-      .select('id, name, start_date, flyer_url')
+      .select('id, name, start_date, flyer_url, slug')
       .eq('is_active', true)
       .eq('registrations_open', true)
       .order('start_date', { ascending: true })
@@ -99,7 +104,7 @@ function Cartelera() {
             {events.map(event => (
               <button
                 key={event.id}
-                onClick={() => navigate(`/registro?event=${event.id}`)}
+                onClick={() => navigate(event.slug ? `/registro/${event.slug}` : `/registro?event=${event.id}`)}
                 className="group flex flex-col rounded-2xl overflow-hidden border border-white/10 bg-black/40 backdrop-blur-sm hover:border-emerald-500/50 transition-all active:scale-95 text-left"
               >
                 <div className="w-full relative" style={{ paddingBottom: '125%' }}>
@@ -132,7 +137,7 @@ function Cartelera() {
                     </p>
                     <span className="text-white/20 mx-0.5">·</span>
                     <button
-                      onClick={e => { e.stopPropagation(); copyLink(event.id) }}
+                      onClick={e => { e.stopPropagation(); copyLink(event) }}
                       className="text-gray-400 hover:text-emerald-300 text-xs transition-colors active:scale-90"
                     >
                       {copiedId === event.id ? '✓ Link copiado' : 'Copiar link'}
@@ -148,9 +153,9 @@ function Cartelera() {
   )
 }
 
-// ─── Formulario de registro (con ?event=) ───────────────────────────────────
+// ─── Formulario de registro ─────────────────────────────────────────────────
 
-function EventoForm({ eventParam }: { eventParam: string }) {
+function EventoForm({ eventParam, isSlug = false }: { eventParam: string; isSlug?: boolean }) {
   const navigate = useNavigate()
   const [activeEvent, setActiveEvent] = useState<ActiveEvent | null>(null)
   const [venueConfig, setVenueConfig] = useState<VenueConfig | null>(null)
@@ -195,7 +200,7 @@ function EventoForm({ eventParam }: { eventParam: string }) {
       const { data, error } = await supabase
         .from('events')
         .select('id, name, registrations_open, max_capacity, is_paid, regular_ticket_price, start_date, ticket_alias_pago, ticket_cbu_pago')
-        .eq('id', eventParam)
+        .eq(isSlug ? 'slug' : 'id', eventParam)
         .eq('is_active', true)
         .single()
 
@@ -586,8 +591,10 @@ function FormSkeleton() {
 
 export default function RegistroEntrada() {
   const [searchParams] = useSearchParams()
-  const eventParam = searchParams.get('event')
+  const { slug } = useParams<{ slug: string }>()
+  const eventQueryParam = searchParams.get('event')
 
-  if (!eventParam) return <Cartelera />
-  return <EventoForm key={eventParam} eventParam={eventParam} />
+  if (slug) return <EventoForm key={slug} eventParam={slug} isSlug={true} />
+  if (eventQueryParam) return <EventoForm key={eventQueryParam} eventParam={eventQueryParam} isSlug={false} />
+  return <Cartelera />
 }
