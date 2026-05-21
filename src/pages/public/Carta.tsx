@@ -51,8 +51,8 @@ function AccordionGroup({ group }: { group: Group }) {
           className="absolute animate-spin pointer-events-none"
           style={{
             inset: '-50%',
-            background: 'conic-gradient(from 0deg, transparent 0%, transparent 72%, #10b981 85%, #6ee7b7 92%, transparent 100%)',
-            animationDuration: '2.5s',
+            background: 'conic-gradient(from 0deg, transparent 0%, transparent 88%, rgba(16,185,129,0.5) 94%, rgba(110,231,183,0.7) 97%, transparent 100%)',
+            animationDuration: '4s',
             animationTimingFunction: 'linear',
           }}
         />
@@ -157,7 +157,9 @@ export default function Carta() {
           <h1 className="text-white font-bold text-2xl text-center -mt-10 mb-6">Carta</h1>
         </div>
 
-        <div className="flex items-center justify-center gap-4 mb-8 px-6 w-full max-w-md mx-auto">
+        <div className="flex items-center gap-4 mb-8 px-6 w-full max-w-md mx-auto">
+          <div className="h-20 w-20 flex-shrink-0" />
+
           <button
             onClick={copyAlias}
             className="flex-1 bg-white/5 border border-white/10 hover:border-emerald-500/50 rounded-2xl px-4 py-4 text-center transition-all active:scale-95"
@@ -169,7 +171,7 @@ export default function Carta() {
             {!aliasCopied && <p className="text-white/30 text-xs mt-1">Tocá para copiar</p>}
           </button>
 
-          <img src="/marcas/warsteiner_transparent.png" alt="Warsteiner" className="h-20 w-auto object-contain flex-shrink-0" />
+          <img src="/marcas/warsteiner_transparent.png" alt="Warsteiner" className="h-20 w-20 object-contain flex-shrink-0" />
         </div>
 
         <div className="px-4 space-y-3 max-w-md mx-auto w-full">
