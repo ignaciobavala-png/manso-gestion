@@ -171,7 +171,7 @@ export default function Carta() {
             {!aliasCopied && <p className="text-white/30 text-xs mt-1">Tocá para copiar</p>}
           </button>
 
-          <img src="/marcas/warsteiner_transparent.png" alt="Warsteiner" className="h-20 w-20 object-contain flex-shrink-0" />
+          <img src="/marcas/warsteiner_transparent.png" alt="Warsteiner" className="h-20 w-20 object-contain flex-shrink-0" style={{ filter: 'invert(1)' }} />
         </div>
 
         <div className="px-4 space-y-3 max-w-md mx-auto w-full">
