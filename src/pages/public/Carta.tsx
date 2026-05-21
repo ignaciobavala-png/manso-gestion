@@ -78,6 +78,13 @@ export default function Carta() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [aliasCopied, setAliasCopied] = useState(false)
+
+  const copyAlias = () => {
+    navigator.clipboard.writeText('MANSO.CLUB')
+    setAliasCopied(true)
+    setTimeout(() => setAliasCopied(false), 2000)
+  }
 
   useEffect(() => {
     supabase
@@ -137,11 +144,21 @@ export default function Carta() {
           <h1 className="text-white font-bold text-2xl text-center -mt-10 mb-6">Carta</h1>
         </div>
 
-        <div className="text-center mb-8">
-          <p className="inline-block bg-white/5 border border-white/10 rounded-xl px-5 py-2.5">
-            <span className="text-white font-bold text-base tracking-wide">ALIAS: </span>
-            <span className="text-white font-mono text-base font-semibold">MANSO.CLUB</span>
-          </p>
+        <div className="flex items-center justify-center gap-4 mb-8 px-6 w-full max-w-md mx-auto">
+          <img src="/marcas/gin.png" alt="Gin" className="h-14 w-auto object-contain opacity-90 flex-shrink-0" />
+
+          <button
+            onClick={copyAlias}
+            className="flex-1 bg-white/5 border border-white/10 hover:border-emerald-500/50 rounded-2xl px-4 py-3 text-center transition-all active:scale-95"
+          >
+            <p className="text-white/40 text-xs uppercase tracking-widest mb-1">Alias de pago</p>
+            <p className="text-white font-mono text-sm font-bold">
+              {aliasCopied ? '✓ Copiado' : 'MANSO.CLUB'}
+            </p>
+            {!aliasCopied && <p className="text-white/30 text-xs mt-0.5">Tocá para copiar</p>}
+          </button>
+
+          <img src="/marcas/warsteiner_transparent.png" alt="Warsteiner" className="h-14 w-auto object-contain opacity-90 flex-shrink-0" />
         </div>
 
         <div className="px-4 space-y-3 max-w-md mx-auto w-full">
