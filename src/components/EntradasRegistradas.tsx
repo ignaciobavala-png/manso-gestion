@@ -37,6 +37,8 @@ export default function EntradasRegistradas() {
   const [verifyingId, setVerifyingId] = useState<string | null>(null)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
   const [toast, setToast] = useState({ isOpen: false, message: '', type: 'info' as 'info' | 'success' | 'warning', name: '' })
+  const [search, setSearch] = useState('')
+  const [sortAlpha, setSortAlpha] = useState(false)
 
   const loadRegistrations = useCallback(async () => {
     if (!activeEvent) return
@@ -191,6 +193,15 @@ export default function EntradasRegistradas() {
     }
   }, [])
 
+  const q = search.toLowerCase().trim()
+  const displayRows = (q
+    ? rows.filter(r => r.name.toLowerCase().includes(q) || r.email.toLowerCase().includes(q))
+    : [...rows]
+  ).sort((a, b) => sortAlpha
+    ? a.name.localeCompare(b.name, 'es')
+    : 0
+  )
+
   const ingresados = rows.filter(r => r.used_at).length
   const pendientes = rows.filter(r => !r.used_at).length
   const porVerificar = rows.filter(r => r.receipt_url && !r.payment_verified && !r.used_at).length
@@ -240,6 +251,35 @@ export default function EntradasRegistradas() {
             </div>
           ) : (
             <>
+              <div className="flex gap-2 mb-4">
+                <div className="flex-1 flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2">
+                  <svg className="w-4 h-4 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+                  </svg>
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    placeholder="Buscar nombre o email..."
+                    className="flex-1 bg-transparent text-white text-sm placeholder-gray-500 outline-none"
+                  />
+                  {search && (
+                    <button onClick={() => setSearch('')} className="text-gray-500 hover:text-white transition-colors text-xs">✕</button>
+                  )}
+                </div>
+                <button
+                  onClick={() => setSortAlpha(prev => !prev)}
+                  title={sortAlpha ? 'Orden cronológico' : 'Orden alfabético'}
+                  className={`flex-shrink-0 px-3 py-2 rounded-xl border text-xs font-medium transition-colors ${
+                    sortAlpha
+                      ? 'bg-emerald-700/40 border-emerald-600/50 text-emerald-300'
+                      : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'
+                  }`}
+                >
+                  A–Z
+                </button>
+              </div>
+
               <div className="flex gap-3 mb-4 flex-wrap">
                 <div className="bg-neutral-900 border border-white/10 rounded-xl px-3 py-1.5">
                   <span className="text-gray-400 text-xs">Total: </span>
@@ -268,7 +308,10 @@ export default function EntradasRegistradas() {
               </div>
 
               <div className="space-y-2 max-h-96 overflow-y-auto">
-                {rows.map(r => {
+                {displayRows.length === 0 && (
+                  <p className="text-center text-gray-500 py-8 text-sm">Sin resultados para "{search}"</p>
+                )}
+                {displayRows.map(r => {
                   const isPending = !r.used_at && !r.payment_verified
 
                   return (
