@@ -12,7 +12,7 @@ interface AuthContextType {
   session: Session | null
   role: Role
   isLoading: boolean
-  signIn: (pin: string) => Promise<Role>
+  signIn: (username: string, password: string) => Promise<Role>
   signOut: () => Promise<void>
 }
 
@@ -41,22 +41,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe()
   }, [])
 
-  const signIn = async (pin: string): Promise<Role> => {
-    // Intentar con cuenta de Control
-    const { error: controlError } = await supabase.auth.signInWithPassword({
-      email: CONTROL_EMAIL,
-      password: pin,
-    })
-    if (!controlError) return 'control'
+  const signIn = async (username: string, password: string): Promise<Role> => {
+    const emailMap: Record<string, string> = {
+      control: CONTROL_EMAIL,
+      empleados: EMPLEADO_EMAIL,
+    }
+    const email = emailMap[username.toLowerCase().trim()]
+    if (!email) return null
 
-    // Intentar con cuenta de Empleados
-    const { error: empleadoError } = await supabase.auth.signInWithPassword({
-      email: EMPLEADO_EMAIL,
-      password: pin,
-    })
-    if (!empleadoError) return 'empleado'
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) return null
 
-    return null
+    return getRoleFromEmail(email)
   }
 
   const signOut = async () => {
