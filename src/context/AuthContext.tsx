@@ -6,14 +6,18 @@ import { supabase } from '../lib/supabase'
 const CONTROL_EMAIL = 'control@manso.internal'
 const EMPLEADO_EMAIL = 'empleado@manso.internal'
 
+const DEFAULT_USERNAMES = { control: 'control', empleados: 'empleados' }
+
 type Role = 'control' | 'empleado' | null
 
 interface AuthContextType {
   session: Session | null
   role: Role
   isLoading: boolean
-  signIn: (pin: string) => Promise<Role>
+  signIn: (username: string, password: string) => Promise<Role>
   signOut: () => Promise<void>
+  usernames: { control: string; empleados: string }
+  refreshUsernames: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -27,9 +31,28 @@ function getRoleFromEmail(email: string | undefined): Role {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [usernames, setUsernames] = useState(DEFAULT_USERNAMES)
+
+  const refreshUsernames = async () => {
+    const { data } = await supabase
+      .from('venue_config')
+      .select('control_username, empleado_username')
+      .eq('id', 1)
+      .single()
+
+    if (data) {
+      setUsernames({
+        control: data.control_username || DEFAULT_USERNAMES.control,
+        empleados: data.empleado_username || DEFAULT_USERNAMES.empleados,
+      })
+    }
+  }
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    Promise.all([
+      supabase.auth.getSession(),
+      refreshUsernames(),
+    ]).then(([{ data: { session } }]) => {
       setSession(session)
       setIsLoading(false)
     })
@@ -41,22 +64,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe()
   }, [])
 
-  const signIn = async (pin: string): Promise<Role> => {
-    // Intentar con cuenta de Control
-    const { error: controlError } = await supabase.auth.signInWithPassword({
-      email: CONTROL_EMAIL,
-      password: pin,
-    })
-    if (!controlError) return 'control'
+  const signIn = async (username: string, password: string): Promise<Role> => {
+    const u = username.toLowerCase().trim()
+    let email: string | null = null
 
-    // Intentar con cuenta de Empleados
-    const { error: empleadoError } = await supabase.auth.signInWithPassword({
-      email: EMPLEADO_EMAIL,
-      password: pin,
-    })
-    if (!empleadoError) return 'empleado'
+    if (u === usernames.control.toLowerCase()) email = CONTROL_EMAIL
+    else if (u === usernames.empleados.toLowerCase()) email = EMPLEADO_EMAIL
 
-    return null
+    if (!email) return null
+
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) return null
+
+    return getRoleFromEmail(email)
   }
 
   const signOut = async () => {
@@ -66,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const role = getRoleFromEmail(session?.user?.email)
 
   return (
-    <AuthContext.Provider value={{ session, role, isLoading, signIn, signOut }}>
+    <AuthContext.Provider value={{ session, role, isLoading, signIn, signOut, usernames, refreshUsernames }}>
       {children}
     </AuthContext.Provider>
   )

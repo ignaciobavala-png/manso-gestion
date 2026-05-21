@@ -16,6 +16,7 @@ export interface Database {
           stock: number
           price: number
           category: 'bebida' | 'comida' | 'otro'
+          subcategory: string | null
           sort_order: number
           visible_en_carta: boolean | null
           container_product_id: string | null
@@ -29,6 +30,7 @@ export interface Database {
           stock?: number
           price: number
           category: 'bebida' | 'comida' | 'otro'
+          subcategory?: string | null
           sort_order?: number
           visible_en_carta?: boolean | null
           container_product_id?: string | null
@@ -42,6 +44,7 @@ export interface Database {
           stock?: number
           price?: number
           category?: 'bebida' | 'comida' | 'otro'
+          subcategory?: string | null
           sort_order?: number
           visible_en_carta?: boolean | null
           container_product_id?: string | null
@@ -153,6 +156,7 @@ export interface Database {
           flyer_url?: string | null
           ticket_alias_pago?: string | null
           ticket_cbu_pago?: string | null
+          slug?: string | null
           closed_at?: string
           created_at: string
           updated_at: string
@@ -172,6 +176,7 @@ export interface Database {
           flyer_url?: string | null
           ticket_alias_pago?: string | null
           ticket_cbu_pago?: string | null
+          slug?: string | null
           closed_at?: string
           created_at?: string
           updated_at?: string
@@ -191,6 +196,7 @@ export interface Database {
           flyer_url?: string | null
           ticket_alias_pago?: string | null
           ticket_cbu_pago?: string | null
+          slug?: string | null
           closed_at?: string
           created_at?: string
           updated_at?: string

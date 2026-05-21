@@ -32,8 +32,8 @@ export default async function handler(req: Request): Promise<Response> {
     return json({ error: 'Datos incompletos' }, 400)
   }
 
-  if (!/^\d{4}$/.test(newPin)) {
-    return json({ error: 'El PIN debe ser de 4 dígitos' }, 400)
+  if (newPin.length < 6) {
+    return json({ error: 'La contraseña debe tener al menos 6 caracteres' }, 400)
   }
 
   if (role !== 'control' && role !== 'empleado') {

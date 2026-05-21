@@ -102,9 +102,6 @@ export default async function handler(req: Request): Promise<Response> {
       })
 
     if (error) {
-      if (error.code === '23505') {
-        return json({ error: `"${name}" ya está registrado con este email`, name_conflict: name }, 409)
-      }
       return json({ error: 'Error al registrar' }, 500)
     }
 

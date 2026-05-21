@@ -23,6 +23,7 @@ function App() {
 
           {/* Rutas públicas */}
           <Route path="/registro" element={<RegistroEntrada />} />
+          <Route path="/registro/:slug" element={<RegistroEntrada />} />
           <Route path="/mi-entrada" element={<MiEntrada />} />
           <Route path="/carta" element={<Carta />} />
 

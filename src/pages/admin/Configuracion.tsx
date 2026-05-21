@@ -1,141 +1,249 @@
 import { useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
+import { supabase } from '../../lib/supabase'
 
-type PinStep = 'idle' | 'enter_new' | 'confirm_1' | 'confirm_2' | 'success' | 'error'
+type Target = 'control' | 'empleado'
+type Step = 'idle' | 'form' | 'success' | 'error'
 
-interface PinFlow {
-  target: 'control' | 'empleado' | null
-  step: PinStep
-  newPin: string
+interface Flow {
+  target: Target | null
+  step: Step
   message: string
 }
 
-const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫']
-
-const STEP_LABELS: Record<PinStep, string> = {
-  idle: '',
-  enter_new: 'Nuevo PIN',
-  confirm_1: 'Confirmá el PIN',
-  confirm_2: 'Confirmá una vez más',
-  success: '',
-  error: '',
-}
-
 export default function Configuracion() {
-  const { session } = useAuth()
+  const { session, usernames, refreshUsernames } = useAuth()
 
-  // ── PIN flow ─────────────────────────────────────────────────────────────
-  const [flow, setFlow] = useState<PinFlow>({ target: null, step: 'idle', newPin: '', message: '' })
-  const [pin, setPin] = useState('')
-  const [pinLoading, setPinLoading] = useState(false)
+  const [flow, setFlow] = useState<Flow>({ target: null, step: 'idle', message: '' })
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showNew, setShowNew] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [formError, setFormError] = useState('')
 
-  // ── PIN handlers ──────────────────────────────────────────────────────────
-  const resetPin = () => {
-    setFlow({ target: null, step: 'idle', newPin: '', message: '' })
-    setPin('')
+  // username flow
+  const [usernameTarget, setUsernameTarget] = useState<Target | null>(null)
+  const [newUsername, setNewUsername] = useState('')
+  const [usernameLoading, setUsernameLoading] = useState(false)
+  const [usernameError, setUsernameError] = useState('')
+  const [usernameSuccess, setUsernameSuccess] = useState(false)
+
+  const resetUsername = () => {
+    setUsernameTarget(null)
+    setNewUsername('')
+    setUsernameError('')
+    setUsernameSuccess(false)
   }
 
-  const startFlow = (target: 'control' | 'empleado') => {
-    setFlow({ target, step: 'enter_new', newPin: '', message: '' })
-    setPin('')
-  }
-
-  const handleKey = async (key: string) => {
-    if (pinLoading || key === '') return
-
-    if (key === '⌫') {
-      setPin(p => p.slice(0, -1))
+  const handleUsernameSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setUsernameError('')
+    const trimmed = newUsername.trim()
+    if (!trimmed || trimmed.length < 3) {
+      setUsernameError('El usuario debe tener al menos 3 caracteres')
+      return
+    }
+    if (!/^[a-z0-9_-]+$/i.test(trimmed)) {
+      setUsernameError('Solo letras, números, guiones y underscores')
       return
     }
 
-    if (pin.length >= 4) return
+    setUsernameLoading(true)
+    const column = usernameTarget === 'control' ? 'control_username' : 'empleado_username'
+    const { error } = await supabase
+      .from('venue_config')
+      .update({ [column]: trimmed.toLowerCase() })
+      .eq('id', 1)
 
-    const current = pin + key
-    setPin(current)
-    if (current.length < 4) return
+    if (error) {
+      setUsernameError('Error al guardar. Intentá de nuevo.')
+    } else {
+      await refreshUsernames()
+      setUsernameSuccess(true)
+    }
+    setUsernameLoading(false)
+  }
 
-    if (flow.step === 'enter_new') {
-      setFlow(f => ({ ...f, step: 'confirm_1', newPin: current, message: '' }))
-      setPin('')
+  const reset = () => {
+    setFlow({ target: null, step: 'idle', message: '' })
+    setNewPassword('')
+    setConfirmPassword('')
+    setShowNew(false)
+    setShowConfirm(false)
+    setFormError('')
+  }
+
+  const startFlow = (target: Target) => {
+    setFlow({ target, step: 'form', message: '' })
+    setNewPassword('')
+    setConfirmPassword('')
+    setFormError('')
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setFormError('')
+
+    if (newPassword.length < 6) {
+      setFormError('La contraseña debe tener al menos 6 caracteres')
       return
     }
 
-    if (flow.step === 'confirm_1') {
-      if (current !== flow.newPin) {
-        setFlow(f => ({ ...f, step: 'enter_new', newPin: '', message: 'No coincidió. Ingresá el nuevo PIN de vuelta.' }))
-        setPin('')
-        return
-      }
-      setFlow(f => ({ ...f, step: 'confirm_2', message: '' }))
-      setPin('')
+    if (newPassword !== confirmPassword) {
+      setFormError('Las contraseñas no coinciden')
+      setConfirmPassword('')
       return
     }
 
-    if (flow.step === 'confirm_2') {
-      if (current !== flow.newPin) {
-        setFlow(f => ({ ...f, step: 'enter_new', newPin: '', message: 'No coincidió. Empezá de nuevo.' }))
-        setPin('')
-        return
+    setLoading(true)
+    try {
+      const res = await fetch('/api/change-pin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token ?? ''}`,
+        },
+        body: JSON.stringify({ role: flow.target, newPin: newPassword }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setFlow(f => ({ ...f, step: 'success' }))
+      } else {
+        setFlow(f => ({ ...f, step: 'error', message: data.error || 'Error al cambiar la contraseña.' }))
       }
-
-      setPinLoading(true)
-      setPin('')
-      try {
-        const res = await fetch('/api/change-pin', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session?.access_token ?? ''}`,
-          },
-          body: JSON.stringify({ role: flow.target, newPin: flow.newPin }),
-        })
-        const data = await res.json()
-        setFlow(f => ({ ...f, step: res.ok ? 'success' : 'error', message: res.ok ? '' : (data.error || 'Error al cambiar el PIN.') }))
-      } catch {
-        setFlow(f => ({ ...f, step: 'error', message: 'Sin conexión. Intentá de nuevo.' }))
-      } finally {
-        setPinLoading(false)
-      }
+    } catch {
+      setFlow(f => ({ ...f, step: 'error', message: 'Sin conexión. Intentá de nuevo.' }))
+    } finally {
+      setLoading(false)
     }
   }
 
-  // ── PANTALLA: teclado PIN ─────────────────────────────────────────────────
-  if (flow.step !== 'idle' && flow.step !== 'success' && flow.step !== 'error') {
-    const progressStep = flow.step === 'enter_new' ? 1 : flow.step === 'confirm_1' ? 2 : 3
+  if (usernameTarget) {
+    if (usernameSuccess) {
+      return (
+        <div className="flex flex-col items-center text-center py-8 space-y-4">
+          <div className="w-14 h-14 rounded-full bg-emerald-900/40 border border-emerald-700 flex items-center justify-center text-2xl text-emerald-400 font-bold">✓</div>
+          <div>
+            <p className="text-white font-semibold">Usuario actualizado</p>
+            <p className="text-gray-500 text-sm mt-1">
+              {usernameTarget === 'control'
+                ? `Desde ahora ingresás con "${usernames.control}".`
+                : `Los empleados ingresan con "${usernames.empleados}".`}
+            </p>
+          </div>
+          <button onClick={resetUsername} className="text-gray-500 text-sm underline underline-offset-2">Volver</button>
+        </div>
+      )
+    }
+
     return (
-      <div className="flex flex-col items-center py-2">
-        <button onClick={resetPin} className="self-start text-gray-500 text-sm mb-6">← Volver</button>
+      <div className="flex flex-col py-2">
+        <button onClick={resetUsername} className="self-start text-gray-500 text-sm mb-6">← Volver</button>
 
-        <div className="flex items-center gap-2 mb-5">
-          {[1, 2, 3].map(s => (
-            <div key={s} className={`h-1 w-8 rounded-full transition-colors ${s <= progressStep ? 'bg-emerald-500' : 'bg-white/20'}`} />
-          ))}
-        </div>
+        <p className="text-white font-semibold mb-1">
+          {usernameTarget === 'control' ? 'Tu usuario (Control)' : 'Usuario de empleados'}
+        </p>
+        <p className="text-gray-500 text-sm mb-1">
+          Actual: <span className="text-white font-mono">{usernameTarget === 'control' ? usernames.control : usernames.empleados}</span>
+        </p>
+        <p className="text-gray-500 text-sm mb-6">Solo letras, números y guiones. Sin espacios.</p>
 
-        <p className="text-gray-400 text-sm uppercase tracking-widest mb-1">{STEP_LABELS[flow.step]}</p>
-        {flow.message && <p className="text-red-400 text-sm mt-2 mb-1 text-center">{flow.message}</p>}
+        <form onSubmit={handleUsernameSubmit} className="space-y-4">
+          <div>
+            <label className="text-white/60 text-xs font-medium mb-1.5 block">Nuevo usuario</label>
+            <input
+              type="text"
+              value={newUsername}
+              onChange={e => { setNewUsername(e.target.value); setUsernameError('') }}
+              autoComplete="off"
+              autoCapitalize="none"
+              placeholder="ej: ana / staff"
+              className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
+            />
+          </div>
 
-        <div className="flex gap-5 my-6">
-          {[0, 1, 2, 3].map(i => (
-            <div key={i} className={`w-3 h-3 rounded-full border-2 transition-all duration-150 ${pin.length > i ? 'bg-emerald-400 border-emerald-400 scale-110' : 'bg-transparent border-gray-600'}`} />
-          ))}
-        </div>
+          {usernameError && <p className="text-red-400 text-sm text-center">{usernameError}</p>}
 
-        <div className="grid grid-cols-3 gap-3 w-64">
-          {KEYS.map((key, i) => {
-            if (key === '') return <div key={i} />
-            return (
+          <button
+            type="submit"
+            disabled={usernameLoading || !newUsername.trim()}
+            className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-white/10 disabled:text-gray-600 text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-95 text-sm"
+          >
+            {usernameLoading ? 'Guardando...' : 'Guardar usuario'}
+          </button>
+        </form>
+      </div>
+    )
+  }
+
+  if (flow.step === 'form') {
+    return (
+      <div className="flex flex-col py-2">
+        <button onClick={reset} className="self-start text-gray-500 text-sm mb-6">← Volver</button>
+
+        <p className="text-white font-semibold mb-1">
+          {flow.target === 'control' ? 'Tu contraseña' : 'Contraseña de empleados'}
+        </p>
+        <p className="text-gray-500 text-sm mb-6">
+          {flow.target === 'control'
+            ? 'Usá una contraseña segura. La vas a necesitar para entrar al panel.'
+            : 'Todos los empleados usarán esta contraseña para acceder a Barra y Entradas.'}
+        </p>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="text-white/60 text-xs font-medium mb-1.5 block">Nueva contraseña</label>
+            <div className="relative">
+              <input
+                type={showNew ? 'text' : 'password'}
+                value={newPassword}
+                onChange={e => { setNewPassword(e.target.value); setFormError('') }}
+                autoComplete="new-password"
+                placeholder="Mínimo 6 caracteres"
+                className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 pr-16 text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
+              />
               <button
-                key={i}
-                onClick={() => handleKey(key)}
-                disabled={pinLoading}
-                className={`h-14 rounded-2xl text-xl font-medium transition-all duration-100 active:scale-95 bg-white/10 hover:bg-white/20 ${key === '⌫' ? 'text-gray-400' : 'text-white'} ${pinLoading ? 'opacity-40 pointer-events-none' : ''}`}
+                type="button"
+                onClick={() => setShowNew(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors text-xs px-1"
               >
-                {key}
+                {showNew ? 'Ocultar' : 'Ver'}
               </button>
-            )
-          })}
-        </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-white/60 text-xs font-medium mb-1.5 block">Confirmá la contraseña</label>
+            <div className="relative">
+              <input
+                type={showConfirm ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={e => { setConfirmPassword(e.target.value); setFormError('') }}
+                autoComplete="new-password"
+                placeholder="Repetí la contraseña"
+                className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 pr-16 text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirm(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors text-xs px-1"
+              >
+                {showConfirm ? 'Ocultar' : 'Ver'}
+              </button>
+            </div>
+          </div>
+
+          {formError && <p className="text-red-400 text-sm text-center">{formError}</p>}
+
+          <button
+            type="submit"
+            disabled={loading || !newPassword || !confirmPassword}
+            className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-white/10 disabled:text-gray-600 text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-95 text-sm mt-2"
+          >
+            {loading ? 'Guardando...' : 'Guardar contraseña'}
+          </button>
+        </form>
       </div>
     )
   }
@@ -145,12 +253,14 @@ export default function Configuracion() {
       <div className="flex flex-col items-center text-center py-8 space-y-4">
         <div className="w-14 h-14 rounded-full bg-emerald-900/40 border border-emerald-700 flex items-center justify-center text-2xl text-emerald-400 font-bold">✓</div>
         <div>
-          <p className="text-white font-semibold">PIN actualizado</p>
+          <p className="text-white font-semibold">Contraseña actualizada</p>
           <p className="text-gray-500 text-sm mt-1">
-            {flow.target === 'control' ? 'Usá el nuevo PIN la próxima vez que ingreses.' : 'Los empleados ya pueden usar el nuevo PIN.'}
+            {flow.target === 'control'
+              ? 'Usá la nueva contraseña la próxima vez que ingreses.'
+              : 'Los empleados ya pueden usar la nueva contraseña.'}
           </p>
         </div>
-        <button onClick={resetPin} className="text-gray-500 text-sm underline underline-offset-2">Volver</button>
+        <button onClick={reset} className="text-gray-500 text-sm underline underline-offset-2">Volver</button>
       </div>
     )
   }
@@ -168,21 +278,44 @@ export default function Configuracion() {
     )
   }
 
-  // ── PANTALLA: idle (menú principal de config) ─────────────────────────────
   return (
     <div className="space-y-6">
+      <div className="border-t border-white/10" />
+
+      <div className="space-y-3">
+        <p className="text-gray-500 text-sm uppercase tracking-widest">Usuarios de acceso</p>
+        <button
+          onClick={() => { setUsernameTarget('control'); setNewUsername(''); setUsernameError(''); setUsernameSuccess(false) }}
+          className="w-full flex items-center justify-between bg-white/10 hover:bg-white/20 rounded-xl px-4 py-3.5 transition-colors"
+        >
+          <div className="text-left">
+            <p className="text-white text-sm font-medium">Tu usuario (Control)</p>
+            <p className="text-gray-500 text-sm font-mono">{usernames.control}</p>
+          </div>
+          <span className="text-gray-400 text-lg">›</span>
+        </button>
+        <button
+          onClick={() => { setUsernameTarget('empleado'); setNewUsername(''); setUsernameError(''); setUsernameSuccess(false) }}
+          className="w-full flex items-center justify-between bg-white/10 hover:bg-white/20 rounded-xl px-4 py-3.5 transition-colors"
+        >
+          <div className="text-left">
+            <p className="text-white text-sm font-medium">Usuario de empleados</p>
+            <p className="text-gray-500 text-sm font-mono">{usernames.empleados}</p>
+          </div>
+          <span className="text-gray-400 text-lg">›</span>
+        </button>
+      </div>
 
       <div className="border-t border-white/10" />
 
-      {/* PINs */}
       <div className="space-y-3">
-        <p className="text-gray-500 text-sm uppercase tracking-widest">PINs de acceso</p>
+        <p className="text-gray-500 text-sm uppercase tracking-widest">Contraseñas de acceso</p>
         <button
           onClick={() => startFlow('control')}
           className="w-full flex items-center justify-between bg-white/10 hover:bg-white/20 rounded-xl px-4 py-3.5 transition-colors"
         >
           <div className="text-left">
-            <p className="text-white text-sm font-medium">Tu PIN (Control)</p>
+            <p className="text-white text-sm font-medium">Tu contraseña (Control)</p>
             <p className="text-gray-500 text-sm">Acceso al panel de administración</p>
           </div>
           <span className="text-gray-400 text-lg">›</span>
@@ -192,13 +325,12 @@ export default function Configuracion() {
           className="w-full flex items-center justify-between bg-white/10 hover:bg-white/20 rounded-xl px-4 py-3.5 transition-colors"
         >
           <div className="text-left">
-            <p className="text-white text-sm font-medium">PIN de empleados</p>
+            <p className="text-white text-sm font-medium">Contraseña de empleados</p>
             <p className="text-gray-500 text-sm">Acceso a Barra y Entradas</p>
           </div>
           <span className="text-gray-400 text-lg">›</span>
         </button>
       </div>
-
     </div>
   )
 }
