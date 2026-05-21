@@ -31,8 +31,8 @@ function buildGroups(products: Product[]): Group[] {
 
   const bebidas = products.filter(p => p.category === 'bebida')
   add('trago',       'Tragos',      bebidas.filter(p => p.subcategory === 'trago'))
-  add('cerveza',     'Cervezas',    bebidas.filter(p => p.subcategory === 'cerveza'))
   add('vino',        'Vinos',       bebidas.filter(p => !p.subcategory))
+  add('cerveza',     'Cervezas',    bebidas.filter(p => p.subcategory === 'cerveza'))
   add('sin_alcohol', 'Sin alcohol', bebidas.filter(p => p.subcategory === 'sin_alcohol'))
 
   add('comida', 'Comidas', products.filter(p => p.category === 'comida'))
@@ -45,30 +45,43 @@ function AccordionGroup({ group }: { group: Group }) {
   const [open, setOpen] = useState(false)
 
   return (
-    <div className="bg-neutral-900 border border-white/10 rounded-2xl overflow-hidden">
-      <button
-        onClick={() => setOpen(v => !v)}
-        className="w-full flex items-center justify-between px-5 py-4 bg-neutral-800 hover:bg-neutral-700 transition-colors"
-      >
-        <span className="text-white font-semibold text-sm tracking-wide">{group.label}</span>
-        <div className="flex items-center gap-2">
-          <span className="text-gray-500 text-xs">{group.items.length} {group.items.length === 1 ? 'item' : 'items'}</span>
-          <span className={`text-gray-400 text-sm transition-transform duration-200 inline-block ${open ? 'rotate-180' : ''}`}>
-            ▾
-          </span>
-        </div>
-      </button>
-
-      {open && (
-        <div className="divide-y divide-white/5">
-          {group.items.map(product => (
-            <div key={product.id} className="flex items-center justify-between px-5 py-4">
-              <p className="text-white text-sm font-medium">{product.name}</p>
-              <p className="text-emerald-400 text-base font-bold ml-4 flex-shrink-0">{formatPrice(product.price)}</p>
-            </div>
-          ))}
-        </div>
+    <div className={`relative rounded-2xl ${!open ? 'p-[1.5px] overflow-hidden' : 'border border-white/10'}`}>
+      {!open && (
+        <div
+          className="absolute animate-spin pointer-events-none"
+          style={{
+            inset: '-50%',
+            background: 'conic-gradient(from 0deg, transparent 0%, transparent 72%, #10b981 85%, #6ee7b7 92%, transparent 100%)',
+            animationDuration: '2.5s',
+            animationTimingFunction: 'linear',
+          }}
+        />
       )}
+      <div className="relative bg-neutral-900 rounded-2xl overflow-hidden">
+        <button
+          onClick={() => setOpen(v => !v)}
+          className="w-full flex items-center justify-between px-5 py-4 bg-neutral-800 hover:bg-neutral-700 transition-colors"
+        >
+          <span className="text-white font-semibold text-sm tracking-wide">{group.label}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-gray-500 text-xs">{group.items.length} {group.items.length === 1 ? 'item' : 'items'}</span>
+            <span className={`text-gray-400 text-sm transition-transform duration-200 inline-block ${open ? 'rotate-180' : ''}`}>
+              ▾
+            </span>
+          </div>
+        </button>
+
+        {open && (
+          <div className="divide-y divide-white/5">
+            {group.items.map(product => (
+              <div key={product.id} className="flex items-center justify-between px-5 py-4">
+                <p className="text-white text-sm font-medium">{product.name}</p>
+                <p className="text-emerald-400 text-base font-bold ml-4 flex-shrink-0">{formatPrice(product.price)}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -145,8 +158,6 @@ export default function Carta() {
         </div>
 
         <div className="flex items-center justify-center gap-4 mb-8 px-6 w-full max-w-md mx-auto">
-          <div className="w-14 flex-shrink-0" />
-
           <button
             onClick={copyAlias}
             className="flex-1 bg-white/5 border border-white/10 hover:border-emerald-500/50 rounded-2xl px-4 py-4 text-center transition-all active:scale-95"
@@ -158,7 +169,7 @@ export default function Carta() {
             {!aliasCopied && <p className="text-white/30 text-xs mt-1">Tocá para copiar</p>}
           </button>
 
-          <img src="/marcas/warsteiner_transparent.png" alt="Warsteiner" className="h-14 w-auto object-contain opacity-90 flex-shrink-0" />
+          <img src="/marcas/warsteiner_transparent.png" alt="Warsteiner" className="h-20 w-auto object-contain flex-shrink-0" />
         </div>
 
         <div className="px-4 space-y-3 max-w-md mx-auto w-full">
@@ -172,7 +183,7 @@ export default function Carta() {
         </div>
 
         <div className="mt-10 flex justify-center">
-          <img src="/marcas/gin.png" alt="Heredero" className="h-28 w-auto object-contain opacity-85" />
+          <img src="/marcas/gin.png" alt="Heredero" className="h-56 w-auto object-contain" />
         </div>
       </div>
     </PublicLayout>
