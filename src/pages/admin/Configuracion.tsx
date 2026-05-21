@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
+import { supabase } from '../../lib/supabase'
 
 type Target = 'control' | 'empleado'
 type Step = 'idle' | 'form' | 'success' | 'error'
@@ -11,7 +12,7 @@ interface Flow {
 }
 
 export default function Configuracion() {
-  const { session } = useAuth()
+  const { session, usernames, refreshUsernames } = useAuth()
 
   const [flow, setFlow] = useState<Flow>({ target: null, step: 'idle', message: '' })
   const [newPassword, setNewPassword] = useState('')
@@ -20,6 +21,49 @@ export default function Configuracion() {
   const [showConfirm, setShowConfirm] = useState(false)
   const [loading, setLoading] = useState(false)
   const [formError, setFormError] = useState('')
+
+  // username flow
+  const [usernameTarget, setUsernameTarget] = useState<Target | null>(null)
+  const [newUsername, setNewUsername] = useState('')
+  const [usernameLoading, setUsernameLoading] = useState(false)
+  const [usernameError, setUsernameError] = useState('')
+  const [usernameSuccess, setUsernameSuccess] = useState(false)
+
+  const resetUsername = () => {
+    setUsernameTarget(null)
+    setNewUsername('')
+    setUsernameError('')
+    setUsernameSuccess(false)
+  }
+
+  const handleUsernameSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setUsernameError('')
+    const trimmed = newUsername.trim()
+    if (!trimmed || trimmed.length < 3) {
+      setUsernameError('El usuario debe tener al menos 3 caracteres')
+      return
+    }
+    if (/\s/.test(trimmed)) {
+      setUsernameError('El usuario no puede tener espacios')
+      return
+    }
+
+    setUsernameLoading(true)
+    const column = usernameTarget === 'control' ? 'control_username' : 'empleado_username'
+    const { error } = await supabase
+      .from('venue_config')
+      .update({ [column]: trimmed.toLowerCase() })
+      .eq('id', 1)
+
+    if (error) {
+      setUsernameError('Error al guardar. Intentá de nuevo.')
+    } else {
+      await refreshUsernames()
+      setUsernameSuccess(true)
+    }
+    setUsernameLoading(false)
+  }
 
   const reset = () => {
     setFlow({ target: null, step: 'idle', message: '' })
@@ -73,6 +117,64 @@ export default function Configuracion() {
     } finally {
       setLoading(false)
     }
+  }
+
+  if (usernameTarget) {
+    if (usernameSuccess) {
+      return (
+        <div className="flex flex-col items-center text-center py-8 space-y-4">
+          <div className="w-14 h-14 rounded-full bg-emerald-900/40 border border-emerald-700 flex items-center justify-center text-2xl text-emerald-400 font-bold">✓</div>
+          <div>
+            <p className="text-white font-semibold">Usuario actualizado</p>
+            <p className="text-gray-500 text-sm mt-1">
+              {usernameTarget === 'control'
+                ? `Desde ahora ingresás con "${usernames.control}".`
+                : `Los empleados ingresan con "${usernames.empleados}".`}
+            </p>
+          </div>
+          <button onClick={resetUsername} className="text-gray-500 text-sm underline underline-offset-2">Volver</button>
+        </div>
+      )
+    }
+
+    return (
+      <div className="flex flex-col py-2">
+        <button onClick={resetUsername} className="self-start text-gray-500 text-sm mb-6">← Volver</button>
+
+        <p className="text-white font-semibold mb-1">
+          {usernameTarget === 'control' ? 'Tu usuario (Control)' : 'Usuario de empleados'}
+        </p>
+        <p className="text-gray-500 text-sm mb-1">
+          Actual: <span className="text-white font-mono">{usernameTarget === 'control' ? usernames.control : usernames.empleados}</span>
+        </p>
+        <p className="text-gray-500 text-sm mb-6">Solo letras, números y guiones. Sin espacios.</p>
+
+        <form onSubmit={handleUsernameSubmit} className="space-y-4">
+          <div>
+            <label className="text-white/60 text-xs font-medium mb-1.5 block">Nuevo usuario</label>
+            <input
+              type="text"
+              value={newUsername}
+              onChange={e => { setNewUsername(e.target.value); setUsernameError('') }}
+              autoComplete="off"
+              autoCapitalize="none"
+              placeholder="ej: ana / staff"
+              className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
+            />
+          </div>
+
+          {usernameError && <p className="text-red-400 text-sm text-center">{usernameError}</p>}
+
+          <button
+            type="submit"
+            disabled={usernameLoading || !newUsername.trim()}
+            className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-white/10 disabled:text-gray-600 text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-95 text-sm"
+          >
+            {usernameLoading ? 'Guardando...' : 'Guardar usuario'}
+          </button>
+        </form>
+      </div>
+    )
   }
 
   if (flow.step === 'form') {
@@ -178,6 +280,32 @@ export default function Configuracion() {
 
   return (
     <div className="space-y-6">
+      <div className="border-t border-white/10" />
+
+      <div className="space-y-3">
+        <p className="text-gray-500 text-sm uppercase tracking-widest">Usuarios de acceso</p>
+        <button
+          onClick={() => { setUsernameTarget('control'); setNewUsername(''); setUsernameError(''); setUsernameSuccess(false) }}
+          className="w-full flex items-center justify-between bg-white/10 hover:bg-white/20 rounded-xl px-4 py-3.5 transition-colors"
+        >
+          <div className="text-left">
+            <p className="text-white text-sm font-medium">Tu usuario (Control)</p>
+            <p className="text-gray-500 text-sm font-mono">{usernames.control}</p>
+          </div>
+          <span className="text-gray-400 text-lg">›</span>
+        </button>
+        <button
+          onClick={() => { setUsernameTarget('empleado'); setNewUsername(''); setUsernameError(''); setUsernameSuccess(false) }}
+          className="w-full flex items-center justify-between bg-white/10 hover:bg-white/20 rounded-xl px-4 py-3.5 transition-colors"
+        >
+          <div className="text-left">
+            <p className="text-white text-sm font-medium">Usuario de empleados</p>
+            <p className="text-gray-500 text-sm font-mono">{usernames.empleados}</p>
+          </div>
+          <span className="text-gray-400 text-lg">›</span>
+        </button>
+      </div>
+
       <div className="border-t border-white/10" />
 
       <div className="space-y-3">
