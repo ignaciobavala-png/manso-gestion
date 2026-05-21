@@ -18,12 +18,6 @@ interface Group {
   items: Product[]
 }
 
-const DRINK_SUBCATEGORIES: { key: string; label: string }[] = [
-  { key: 'trago', label: 'Tragos' },
-  { key: 'cerveza', label: 'Cervezas' },
-  { key: 'sin_alcohol', label: 'Sin alcohol' },
-]
-
 function formatPrice(n: number): string {
   return `$${n.toLocaleString('es-AR')}`
 }
@@ -31,22 +25,18 @@ function formatPrice(n: number): string {
 function buildGroups(products: Product[]): Group[] {
   const groups: Group[] = []
 
-  // Bebidas agrupadas por subcategoría
-  for (const sub of DRINK_SUBCATEGORIES) {
-    const items = products.filter(p => p.category === 'bebida' && p.subcategory === sub.key)
-    if (items.length > 0) groups.push({ key: sub.key, label: sub.label, items })
+  const add = (key: string, label: string, items: Product[]) => {
+    if (items.length > 0) groups.push({ key, label, items })
   }
 
-  // Bebidas sin subcategoría → Vinos
-  const otherDrinks = products.filter(p => p.category === 'bebida' && !p.subcategory)
-  if (otherDrinks.length > 0) groups.push({ key: 'bebida', label: 'Vinos', items: otherDrinks })
+  const bebidas = products.filter(p => p.category === 'bebida')
+  add('trago',       'Tragos',      bebidas.filter(p => p.subcategory === 'trago'))
+  add('cerveza',     'Cervezas',    bebidas.filter(p => p.subcategory === 'cerveza'))
+  add('vino',        'Vinos',       bebidas.filter(p => !p.subcategory))
+  add('sin_alcohol', 'Sin alcohol', bebidas.filter(p => p.subcategory === 'sin_alcohol'))
 
-  // Resto de categorías
-  const comidas = products.filter(p => p.category === 'comida')
-  if (comidas.length > 0) groups.push({ key: 'comida', label: 'Comidas', items: comidas })
-
-  const otros = products.filter(p => p.category === 'otro')
-  if (otros.length > 0) groups.push({ key: 'otro', label: 'Otros', items: otros })
+  add('comida', 'Comidas', products.filter(p => p.category === 'comida'))
+  add('otro',   'Otros',   products.filter(p => p.category === 'otro'))
 
   return groups
 }
@@ -144,6 +134,7 @@ export default function Carta() {
           >
             ←
           </button>
+          <h1 className="text-white font-bold text-2xl text-center -mt-10 mb-6">Carta</h1>
         </div>
 
         <div className="text-center mb-8">
