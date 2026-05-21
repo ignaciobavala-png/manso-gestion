@@ -37,9 +37,9 @@ function buildGroups(products: Product[]): Group[] {
     if (items.length > 0) groups.push({ key: sub.key, label: sub.label, items })
   }
 
-  // Bebidas sin subcategoría
+  // Bebidas sin subcategoría → Vinos
   const otherDrinks = products.filter(p => p.category === 'bebida' && !p.subcategory)
-  if (otherDrinks.length > 0) groups.push({ key: 'bebida', label: 'Bebidas', items: otherDrinks })
+  if (otherDrinks.length > 0) groups.push({ key: 'bebida', label: 'Vinos', items: otherDrinks })
 
   // Resto de categorías
   const comidas = products.filter(p => p.category === 'comida')

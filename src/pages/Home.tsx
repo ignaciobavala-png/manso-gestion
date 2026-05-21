@@ -391,7 +391,7 @@ export default function Home() {
                                     onChange={e => updateProduct(product.id, { subcategory: e.target.value || null })}
                                     className="text-xs bg-neutral-800 border border-white/10 rounded-lg px-2 py-0.5 text-gray-300 focus:outline-none focus:border-emerald-500 cursor-pointer"
                                   >
-                                    <option value="">Sin clasificar</option>
+                                    <option value="">Vino</option>
                                     <option value="trago">Trago</option>
                                     <option value="cerveza">Cerveza</option>
                                     <option value="sin_alcohol">Sin alcohol</option>
@@ -533,7 +533,7 @@ export default function Home() {
                               onChange={e => setNewProduct(p => ({ ...p, subcategory: e.target.value }))}
                               className="w-full sm:w-36 px-3 py-2 bg-neutral-900 border border-white/20 rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500"
                             >
-                              <option value="">Sin clasificar</option>
+                              <option value="">Vino</option>
                               <option value="trago">Trago</option>
                               <option value="cerveza">Cerveza</option>
                               <option value="sin_alcohol">Sin alcohol</option>
