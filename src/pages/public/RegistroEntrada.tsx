@@ -209,6 +209,12 @@ function EventoForm({ eventParam, isSlug = false }: { eventParam: string; isSlug
       setLoadingEvent(false)
       if (error || !data || !data.registrations_open) return
 
+      // If user already registered on this device, send them to their QR
+      if (localStorage.getItem(LS_KEY(data.id))) {
+        navigate('/mi-entrada')
+        return
+      }
+
       setActiveEvent({
         id: data.id,
         name: data.name,

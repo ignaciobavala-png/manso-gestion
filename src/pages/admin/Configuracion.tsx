@@ -106,7 +106,13 @@ export default function Configuracion() {
         },
         body: JSON.stringify({ role: flow.target, newPin: newPassword }),
       })
-      const data = await res.json()
+      let data: { error?: string } = {}
+      try {
+        data = await res.json()
+      } catch {
+        setFlow(f => ({ ...f, step: 'error', message: 'Error interno del servidor. Contactá a soporte.' }))
+        return
+      }
       if (res.ok) {
         setFlow(f => ({ ...f, step: 'success' }))
       } else {

@@ -56,6 +56,10 @@ export default async function handler(req: Request): Promise<Response> {
     return json({ error: 'Sin permisos' }, 403)
   }
 
+  if (!serviceRoleKey) {
+    return json({ error: 'Configuración del servidor incompleta (SUPABASE_SERVICE_ROLE_KEY)' }, 500)
+  }
+
   // Cliente admin para cambiar passwords
   const adminClient = createClient(supabaseUrl, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false }
@@ -63,13 +67,13 @@ export default async function handler(req: Request): Promise<Response> {
 
   // Buscar el usuario target por email
   const targetEmail = role === 'control' ? CONTROL_EMAIL : EMPLEADO_EMAIL
-  const { data: { users }, error: listError } = await adminClient.auth.admin.listUsers({ perPage: 1000 })
+  const { data: listData, error: listError } = await adminClient.auth.admin.listUsers({ perPage: 1000 })
 
-  if (listError) {
+  if (listError || !listData) {
     return json({ error: 'Error al buscar usuarios' }, 500)
   }
 
-  const target = users.find(u => u.email === targetEmail)
+  const target = listData.users.find(u => u.email === targetEmail)
   if (!target) {
     return json({ error: 'Usuario no encontrado' }, 404)
   }
