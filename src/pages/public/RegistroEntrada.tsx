@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams, useParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import PublicLayout from '../../components/PublicLayout'
@@ -168,7 +168,9 @@ function EventoForm({ eventParam, isSlug = false }: { eventParam: string; isSlug
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
+  const submittingRef = useRef(false)
 
   const handleReceiptUpload = async (file: File) => {
     if (!activeEvent) return
@@ -266,12 +268,14 @@ function EventoForm({ eventParam, isSlug = false }: { eventParam: string; isSlug
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!activeEvent) return
+    if (submittingRef.current) return
 
     if (activeEvent.is_paid && !receiptUrl) {
       setError('Subí el comprobante de pago para continuar')
       return
     }
 
+    submittingRef.current = true
     setSubmitting(true)
     setError('')
 
@@ -293,12 +297,14 @@ function EventoForm({ eventParam, isSlug = false }: { eventParam: string; isSlug
 
       if (res.status === 409) {
         setError(data.error || 'Conflicto al registrar. Intentá de nuevo.')
+        submittingRef.current = false
         setSubmitting(false)
         return
       }
 
       if (!res.ok) {
         setError(data.error || 'Algo salió mal. Intentá de nuevo.')
+        submittingRef.current = false
         setSubmitting(false)
         return
       }
@@ -311,9 +317,11 @@ function EventoForm({ eventParam, isSlug = false }: { eventParam: string; isSlug
       }))
 
       localStorage.setItem(LS_KEY(activeEvent.id), JSON.stringify(tickets))
-      navigate('/mi-entrada')
+      setSubmitted(true)
+      setTimeout(() => navigate('/mi-entrada'), 1800)
     } catch {
       setError('Sin conexión. Intentá de nuevo.')
+      submittingRef.current = false
       setSubmitting(false)
     }
   }
@@ -539,7 +547,17 @@ function EventoForm({ eventParam, isSlug = false }: { eventParam: string; isSlug
 
               {error && <p className="text-red-400 text-sm text-center">{error}</p>}
 
-              {capacityInfo && capacityInfo.current >= capacityInfo.max ? (
+              {submitted ? (
+                <div className="flex flex-col items-center gap-2 py-4">
+                  <div className="w-12 h-12 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <p className="text-white font-semibold text-sm">¡Entrada registrada!</p>
+                  <p className="text-gray-400 text-xs">Preparando tu QR...</p>
+                </div>
+              ) : capacityInfo && capacityInfo.current >= capacityInfo.max ? (
                 <p className="text-center text-red-400 text-sm font-medium py-3">Evento completo</p>
               ) : (
                 <button
