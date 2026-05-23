@@ -86,9 +86,29 @@ export default async function handler(req: Request): Promise<Response> {
 
   const normalizedEmail = email.toLowerCase().trim()
   const receipt = receipt_url?.trim() || null
-  const tickets: TicketResult[] = []
 
-  for (const name of names) {
+  // Fetch already-registered names for this email+event to avoid duplicates
+  const { data: existing } = await supabase
+    .from('ticket_registrations')
+    .select('name, token')
+    .eq('event_id', event_id)
+    .eq('email', normalizedEmail)
+
+  const existingMap = new Map(
+    (existing ?? []).map(r => [r.name.toLowerCase().trim(), r.token])
+  )
+
+  const newNames = names.filter(n => !existingMap.has(n.toLowerCase()))
+  const tickets: TicketResult[] = names
+    .filter(n => existingMap.has(n.toLowerCase()))
+    .map(n => ({ name: n, token: existingMap.get(n.toLowerCase())! }))
+
+  // All names already registered → idempotent response, nothing inserted
+  if (newNames.length === 0) {
+    return json({ tickets }, 200)
+  }
+
+  for (const name of newNames) {
     const token = crypto.randomUUID()
 
     const { error } = await supabase
