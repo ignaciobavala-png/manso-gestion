@@ -163,7 +163,11 @@ export default function Entradas(): React.JSX.Element {
       return
     }
 
-    await addGuest({ name: mansoTicketPending.name, type: 'regular' })
+    try {
+      await addGuest({ name: mansoTicketPending.name, type: 'regular' })
+    } catch {
+      // El ticket ya está marcado como usado en DB — solo falla el contador local
+    }
 
     setMansoTicketPending(null)
     setShowSuccess(true)
