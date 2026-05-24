@@ -225,6 +225,10 @@ export default function MiEntrada() {
 
       if (fetchError || !rows || rows.length === 0) return
 
+      // Nunca reducir tickets: si la DB devuelve menos que localStorage, es dato rancho
+      const currentLocal = getTicketsForEvent(eventId)
+      if (rows.length < currentLocal.length) return
+
       const eventName = eventData?.name ?? 'Evento'
       const freshTickets: TicketData[] = rows.map(r => ({
         token: r.token,
