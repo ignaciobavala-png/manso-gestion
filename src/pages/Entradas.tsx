@@ -163,6 +163,8 @@ export default function Entradas(): React.JSX.Element {
       return
     }
 
+    await addGuest({ name: mansoTicketPending.name, type: 'regular' })
+
     setMansoTicketPending(null)
     setShowSuccess(true)
     setTimeout(() => setShowSuccess(false), 2000)
