@@ -17,6 +17,7 @@ interface ActiveEvent {
   is_paid: boolean
   regular_ticket_price: number
   start_date: string | null
+  end_date: string | null
   ticket_alias_pago: string | null
   ticket_cbu_pago: string | null
 }
@@ -221,6 +222,7 @@ function EventoForm({ eventParam, isSlug = false }: { eventParam: string; isSlug
         is_paid: data.is_paid,
         regular_ticket_price: data.regular_ticket_price,
         start_date: data.start_date,
+        end_date: data.end_date,
         ticket_alias_pago: data.ticket_alias_pago,
         ticket_cbu_pago: data.ticket_cbu_pago,
       })
