@@ -44,30 +44,32 @@ function getTicketsForEvent(eventId: string): TicketData[] {
   return []
 }
 
-function saveTicketsToStorage(eventId: string, tickets: TicketData[]) {
+function saveTicketsToStorage(eventId: string, tickets: TicketData[], eventEndDate?: string) {
   localStorage.setItem(`manso_tickets_${eventId}`, JSON.stringify(tickets))
   localStorage.setItem(`manso_tickets_ts_${eventId}`, Date.now().toString())
+  if (eventEndDate) localStorage.setItem(`manso_tickets_end_${eventId}`, eventEndDate)
 }
 
 function getAllStoredTickets(): TicketData[] {
-  const events: { ts: number; tickets: TicketData[] }[] = []
+  const META_PREFIXES = ['manso_tickets_ts_', 'manso_tickets_end_']
+  const events: { sortVal: number; tickets: TicketData[] }[] = []
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i)
-    if (key?.startsWith('manso_tickets_') && !key.startsWith('manso_tickets_ts_')) {
-      try {
-        const raw = localStorage.getItem(key)
-        if (raw) {
-          const parsed = JSON.parse(raw)
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            const eventId = key.slice('manso_tickets_'.length)
-            const ts = parseInt(localStorage.getItem(`manso_tickets_ts_${eventId}`) ?? '0')
-            events.push({ ts, tickets: parsed })
-          }
-        }
-      } catch { /* ignorar entradas corruptas */ }
-    }
+    if (!key?.startsWith('manso_tickets_')) continue
+    if (META_PREFIXES.some(p => key.startsWith(p))) continue
+    try {
+      const raw = localStorage.getItem(key)
+      if (!raw) continue
+      const parsed = JSON.parse(raw)
+      if (!Array.isArray(parsed) || parsed.length === 0) continue
+      const eventId = key.slice('manso_tickets_'.length)
+      const endDateStr = localStorage.getItem(`manso_tickets_end_${eventId}`)
+      const fallbackTs = parseInt(localStorage.getItem(`manso_tickets_ts_${eventId}`) ?? '0')
+      const sortVal = endDateStr ? new Date(endDateStr).getTime() : fallbackTs
+      events.push({ sortVal, tickets: parsed })
+    } catch { /* ignorar entradas corruptas */ }
   }
-  events.sort((a, b) => b.ts - a.ts)
+  events.sort((a, b) => b.sortVal - a.sortVal)
   return events.flatMap(e => e.tickets)
 }
 
@@ -220,7 +222,7 @@ export default function MiEntrada() {
           .select('token, name, event_id')
           .eq('email', storedEmail)
           .eq('event_id', eventId),
-        supabase.from('events').select('name').eq('id', eventId).single(),
+        supabase.from('events').select('name, end_date').eq('id', eventId).single(),
       ])
 
       if (fetchError || !rows || rows.length === 0) return
@@ -237,7 +239,7 @@ export default function MiEntrada() {
         event_id: r.event_id,
       }))
 
-      saveTicketsToStorage(eventId, freshTickets)
+      saveTicketsToStorage(eventId, freshTickets, eventData?.end_date ?? undefined)
       setTickets(freshTickets)
     })
   }, [])
@@ -267,10 +269,11 @@ export default function MiEntrada() {
     const eventIds = [...new Set(data.map(r => r.event_id))]
     const { data: events } = await supabase
       .from('events')
-      .select('id, name')
+      .select('id, name, end_date')
       .in('id', eventIds)
 
     const eventMap = new Map(events?.map(e => [e.id, e.name]) ?? [])
+    const eventEndDateMap = new Map(events?.map(e => [e.id, e.end_date ?? undefined]) ?? [])
 
     const ticketsByEvent = new Map<string, TicketData[]>()
     for (const row of data) {
@@ -282,7 +285,7 @@ export default function MiEntrada() {
     }
 
     for (const [eid, tix] of ticketsByEvent) {
-      saveTicketsToStorage(eid, tix)
+      saveTicketsToStorage(eid, tix, eventEndDateMap.get(eid))
     }
     localStorage.setItem('manso_email', email.trim().toLowerCase())
 
