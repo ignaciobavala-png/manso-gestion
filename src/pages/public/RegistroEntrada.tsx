@@ -202,7 +202,7 @@ function EventoForm({ eventParam, isSlug = false }: { eventParam: string; isSlug
       setLoadingEvent(true)
       const { data, error } = await supabase
         .from('events')
-        .select('id, name, registrations_open, max_capacity, is_paid, regular_ticket_price, start_date, ticket_alias_pago, ticket_cbu_pago')
+        .select('id, name, registrations_open, max_capacity, is_paid, regular_ticket_price, start_date, end_date, ticket_alias_pago, ticket_cbu_pago')
         .eq(isSlug ? 'slug' : 'id', eventParam)
         .eq('is_active', true)
         .single()
