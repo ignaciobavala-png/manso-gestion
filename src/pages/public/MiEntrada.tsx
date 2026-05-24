@@ -9,6 +9,7 @@ interface TicketData {
   name: string
   event_name: string
   event_id: string
+  isFinished?: boolean
 }
 
 function GlowBorder({ children, className = '' }: { children: React.ReactNode; className?: string }) {
@@ -52,7 +53,7 @@ function saveTicketsToStorage(eventId: string, tickets: TicketData[], eventEndDa
 
 function getAllStoredTickets(): TicketData[] {
   const META_PREFIXES = ['manso_tickets_ts_', 'manso_tickets_end_']
-  const events: { sortVal: number; tickets: TicketData[] }[] = []
+  const events: { sortVal: number; isFinished: boolean; tickets: TicketData[] }[] = []
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i)
     if (!key?.startsWith('manso_tickets_')) continue
@@ -66,11 +67,12 @@ function getAllStoredTickets(): TicketData[] {
       const endDateStr = localStorage.getItem(`manso_tickets_end_${eventId}`)
       const fallbackTs = parseInt(localStorage.getItem(`manso_tickets_ts_${eventId}`) ?? '0')
       const sortVal = endDateStr ? new Date(endDateStr).getTime() : fallbackTs
-      events.push({ sortVal, tickets: parsed })
+      const isFinished = endDateStr ? new Date(endDateStr) < new Date() : false
+      events.push({ sortVal, isFinished, tickets: parsed })
     } catch { /* ignorar entradas corruptas */ }
   }
   events.sort((a, b) => b.sortVal - a.sortVal)
-  return events.flatMap(e => e.tickets)
+  return events.flatMap(e => e.tickets.map(t => ({ ...t, isFinished: e.isFinished })))
 }
 
 function TicketCard({ ticket, isFinished = false }: { ticket: TicketData; isFinished?: boolean }) {
@@ -185,7 +187,6 @@ export default function MiEntrada() {
   const navigate = useNavigate()
   const [tickets, setTickets] = useState<TicketData[] | null>(null)
   const [loading, setLoading] = useState(true)
-  const [isEventFinished, setIsEventFinished] = useState(false)
   const [showEmailSearch, setShowEmailSearch] = useState(false)
   const [email, setEmail] = useState('')
   const [searching, setSearching] = useState(false)
@@ -193,24 +194,16 @@ export default function MiEntrada() {
 
   useEffect(() => {
     supabase.from('active_event').select('id, end_date').single().then(async ({ data, error }) => {
+      const allStored = getAllStoredTickets()
+
       if (error || !data?.id) {
-        const pastTickets = getAllStoredTickets()
-        if (pastTickets.length > 0) {
-          setTickets(pastTickets)
-          setIsEventFinished(true)
-        } else {
-          setTickets([])
-        }
+        setTickets(allStored.length > 0 ? allStored : [])
         setLoading(false)
         return
       }
 
       const eventId = data.id
-      if (data.end_date && new Date(data.end_date) < new Date()) {
-        setIsEventFinished(true)
-      }
-      const saved = getTicketsForEvent(eventId)
-      setTickets(saved.length > 0 ? saved : null)
+      setTickets(allStored.length > 0 ? allStored : null)
       setLoading(false)
 
       const storedEmail = localStorage.getItem('manso_email')
@@ -240,7 +233,7 @@ export default function MiEntrada() {
       }))
 
       saveTicketsToStorage(eventId, freshTickets, eventData?.end_date ?? undefined)
-      setTickets(freshTickets)
+      setTickets(getAllStoredTickets())
     })
   }, [])
 
@@ -291,9 +284,7 @@ export default function MiEntrada() {
 
     setSearching(false)
     setShowEmailSearch(false)
-
-    const allTickets = [...ticketsByEvent.values()].flat()
-    setTickets(allTickets)
+    setTickets(getAllStoredTickets())
   }
 
   if (loading) {
@@ -446,7 +437,7 @@ export default function MiEntrada() {
             )}
 
             {tickets.map((ticket, i) => (
-              <TicketCard key={`${ticket.token}-${i}`} ticket={ticket} isFinished={isEventFinished} />
+              <TicketCard key={`${ticket.token}-${i}`} ticket={ticket} isFinished={ticket.isFinished ?? false} />
             ))}
 
             {tickets.length === 1 && (
