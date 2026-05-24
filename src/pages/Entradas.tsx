@@ -156,9 +156,8 @@ export default function Entradas(): React.JSX.Element {
       .eq('token', mansoTicketPending.token)
       .is('used_at', null)
 
-    setConfirming(false)
-
     if (error) {
+      setConfirming(false)
       setAlertModal({ isOpen: true, message: 'Error al registrar el ingreso.', type: 'error' })
       return
     }
@@ -169,6 +168,7 @@ export default function Entradas(): React.JSX.Element {
       // El ticket ya está marcado como usado en DB — solo falla el contador local
     }
 
+    setConfirming(false)
     setMansoTicketPending(null)
     setShowSuccess(true)
     setTimeout(() => setShowSuccess(false), 2000)
