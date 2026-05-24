@@ -44,24 +44,34 @@ function getTicketsForEvent(eventId: string): TicketData[] {
   return []
 }
 
+function saveTicketsToStorage(eventId: string, tickets: TicketData[]) {
+  localStorage.setItem(`manso_tickets_${eventId}`, JSON.stringify(tickets))
+  localStorage.setItem(`manso_tickets_ts_${eventId}`, Date.now().toString())
+}
+
 function getAllStoredTickets(): TicketData[] {
-  const tickets: TicketData[] = []
+  const events: { ts: number; tickets: TicketData[] }[] = []
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i)
-    if (key?.startsWith('manso_tickets_')) {
+    if (key?.startsWith('manso_tickets_') && !key.startsWith('manso_tickets_ts_')) {
       try {
         const raw = localStorage.getItem(key)
         if (raw) {
           const parsed = JSON.parse(raw)
-          if (Array.isArray(parsed)) tickets.push(...parsed)
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const eventId = key.slice('manso_tickets_'.length)
+            const ts = parseInt(localStorage.getItem(`manso_tickets_ts_${eventId}`) ?? '0')
+            events.push({ ts, tickets: parsed })
+          }
         }
       } catch { /* ignorar entradas corruptas */ }
     }
   }
-  return tickets
+  events.sort((a, b) => b.ts - a.ts)
+  return events.flatMap(e => e.tickets)
 }
 
-function TicketCard({ ticket }: { ticket: TicketData }) {
+function TicketCard({ ticket, isFinished = false }: { ticket: TicketData; isFinished?: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [downloading, setDownloading] = useState(false)
 
@@ -133,19 +143,23 @@ function TicketCard({ ticket }: { ticket: TicketData }) {
   }
 
   return (
-    <div className="bg-black/60 backdrop-blur-md border border-white/10 rounded-3xl overflow-hidden">
-      <div className="h-1 bg-gradient-to-r from-emerald-700 via-emerald-500 to-emerald-700" />
+    <div className={`backdrop-blur-md rounded-3xl overflow-hidden border ${isFinished ? 'bg-black/40 border-white/5' : 'bg-black/60 border-white/10'}`}>
+      <div className={`h-1 bg-gradient-to-r ${isFinished ? 'from-neutral-700 via-neutral-600 to-neutral-700' : 'from-emerald-700 via-emerald-500 to-emerald-700'}`} />
 
       <div className="px-6 pt-5 pb-6 flex flex-col items-center">
-        <p className="text-gray-500 text-[10px] tracking-[3px] uppercase mb-1">entrada digital</p>
-        <p className="text-emerald-400 text-sm font-medium mb-4">{ticket.event_name}</p>
+        <p className={`text-[10px] tracking-[3px] uppercase mb-1 ${isFinished ? 'text-gray-600' : 'text-gray-500'}`}>
+          {isFinished ? 'evento finalizado' : 'entrada digital'}
+        </p>
+        <p className={`text-sm font-medium mb-4 ${isFinished ? 'text-gray-500' : 'text-emerald-400'}`}>{ticket.event_name}</p>
 
-        <div className="bg-white rounded-2xl p-3 shadow-2xl">
-          <canvas ref={canvasRef} className="block" style={{ width: 200, height: 200 }} />
+        <div className={`rounded-2xl p-3 shadow-2xl ${isFinished ? 'bg-white/80' : 'bg-white'}`}>
+          <canvas ref={canvasRef} className="block opacity-60" style={{ width: 200, height: 200 }} />
         </div>
 
         <p className="text-white font-bold text-lg mt-4">{ticket.name}</p>
-        <p className="text-gray-500 text-xs mt-1">Mostrá este QR en la puerta de ingreso.</p>
+        <p className="text-gray-500 text-xs mt-1">
+          {isFinished ? 'Este evento ya finalizó.' : 'Mostrá este QR en la puerta de ingreso.'}
+        </p>
       </div>
 
       <div className="border-t border-white/5 px-6 py-3">
@@ -216,7 +230,7 @@ export default function MiEntrada() {
         event_id: r.event_id,
       }))
 
-      localStorage.setItem(`manso_tickets_${eventId}`, JSON.stringify(freshTickets))
+      saveTicketsToStorage(eventId, freshTickets)
       setTickets(freshTickets)
     })
   }, [])
@@ -261,7 +275,7 @@ export default function MiEntrada() {
     }
 
     for (const [eid, tix] of ticketsByEvent) {
-      localStorage.setItem(`manso_tickets_${eid}`, JSON.stringify(tix))
+      saveTicketsToStorage(eid, tix)
     }
     localStorage.setItem('manso_email', email.trim().toLowerCase())
 
@@ -421,15 +435,8 @@ export default function MiEntrada() {
               </div>
             )}
 
-            {isEventFinished && (
-              <div className="bg-neutral-900 border border-white/10 rounded-2xl px-4 py-3 text-center">
-                <p className="text-gray-400 text-sm font-medium">Evento finalizado</p>
-                <p className="text-gray-600 text-xs mt-1">Tu entrada fue válida. Guardá el QR como recuerdo.</p>
-              </div>
-            )}
-
             {tickets.map((ticket, i) => (
-              <TicketCard key={`${ticket.token}-${i}`} ticket={ticket} />
+              <TicketCard key={`${ticket.token}-${i}`} ticket={ticket} isFinished={isEventFinished} />
             ))}
 
             {tickets.length === 1 && (
