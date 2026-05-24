@@ -151,20 +151,49 @@ function TicketCard({ ticket }: { ticket: TicketData }) {
 export default function MiEntrada() {
   const navigate = useNavigate()
   const [tickets, setTickets] = useState<TicketData[] | null>(null)
+  const [loading, setLoading] = useState(true)
   const [showEmailSearch, setShowEmailSearch] = useState(false)
   const [email, setEmail] = useState('')
   const [searching, setSearching] = useState(false)
   const [searchError, setSearchError] = useState('')
 
   useEffect(() => {
-    supabase.from('active_event').select('id').single().then(({ data, error }) => {
+    supabase.from('active_event').select('id').single().then(async ({ data, error }) => {
       if (error || !data?.id) {
         setTickets([])
+        setLoading(false)
         return
       }
 
-      const saved = getTicketsForEvent(data.id)
+      const eventId = data.id
+      const saved = getTicketsForEvent(eventId)
       setTickets(saved.length > 0 ? saved : null)
+      setLoading(false)
+
+      const storedEmail = localStorage.getItem('manso_email')
+      if (!storedEmail) return
+
+      const [{ data: rows, error: fetchError }, { data: eventData }] = await Promise.all([
+        supabase
+          .from('ticket_registrations')
+          .select('token, name, event_id')
+          .eq('email', storedEmail)
+          .eq('event_id', eventId),
+        supabase.from('events').select('name').eq('id', eventId).single(),
+      ])
+
+      if (fetchError || !rows || rows.length === 0) return
+
+      const eventName = eventData?.name ?? 'Evento'
+      const freshTickets: TicketData[] = rows.map(r => ({
+        token: r.token,
+        name: r.name,
+        event_name: eventName,
+        event_id: r.event_id,
+      }))
+
+      localStorage.setItem(`manso_tickets_${eventId}`, JSON.stringify(freshTickets))
+      setTickets(freshTickets)
     })
   }, [])
 
@@ -210,12 +239,43 @@ export default function MiEntrada() {
     for (const [eid, tix] of ticketsByEvent) {
       localStorage.setItem(`manso_tickets_${eid}`, JSON.stringify(tix))
     }
+    localStorage.setItem('manso_email', email.trim().toLowerCase())
 
     setSearching(false)
     setShowEmailSearch(false)
 
     const allTickets = [...ticketsByEvent.values()].flat()
     setTickets(allTickets)
+  }
+
+  if (loading) {
+    return (
+      <PublicLayout showHeader={false}>
+        <div className="flex-1 flex flex-col items-center px-5 pb-10 max-w-sm w-full mx-auto">
+          <div className="w-full flex justify-start mb-4 mt-1">
+            <div className="w-10 h-10 rounded-xl bg-white/5 animate-pulse" />
+          </div>
+          <div className="w-full space-y-5">
+            {[0, 1].map(i => (
+              <div key={i} className="bg-white/5 rounded-3xl overflow-hidden animate-pulse">
+                <div className="h-1 bg-white/10" />
+                <div className="px-6 pt-5 pb-6 flex flex-col items-center gap-4">
+                  <div className="h-3 w-24 bg-white/10 rounded-full" />
+                  <div className="h-4 w-36 bg-white/10 rounded-full" />
+                  <div className="w-[200px] h-[200px] bg-white/10 rounded-2xl" />
+                  <div className="h-5 w-32 bg-white/10 rounded-full mt-1" />
+                  <div className="h-3 w-48 bg-white/10 rounded-full" />
+                </div>
+                <div className="border-t border-white/5 px-6 py-3">
+                  <div className="h-10 bg-white/10 rounded-2xl" />
+                </div>
+                <div className="h-1 bg-white/10" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </PublicLayout>
+    )
   }
 
   if (tickets === null) {

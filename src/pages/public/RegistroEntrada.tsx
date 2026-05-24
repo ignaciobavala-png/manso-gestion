@@ -323,6 +323,7 @@ function EventoForm({ eventParam, isSlug = false }: { eventParam: string; isSlug
       }))
 
       localStorage.setItem(LS_KEY(activeEvent.id), JSON.stringify(tickets))
+      localStorage.setItem('manso_email', email.trim().toLowerCase())
       setSubmitted(true)
       setTimeout(() => navigate('/mi-entrada'), 1800)
     } catch {
