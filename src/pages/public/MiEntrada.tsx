@@ -44,6 +44,23 @@ function getTicketsForEvent(eventId: string): TicketData[] {
   return []
 }
 
+function getAllStoredTickets(): TicketData[] {
+  const tickets: TicketData[] = []
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i)
+    if (key?.startsWith('manso_tickets_')) {
+      try {
+        const raw = localStorage.getItem(key)
+        if (raw) {
+          const parsed = JSON.parse(raw)
+          if (Array.isArray(parsed)) tickets.push(...parsed)
+        }
+      } catch { /* ignorar entradas corruptas */ }
+    }
+  }
+  return tickets
+}
+
 function TicketCard({ ticket }: { ticket: TicketData }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [downloading, setDownloading] = useState(false)
@@ -152,6 +169,7 @@ export default function MiEntrada() {
   const navigate = useNavigate()
   const [tickets, setTickets] = useState<TicketData[] | null>(null)
   const [loading, setLoading] = useState(true)
+  const [isEventFinished, setIsEventFinished] = useState(false)
   const [showEmailSearch, setShowEmailSearch] = useState(false)
   const [email, setEmail] = useState('')
   const [searching, setSearching] = useState(false)
@@ -160,7 +178,13 @@ export default function MiEntrada() {
   useEffect(() => {
     supabase.from('active_event').select('id').single().then(async ({ data, error }) => {
       if (error || !data?.id) {
-        setTickets([])
+        const pastTickets = getAllStoredTickets()
+        if (pastTickets.length > 0) {
+          setTickets(pastTickets)
+          setIsEventFinished(true)
+        } else {
+          setTickets([])
+        }
         setLoading(false)
         return
       }
@@ -394,6 +418,13 @@ export default function MiEntrada() {
                 <p className="text-amber-300 text-sm">
                   Guardá cada entrada por separado. Cada persona necesita mostrar su propio QR en la puerta.
                 </p>
+              </div>
+            )}
+
+            {isEventFinished && (
+              <div className="bg-neutral-900 border border-white/10 rounded-2xl px-4 py-3 text-center">
+                <p className="text-gray-400 text-sm font-medium">Evento finalizado</p>
+                <p className="text-gray-600 text-xs mt-1">Tu entrada fue válida. Guardá el QR como recuerdo.</p>
               </div>
             )}
 
