@@ -190,7 +190,7 @@ export default function MiEntrada() {
   const [searchError, setSearchError] = useState('')
 
   useEffect(() => {
-    supabase.from('active_event').select('id').single().then(async ({ data, error }) => {
+    supabase.from('active_event').select('id, end_date').single().then(async ({ data, error }) => {
       if (error || !data?.id) {
         const pastTickets = getAllStoredTickets()
         if (pastTickets.length > 0) {
@@ -204,6 +204,9 @@ export default function MiEntrada() {
       }
 
       const eventId = data.id
+      if (data.end_date && new Date(data.end_date) < new Date()) {
+        setIsEventFinished(true)
+      }
       const saved = getTicketsForEvent(eventId)
       setTickets(saved.length > 0 ? saved : null)
       setLoading(false)
