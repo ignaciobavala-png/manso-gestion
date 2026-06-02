@@ -279,6 +279,7 @@ export default function GestionEventos() {
                     />
                   </div>
                 </div>
+              </div>
               {editingId === e.id && (
                 <div className="px-4 pb-4">
                   <EventEditor
