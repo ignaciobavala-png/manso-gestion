@@ -372,11 +372,21 @@ export const useAppStore = create<AppState>((set, get) => ({
   // Acciones de eventos
   addEvent: async (eventData) => {
     try {
-      const { data, error } = await supabase
-        .from('events')
-        .insert([{ ...eventData, is_active: true }])
-        .select()
-        .single()
+      const baseSlug = eventData.slug ?? null
+      let data = null
+      let error = null
+
+      for (let attempt = 0; attempt <= 5; attempt++) {
+        const slug = baseSlug === null ? null : attempt === 0 ? baseSlug : `${baseSlug}-${attempt}`
+        const result = await supabase
+          .from('events')
+          .insert([{ ...eventData, slug, is_active: true }])
+          .select()
+          .single()
+        data = result.data
+        error = result.error
+        if (!error || (error as { code?: string }).code !== '23505') break
+      }
 
       if (error) throw error
 
