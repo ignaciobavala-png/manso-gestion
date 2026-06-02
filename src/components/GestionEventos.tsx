@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAppStore } from '../store/useAppStore'
 import EventCreator from './EventCreator'
+import EventEditor from './EventEditor'
 
 export default function GestionEventos() {
   const { events, activeEvent, selectOperatingEvent, updateEventFlyer, updateEventBackground } = useAppStore()
@@ -12,6 +13,7 @@ export default function GestionEventos() {
   const [uploadingBgFor, setUploadingBgFor] = useState<string | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({})
   const bgFileInputRefs = useRef<Record<string, HTMLInputElement | null>>({})
 
@@ -203,6 +205,13 @@ export default function GestionEventos() {
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-white font-semibold text-sm truncate">{e.name}</p>
+                      <button
+                        onClick={() => setEditingId(editingId === e.id ? null : e.id)}
+                        className="text-gray-500 hover:text-gray-300 transition-colors flex-shrink-0"
+                        title="Editar evento"
+                      >
+                        ✏️
+                      </button>
                       {isCurrent && (
                         <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-700 text-emerald-100 uppercase tracking-wide whitespace-nowrap">
                           En operación
@@ -270,7 +279,14 @@ export default function GestionEventos() {
                     />
                   </div>
                 </div>
-              </div>
+              {editingId === e.id && (
+                <div className="px-4 pb-4">
+                  <EventEditor
+                    event={e}
+                    onDone={() => setEditingId(null)}
+                  />
+                </div>
+              )}
             </div>
           )
         })}

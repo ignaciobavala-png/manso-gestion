@@ -22,6 +22,7 @@ export default function EventCreator({ onCreated }: Props) {
   const [slugEdited, setSlugEdited] = useState(false)
   const [isPaid, setIsPaid] = useState(false)
   const [isPrivate, setIsPrivate] = useState(false)
+  const [oneTicketPerEmail, setOneTicketPerEmail] = useState(false)
   const [qrCodeUrl, setQrCodeUrl] = useState('')
   const [createdEventName, setCreatedEventName] = useState('')
   const [saving, setSaving] = useState(false)
@@ -57,6 +58,7 @@ export default function EventCreator({ onCreated }: Props) {
         invited_ticket_price: price,
         is_paid: isPaid,
         is_private: isPrivate,
+        one_ticket_per_email: oneTicketPerEmail,
         is_active: true,
         registrations_open: true,
         max_capacity: null,
@@ -148,7 +150,6 @@ export default function EventCreator({ onCreated }: Props) {
           }}
           placeholder="Ej: La Nube — Vinilos"
           className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-          onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
         />
       </div>
 
@@ -168,6 +169,66 @@ export default function EventCreator({ onCreated }: Props) {
           />
         </div>
         <p className="text-xs text-gray-600 mt-1">Se genera automáticamente desde el nombre. Podés editarlo.</p>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-3">Visibilidad</label>
+        <div className="flex rounded-xl overflow-hidden border border-white/20 bg-neutral-900/80">
+          <button
+            type="button"
+            onClick={() => setIsPrivate(false)}
+            className={`flex-1 py-3 text-sm font-medium transition-colors ${
+              !isPrivate
+                ? 'bg-emerald-600 text-white'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            Público
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsPrivate(true)}
+            className={`flex-1 py-3 text-sm font-medium transition-colors ${
+              isPrivate
+                ? 'bg-emerald-600 text-white'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            Privado
+          </button>
+        </div>
+        {isPrivate && (
+          <p className="text-xs text-gray-500 mt-1">El evento no aparece en la cartelera pública. Se accede solo con el link privado.</p>
+        )}
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-3">Entradas por persona</label>
+        <div className="flex rounded-xl overflow-hidden border border-white/20 bg-neutral-900/80">
+          <button
+            type="button"
+            onClick={() => setOneTicketPerEmail(false)}
+            className={`flex-1 py-3 text-sm font-medium transition-colors ${
+              !oneTicketPerEmail
+                ? 'bg-emerald-600 text-white'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            Sin límite
+          </button>
+          <button
+            type="button"
+            onClick={() => setOneTicketPerEmail(true)}
+            className={`flex-1 py-3 text-sm font-medium transition-colors ${
+              oneTicketPerEmail
+                ? 'bg-emerald-600 text-white'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            1 por email
+          </button>
+        </div>
+        {oneTicketPerEmail && (
+          <p className="text-xs text-gray-500 mt-1">Cada email solo puede registrar una entrada.</p>
+        )}
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-3">Tipo de entrada</label>
@@ -236,37 +297,6 @@ export default function EventCreator({ onCreated }: Props) {
           </div>
         </>
       )}
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-3">Visibilidad</label>
-        <div className="flex rounded-xl overflow-hidden border border-white/20 bg-neutral-900/80">
-          <button
-            type="button"
-            onClick={() => setIsPrivate(false)}
-            className={`flex-1 py-3 text-sm font-medium transition-colors ${
-              !isPrivate
-                ? 'bg-emerald-600 text-white'
-                : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            Público
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsPrivate(true)}
-            className={`flex-1 py-3 text-sm font-medium transition-colors ${
-              isPrivate
-                ? 'bg-emerald-600 text-white'
-                : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            Privado
-          </button>
-        </div>
-        {isPrivate && (
-          <p className="text-xs text-gray-500 mt-1">El evento no aparece en la cartelera pública. Se accede solo con el link privado.</p>
-        )}
-      </div>
-
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-2">Fecha y hora *</label>
         <input

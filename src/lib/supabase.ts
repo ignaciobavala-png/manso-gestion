@@ -160,6 +160,7 @@ export interface Database {
           slug?: string | null
           is_private: boolean
           private_token: string
+          one_ticket_per_email: boolean
           closed_at?: string
           created_at: string
           updated_at: string
@@ -183,6 +184,7 @@ export interface Database {
           slug?: string | null
           is_private?: boolean
           private_token?: string
+          one_ticket_per_email?: boolean
           closed_at?: string
           created_at?: string
           updated_at?: string
@@ -206,6 +208,7 @@ export interface Database {
           slug?: string | null
           is_private?: boolean
           private_token?: string
+          one_ticket_per_email?: boolean
           closed_at?: string
           created_at?: string
           updated_at?: string

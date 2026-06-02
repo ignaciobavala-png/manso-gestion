@@ -58,7 +58,7 @@ export default async function handler(req: Request): Promise<Response> {
 
   const { data: event, error: eventError } = await supabase
     .from('events')
-    .select('id, is_active, registrations_open, max_capacity, is_private, private_token')
+    .select('id, is_active, registrations_open, max_capacity, is_private, private_token, one_ticket_per_email')
     .eq('id', event_id)
     .single()
 
@@ -93,6 +93,7 @@ export default async function handler(req: Request): Promise<Response> {
   const receipt = receipt_url?.trim() || null
 
   // Fetch already-registered names for this email+event to avoid duplicates
+  // (also used for one_ticket_per_email validation)
   const { data: existing } = await supabase
     .from('ticket_registrations')
     .select('name, token')
@@ -107,6 +108,10 @@ export default async function handler(req: Request): Promise<Response> {
   const tickets: TicketResult[] = names
     .filter(n => existingMap.has(n.toLowerCase()))
     .map(n => ({ name: n, token: existingMap.get(n.toLowerCase())! }))
+
+  if (event.one_ticket_per_email && (existing ?? []).length > 0) {
+    return json({ error: 'Este email ya tiene una entrada registrada para este evento' }, 409)
+  }
 
   // All names already registered → idempotent response, nothing inserted
   if (newNames.length === 0) {

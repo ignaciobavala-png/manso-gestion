@@ -17,6 +17,7 @@ interface ActiveEvent {
   is_paid: boolean
   is_private: boolean
   private_token: string
+  one_ticket_per_email: boolean
   regular_ticket_price: number
   start_date: string | null
   end_date: string | null
@@ -206,7 +207,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken }: { eventParam: 
       setLoadingEvent(true)
       const { data, error } = await supabase
         .from('events')
-        .select('id, name, registrations_open, max_capacity, is_paid, regular_ticket_price, start_date, end_date, ticket_alias_pago, ticket_cbu_pago, is_private, private_token, background_url')
+        .select('id, name, registrations_open, max_capacity, is_paid, regular_ticket_price, start_date, end_date, ticket_alias_pago, ticket_cbu_pago, is_private, private_token, one_ticket_per_email, background_url')
         .eq(isSlug ? 'slug' : 'id', eventParam)
         .eq('is_active', true)
         .single()
@@ -229,6 +230,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken }: { eventParam: 
         is_paid: data.is_paid,
         is_private: data.is_private,
         private_token: data.private_token,
+        one_ticket_per_email: data.one_ticket_per_email,
         regular_ticket_price: data.regular_ticket_price,
         start_date: data.start_date,
         end_date: data.end_date,
@@ -467,13 +469,15 @@ function EventoForm({ eventParam, isSlug = false, privateToken }: { eventParam: 
                 ))}
               </div>
 
-              <button
-                type="button"
-                onClick={addAttendee}
-                className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-dashed border-white/20 rounded-2xl py-3 text-gray-400 hover:text-gray-200 transition-colors text-sm"
-              >
-                <span className="text-lg">+</span> Agregar otra entrada
-              </button>
+              {!activeEvent.one_ticket_per_email && (
+                <button
+                  type="button"
+                  onClick={addAttendee}
+                  className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-dashed border-white/20 rounded-2xl py-3 text-gray-400 hover:text-gray-200 transition-colors text-sm"
+                >
+                  <span className="text-lg">+</span> Agregar otra entrada
+                </button>
+              )}
 
               {activeEvent.is_paid && (
                 <>
