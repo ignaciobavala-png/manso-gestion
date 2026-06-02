@@ -4,11 +4,12 @@ interface PublicLayoutProps {
   children: React.ReactNode
   /** Si true, muestra el header con logo grande (para páginas de bienvenida) */
   showHeader?: boolean
+  backgroundImage?: string
 }
 
-export default function PublicLayout({ children, showHeader = true }: PublicLayoutProps) {
+export default function PublicLayout({ children, showHeader = true, backgroundImage }: PublicLayoutProps) {
   return (
-    <Background>
+    <Background backgroundImage={backgroundImage}>
       <div className="flex flex-col flex-1 w-full min-h-screen">
         {showHeader && (
           <header className="flex items-center justify-center pt-12 pb-6 px-6">

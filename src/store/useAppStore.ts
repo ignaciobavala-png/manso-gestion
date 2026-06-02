@@ -53,6 +53,7 @@ interface AppState {
   closeEvent: (eventId: string) => Promise<void>
   deleteEvent: (eventId: string) => Promise<void>
   updateEventFlyer: (eventId: string, flyerUrl: string) => Promise<void>
+  updateEventBackground: (eventId: string, backgroundUrl: string | null) => Promise<void>
   updateEventPaymentAlias: (eventId: string, alias: string | null, cbu: string | null) => Promise<void>
   
   // Utilidades
@@ -479,6 +480,19 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     set(state => ({
       events: state.events.map(e => e.id === eventId ? { ...e, flyer_url: flyerUrl } : e)
+    }))
+  },
+
+  updateEventBackground: async (eventId, backgroundUrl) => {
+    const { error } = await supabase
+      .from('events')
+      .update({ background_url: backgroundUrl })
+      .eq('id', eventId)
+
+    if (error) throw error
+
+    set(state => ({
+      events: state.events.map(e => e.id === eventId ? { ...e, background_url: backgroundUrl } : e)
     }))
   },
 

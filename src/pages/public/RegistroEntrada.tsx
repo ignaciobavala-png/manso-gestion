@@ -15,11 +15,14 @@ interface ActiveEvent {
   id: string
   name: string
   is_paid: boolean
+  is_private: boolean
+  private_token: string
   regular_ticket_price: number
   start_date: string | null
   end_date: string | null
   ticket_alias_pago: string | null
   ticket_cbu_pago: string | null
+  background_url: string | null
 }
 
 interface VenueConfig {
@@ -54,6 +57,7 @@ function Cartelera() {
       .select('id, name, start_date, flyer_url, slug')
       .eq('is_active', true)
       .eq('registrations_open', true)
+      .eq('is_private', false)
       .order('start_date', { ascending: true })
       .then(({ data }) => {
         setEvents(data ?? [])
@@ -156,7 +160,7 @@ function Cartelera() {
 
 // ─── Formulario de registro ─────────────────────────────────────────────────
 
-function EventoForm({ eventParam, isSlug = false }: { eventParam: string; isSlug?: boolean }) {
+function EventoForm({ eventParam, isSlug = false, privateToken }: { eventParam: string; isSlug?: boolean; privateToken?: string }) {
   const navigate = useNavigate()
   const [activeEvent, setActiveEvent] = useState<ActiveEvent | null>(null)
   const [venueConfig, setVenueConfig] = useState<VenueConfig | null>(null)
@@ -202,13 +206,16 @@ function EventoForm({ eventParam, isSlug = false }: { eventParam: string; isSlug
       setLoadingEvent(true)
       const { data, error } = await supabase
         .from('events')
-        .select('id, name, registrations_open, max_capacity, is_paid, regular_ticket_price, start_date, end_date, ticket_alias_pago, ticket_cbu_pago')
+        .select('id, name, registrations_open, max_capacity, is_paid, regular_ticket_price, start_date, end_date, ticket_alias_pago, ticket_cbu_pago, is_private, private_token, background_url')
         .eq(isSlug ? 'slug' : 'id', eventParam)
         .eq('is_active', true)
         .single()
 
       setLoadingEvent(false)
       if (error || !data || !data.registrations_open) return
+
+      // Evento privado: verificar token en URL
+      if (data.is_private && data.private_token !== privateToken) return
 
       // If user already registered on this device, send them to their QR
       if (localStorage.getItem(LS_KEY(data.id))) {
@@ -220,11 +227,14 @@ function EventoForm({ eventParam, isSlug = false }: { eventParam: string; isSlug
         id: data.id,
         name: data.name,
         is_paid: data.is_paid,
+        is_private: data.is_private,
+        private_token: data.private_token,
         regular_ticket_price: data.regular_ticket_price,
         start_date: data.start_date,
         end_date: data.end_date,
         ticket_alias_pago: data.ticket_alias_pago,
         ticket_cbu_pago: data.ticket_cbu_pago,
+        background_url: data.background_url ?? null,
       })
 
       if (data.max_capacity !== null) {
@@ -297,7 +307,8 @@ function EventoForm({ eventParam, isSlug = false }: { eventParam: string; isSlug
           attendees: validNames.map(name => ({ name })),
           email: email.trim(),
           event_id: activeEvent.id,
-          receipt_url: receiptUrl || undefined
+          receipt_url: receiptUrl || undefined,
+          private_token: activeEvent.is_private ? activeEvent.private_token : undefined
         })
       })
 
@@ -341,6 +352,8 @@ function EventoForm({ eventParam, isSlug = false }: { eventParam: string; isSlug
     return <FormSkeleton />
   }
 
+  const backgroundImage = activeEvent?.background_url ?? undefined
+
   if (!activeEvent) {
     return (
       <PublicLayout>
@@ -365,7 +378,7 @@ function EventoForm({ eventParam, isSlug = false }: { eventParam: string; isSlug
   }
 
   return (
-    <PublicLayout>
+    <PublicLayout backgroundImage={backgroundImage}>
       <div className="flex-1 flex flex-col items-center px-5 pb-10">
         <div className="w-full max-w-sm mb-4 pt-2">
           <button onClick={() => navigate('/registro')} className="text-white/50 hover:text-white/80 transition-colors text-2xl leading-none">←</button>
@@ -622,8 +635,9 @@ export default function RegistroEntrada() {
   const [searchParams] = useSearchParams()
   const { slug } = useParams<{ slug: string }>()
   const eventQueryParam = searchParams.get('event')
+  const tokenParam = searchParams.get('token') ?? undefined
 
-  if (slug) return <EventoForm key={slug} eventParam={slug} isSlug={true} />
-  if (eventQueryParam) return <EventoForm key={eventQueryParam} eventParam={eventQueryParam} isSlug={false} />
+  if (slug) return <EventoForm key={slug} eventParam={slug} isSlug={true} privateToken={tokenParam} />
+  if (eventQueryParam) return <EventoForm key={eventQueryParam} eventParam={eventQueryParam} isSlug={false} privateToken={tokenParam} />
   return <Cartelera />
 }

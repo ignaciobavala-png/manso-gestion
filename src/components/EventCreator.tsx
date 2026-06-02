@@ -21,6 +21,7 @@ export default function EventCreator({ onCreated }: Props) {
   const [form, setForm] = useState({ name: '', slug: '', description: '', ticketPrice: '', startDate: '', aliasPago: '', cbuPago: '' })
   const [slugEdited, setSlugEdited] = useState(false)
   const [isPaid, setIsPaid] = useState(false)
+  const [isPrivate, setIsPrivate] = useState(false)
   const [qrCodeUrl, setQrCodeUrl] = useState('')
   const [createdEventName, setCreatedEventName] = useState('')
   const [saving, setSaving] = useState(false)
@@ -55,6 +56,7 @@ export default function EventCreator({ onCreated }: Props) {
         regular_ticket_price: price,
         invited_ticket_price: price,
         is_paid: isPaid,
+        is_private: isPrivate,
         is_active: true,
         registrations_open: true,
         max_capacity: null,
@@ -64,9 +66,12 @@ export default function EventCreator({ onCreated }: Props) {
         slug: finalSlug || null,
       })
 
-      const qrData = event.slug
+      const baseUrl = event.slug
         ? `${window.location.origin}/registro/${event.slug}`
         : `${window.location.origin}/registro?event=${event.id}`
+      const qrData = event.is_private && event.private_token
+        ? `${baseUrl}${event.slug ? '?' : '&'}token=${event.private_token}`
+        : baseUrl
       const url = await QRCode.toDataURL(qrData, {
         width: 300,
         margin: 2,
@@ -231,6 +236,37 @@ export default function EventCreator({ onCreated }: Props) {
           </div>
         </>
       )}
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-3">Visibilidad</label>
+        <div className="flex rounded-xl overflow-hidden border border-white/20 bg-neutral-900/80">
+          <button
+            type="button"
+            onClick={() => setIsPrivate(false)}
+            className={`flex-1 py-3 text-sm font-medium transition-colors ${
+              !isPrivate
+                ? 'bg-emerald-600 text-white'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            Público
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsPrivate(true)}
+            className={`flex-1 py-3 text-sm font-medium transition-colors ${
+              isPrivate
+                ? 'bg-emerald-600 text-white'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            Privado
+          </button>
+        </div>
+        {isPrivate && (
+          <p className="text-xs text-gray-500 mt-1">El evento no aparece en la cartelera pública. Se accede solo con el link privado.</p>
+        )}
+      </div>
+
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-2">Fecha y hora *</label>
         <input

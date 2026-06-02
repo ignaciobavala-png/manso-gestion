@@ -4,14 +4,16 @@ import { useAppStore } from '../store/useAppStore'
 import EventCreator from './EventCreator'
 
 export default function GestionEventos() {
-  const { events, activeEvent, selectOperatingEvent, updateEventFlyer } = useAppStore()
+  const { events, activeEvent, selectOperatingEvent, updateEventFlyer, updateEventBackground } = useAppStore()
   const [regCounts, setRegCounts] = useState<Record<string, number>>({})
   const [showCreator, setShowCreator] = useState(false)
   const [showHistorial, setShowHistorial] = useState(false)
   const [uploadingFor, setUploadingFor] = useState<string | null>(null)
+  const [uploadingBgFor, setUploadingBgFor] = useState<string | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({})
+  const bgFileInputRefs = useRef<Record<string, HTMLInputElement | null>>({})
 
   const scrollToArqueo = () => {
     document.getElementById('arqueo')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -64,6 +66,42 @@ export default function GestionEventos() {
     }
   }
 
+  const handleBackgroundUpload = async (eventId: string, file: File) => {
+    if (uploadingBgFor) return
+    setUploadingBgFor(eventId)
+    setUploadError(null)
+    try {
+      const ext = file.name.split('.').pop()
+      const path = `bg_${eventId}.${ext}`
+
+      const { error: storageError } = await supabase.storage
+        .from('event-flyers')
+        .upload(path, file, { upsert: true })
+
+      if (storageError) throw storageError
+
+      const { data: urlData } = supabase.storage
+        .from('event-flyers')
+        .getPublicUrl(path)
+
+      await updateEventBackground(eventId, urlData.publicUrl)
+    } catch (err) {
+      console.error('Error subiendo fondo:', err)
+      setUploadError('Error al subir el fondo. Intentá de nuevo.')
+    } finally {
+      setUploadingBgFor(null)
+    }
+  }
+
+  const getEventUrl = (e: { slug?: string | null; id: string; is_private: boolean; private_token: string }) => {
+    const base = e.slug
+      ? `${window.location.origin}/registro/${e.slug}`
+      : `${window.location.origin}/registro?event=${e.id}`
+    return e.is_private
+      ? `${base}${e.slug ? '?' : '&'}token=${e.private_token}`
+      : base
+  }
+
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' })
 
@@ -109,6 +147,7 @@ export default function GestionEventos() {
           const isCurrent = activeEvent?.id === e.id
           const regs = regCounts[e.id] ?? 0
           const isUploading = uploadingFor === e.id
+          const isUploadingBg = uploadingBgFor === e.id
 
           return (
             <div
@@ -169,6 +208,11 @@ export default function GestionEventos() {
                           En operación
                         </span>
                       )}
+                      {e.is_private && (
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-zinc-700 text-zinc-300 uppercase tracking-wide whitespace-nowrap">
+                          Privado
+                        </span>
+                      )}
                     </div>
                     <p className="text-gray-400 text-sm mt-1">
                       {e.start_date ? formatDateTime(e.start_date) : `Creado ${formatDate(e.created_at)}`}
@@ -179,7 +223,7 @@ export default function GestionEventos() {
                     </p>
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     {!isCurrent && (
                       <button
                         onClick={() => selectOperatingEvent(e.id)}
@@ -198,17 +242,32 @@ export default function GestionEventos() {
                     )}
                     <button
                       onClick={() => {
-                        const url = e.slug
-                          ? `${window.location.origin}/registro/${e.slug}`
-                          : `${window.location.origin}/registro?event=${e.id}`
-                        navigator.clipboard.writeText(url)
+                        navigator.clipboard.writeText(getEventUrl(e))
                         setCopiedId(e.id)
                         setTimeout(() => setCopiedId(null), 2000)
                       }}
                       className="text-sm px-3 py-1.5 bg-white/10 hover:bg-white/20 text-gray-300 font-medium rounded-xl transition-colors whitespace-nowrap"
                     >
-                      {copiedId === e.id ? '✓ Link copiado' : 'Copiar link'}
+                      {copiedId === e.id ? '✓ Copiado' : e.is_private ? 'Link privado' : 'Copiar link'}
                     </button>
+                    <button
+                      onClick={() => bgFileInputRefs.current[e.id]?.click()}
+                      disabled={isUploadingBg}
+                      className="text-sm px-3 py-1.5 bg-white/10 hover:bg-white/20 text-gray-300 font-medium rounded-xl transition-colors whitespace-nowrap disabled:opacity-50"
+                    >
+                      {isUploadingBg ? 'Subiendo...' : e.background_url ? 'Cambiar fondo' : 'Subir fondo'}
+                    </button>
+                    <input
+                      ref={el => { bgFileInputRefs.current[e.id] = el }}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={ev => {
+                        const file = ev.target.files?.[0]
+                        if (file) handleBackgroundUpload(e.id, file)
+                        ev.target.value = ''
+                      }}
+                    />
                   </div>
                 </div>
               </div>

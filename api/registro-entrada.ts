@@ -13,6 +13,7 @@ interface RequestBody {
   email: string
   event_id: string
   receipt_url?: string
+  private_token?: string
 }
 
 interface TicketResult {
@@ -32,7 +33,7 @@ export default async function handler(req: Request): Promise<Response> {
     return json({ error: 'Body inválido' }, 400)
   }
 
-  const { attendees, email, event_id, receipt_url } = body as RequestBody
+  const { attendees, email, event_id, receipt_url, private_token } = body as RequestBody
 
   if (!email?.trim() || !event_id || !attendees?.length) {
     return json({ error: 'Datos incompletos' }, 400)
@@ -57,7 +58,7 @@ export default async function handler(req: Request): Promise<Response> {
 
   const { data: event, error: eventError } = await supabase
     .from('events')
-    .select('id, is_active, registrations_open, max_capacity')
+    .select('id, is_active, registrations_open, max_capacity, is_private, private_token')
     .eq('id', event_id)
     .single()
 
@@ -71,6 +72,10 @@ export default async function handler(req: Request): Promise<Response> {
 
   if (!event.registrations_open) {
     return json({ error: 'El registro de entradas está pausado momentáneamente' }, 503)
+  }
+
+  if (event.is_private && event.private_token !== private_token) {
+    return json({ error: 'Acceso no autorizado' }, 403)
   }
 
   if (event.max_capacity !== null) {
