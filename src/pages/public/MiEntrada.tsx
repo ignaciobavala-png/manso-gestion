@@ -51,7 +51,25 @@ function saveTicketsToStorage(eventId: string, tickets: TicketData[], eventEndDa
   if (eventEndDate) localStorage.setItem(`manso_tickets_end_${eventId}`, eventEndDate)
 }
 
+const TWO_DAYS_MS = 2 * 24 * 60 * 60 * 1000
+
+function purgeExpiredTickets() {
+  const keysToDelete: string[] = []
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i)
+    if (!key?.startsWith('manso_tickets_')) continue
+    if (key.startsWith('manso_tickets_ts_') || key.startsWith('manso_tickets_end_')) continue
+    const eventId = key.slice('manso_tickets_'.length)
+    const endDateStr = localStorage.getItem(`manso_tickets_end_${eventId}`)
+    if (endDateStr && Date.now() - new Date(endDateStr).getTime() > TWO_DAYS_MS) {
+      keysToDelete.push(key, `manso_tickets_ts_${eventId}`, `manso_tickets_end_${eventId}`)
+    }
+  }
+  keysToDelete.forEach(k => localStorage.removeItem(k))
+}
+
 function getAllStoredTickets(): TicketData[] {
+  purgeExpiredTickets()
   const META_PREFIXES = ['manso_tickets_ts_', 'manso_tickets_end_']
   const events: { sortVal: number; isFinished: boolean; tickets: TicketData[] }[] = []
   for (let i = 0; i < localStorage.length; i++) {
