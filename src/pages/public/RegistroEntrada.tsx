@@ -424,7 +424,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken }: { eventParam: 
             <div>
               <h3 className="text-white font-bold text-xl">Reservá tu lugar</h3>
               <p className="text-gray-300 text-sm mt-1.5">
-                Ponés tu mail y los nombres de quienes vienen, y te generamos un QR para cada uno.
+                Descargá el QR a continuación :)
               </p>
             </div>
 
