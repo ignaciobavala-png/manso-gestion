@@ -52,6 +52,7 @@ function saveTicketsToStorage(eventId: string, tickets: TicketData[], eventEndDa
 }
 
 const TWO_DAYS_MS = 2 * 24 * 60 * 60 * 1000
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000
 
 function purgeExpiredTickets() {
   const keysToDelete: string[] = []
@@ -61,8 +62,16 @@ function purgeExpiredTickets() {
     if (key.startsWith('manso_tickets_ts_') || key.startsWith('manso_tickets_end_')) continue
     const eventId = key.slice('manso_tickets_'.length)
     const endDateStr = localStorage.getItem(`manso_tickets_end_${eventId}`)
-    if (endDateStr && Date.now() - new Date(endDateStr).getTime() > TWO_DAYS_MS) {
-      keysToDelete.push(key, `manso_tickets_ts_${eventId}`, `manso_tickets_end_${eventId}`)
+    if (endDateStr) {
+      if (Date.now() - new Date(endDateStr).getTime() > TWO_DAYS_MS) {
+        keysToDelete.push(key, `manso_tickets_ts_${eventId}`, `manso_tickets_end_${eventId}`)
+      }
+    } else {
+      // fallback para tickets sin end_date guardado (registrados antes del feature)
+      const ts = parseInt(localStorage.getItem(`manso_tickets_ts_${eventId}`) ?? '0')
+      if (ts > 0 && Date.now() - ts > SEVEN_DAYS_MS) {
+        keysToDelete.push(key, `manso_tickets_ts_${eventId}`, `manso_tickets_end_${eventId}`)
+      }
     }
   }
   keysToDelete.forEach(k => localStorage.removeItem(k))
