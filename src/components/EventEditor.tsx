@@ -15,6 +15,8 @@ interface Event {
   max_capacity: number | null
   is_private: boolean
   one_ticket_per_email: boolean
+  require_instagram: boolean
+  require_phone: boolean
 }
 
 interface Props {
@@ -52,6 +54,8 @@ export default function EventEditor({ event, onDone }: Props) {
   const [isPaid, setIsPaid] = useState(event.is_paid)
   const [isPrivate, setIsPrivate] = useState(event.is_private)
   const [oneTicketPerEmail, setOneTicketPerEmail] = useState(event.one_ticket_per_email)
+  const [requireInstagram, setRequireInstagram] = useState(event.require_instagram)
+  const [requirePhone, setRequirePhone] = useState(event.require_phone)
   const [slugEdited, setSlugEdited] = useState(!!event.slug)
   const [saving, setSaving] = useState(false)
   const [alertModal, setAlertModal] = useState({
@@ -93,6 +97,8 @@ export default function EventEditor({ event, onDone }: Props) {
         max_capacity: maxCap,
         is_private: isPrivate,
         one_ticket_per_email: oneTicketPerEmail,
+        require_instagram: requireInstagram,
+        require_phone: requirePhone,
       })
       onDone()
     } catch {
@@ -169,6 +175,33 @@ export default function EventEditor({ event, onDone }: Props) {
           </button>
         </div>
         {oneTicketPerEmail && <p className="text-xs text-gray-500 mt-1">Cada email solo puede registrar una entrada.</p>}
+      </div>
+
+      {/* Datos extra en el formulario */}
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-3">Datos extra al registrarse</label>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between bg-neutral-900/80 border border-white/20 rounded-xl px-4 py-3">
+            <span className="text-sm text-gray-300">Pedir Instagram</span>
+            <button
+              type="button"
+              onClick={() => setRequireInstagram(prev => !prev)}
+              className={`relative w-10 h-5 rounded-full transition-colors ${requireInstagram ? 'bg-emerald-600' : 'bg-white/20'}`}
+            >
+              <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${requireInstagram ? 'translate-x-5' : ''}`} />
+            </button>
+          </div>
+          <div className="flex items-center justify-between bg-neutral-900/80 border border-white/20 rounded-xl px-4 py-3">
+            <span className="text-sm text-gray-300">Pedir teléfono</span>
+            <button
+              type="button"
+              onClick={() => setRequirePhone(prev => !prev)}
+              className={`relative w-10 h-5 rounded-full transition-colors ${requirePhone ? 'bg-emerald-600' : 'bg-white/20'}`}
+            >
+              <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${requirePhone ? 'translate-x-5' : ''}`} />
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Tipo de entrada */}

@@ -15,6 +15,8 @@ interface Registration {
   used_at: string | null
   receipt_url: string | null
   payment_verified: boolean
+  instagram: string | null
+  phone: string | null
 }
 
 interface EnrichedRegistration extends Registration {
@@ -45,7 +47,7 @@ export default function EntradasRegistradas() {
     setLoading(true)
     const { data, error } = await supabase
       .from('ticket_registrations')
-      .select('id, name, email, event_id, token, registered_at, used_at, receipt_url, payment_verified')
+      .select('id, name, email, event_id, token, registered_at, used_at, receipt_url, payment_verified, instagram, phone')
       .eq('event_id', activeEvent.id)
       .order('registered_at', { ascending: false })
 
@@ -195,7 +197,7 @@ export default function EntradasRegistradas() {
 
   const q = search.toLowerCase().trim()
   const displayRows = (q
-    ? rows.filter(r => r.name.toLowerCase().includes(q) || r.email.toLowerCase().includes(q))
+    ? rows.filter(r => r.name.toLowerCase().includes(q) || r.email.toLowerCase().includes(q) || r.instagram?.toLowerCase().includes(q) || r.phone?.includes(q))
     : [...rows]
   ).sort((a, b) => sortAlpha
     ? a.name.localeCompare(b.name, 'es')
@@ -346,6 +348,12 @@ export default function EntradasRegistradas() {
                         <div className="flex-1 min-w-0">
                           <p className="text-white font-medium text-sm truncate">{r.name}</p>
                           <p className="text-gray-400 text-xs truncate">{r.email}</p>
+                          {r.instagram && (
+                            <p className="text-indigo-400 text-xs truncate">@{r.instagram}</p>
+                          )}
+                          {r.phone && (
+                            <p className="text-gray-400 text-xs truncate">{r.phone}</p>
+                          )}
                           <p className="text-gray-600 text-xs mt-0.5">
                             {new Date(r.registered_at).toLocaleString('es-AR', {
                               day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'

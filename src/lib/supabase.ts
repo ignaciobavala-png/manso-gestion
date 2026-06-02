@@ -161,6 +161,8 @@ export interface Database {
           is_private: boolean
           private_token: string
           one_ticket_per_email: boolean
+          require_instagram: boolean
+          require_phone: boolean
           closed_at?: string
           created_at: string
           updated_at: string
@@ -185,6 +187,8 @@ export interface Database {
           is_private?: boolean
           private_token?: string
           one_ticket_per_email?: boolean
+          require_instagram?: boolean
+          require_phone?: boolean
           closed_at?: string
           created_at?: string
           updated_at?: string
@@ -209,6 +213,8 @@ export interface Database {
           is_private?: boolean
           private_token?: string
           one_ticket_per_email?: boolean
+          require_instagram?: boolean
+          require_phone?: boolean
           closed_at?: string
           created_at?: string
           updated_at?: string
@@ -225,6 +231,8 @@ export interface Database {
           payment_verified: boolean
           registered_at: string
           used_at?: string | null
+          instagram?: string | null
+          phone?: string | null
         }
         Insert: {
           id?: string
@@ -236,6 +244,8 @@ export interface Database {
           payment_verified?: boolean
           registered_at?: string
           used_at?: string
+          instagram?: string | null
+          phone?: string | null
         }
         Update: {
           id?: string
@@ -247,6 +257,8 @@ export interface Database {
           payment_verified?: boolean
           registered_at?: string
           used_at?: string
+          instagram?: string | null
+          phone?: string | null
         }
       }
       venue_config: {

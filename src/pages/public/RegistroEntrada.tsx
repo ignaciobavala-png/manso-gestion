@@ -18,6 +18,8 @@ interface ActiveEvent {
   is_private: boolean
   private_token: string
   one_ticket_per_email: boolean
+  require_instagram: boolean
+  require_phone: boolean
   regular_ticket_price: number
   start_date: string | null
   end_date: string | null
@@ -169,6 +171,8 @@ function EventoForm({ eventParam, isSlug = false, privateToken }: { eventParam: 
   const [capacityInfo, setCapacityInfo] = useState<{ max: number; current: number } | null>(null)
   const [email, setEmail] = useState('')
   const [attendeeNames, setAttendeeNames] = useState<string[]>([''])
+  const [instagram, setInstagram] = useState('')
+  const [phone, setPhone] = useState('')
   const [receiptFile, setReceiptFile] = useState<File | null>(null)
   const [receiptUrl, setReceiptUrl] = useState('')
   const [uploading, setUploading] = useState(false)
@@ -207,7 +211,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken }: { eventParam: 
       setLoadingEvent(true)
       const { data, error } = await supabase
         .from('events')
-        .select('id, name, registrations_open, max_capacity, is_paid, regular_ticket_price, start_date, end_date, ticket_alias_pago, ticket_cbu_pago, is_private, private_token, one_ticket_per_email, background_url')
+        .select('id, name, registrations_open, max_capacity, is_paid, regular_ticket_price, start_date, end_date, ticket_alias_pago, ticket_cbu_pago, is_private, private_token, one_ticket_per_email, require_instagram, require_phone, background_url')
         .eq(isSlug ? 'slug' : 'id', eventParam)
         .eq('is_active', true)
         .single()
@@ -231,6 +235,8 @@ function EventoForm({ eventParam, isSlug = false, privateToken }: { eventParam: 
         is_private: data.is_private,
         private_token: data.private_token,
         one_ticket_per_email: data.one_ticket_per_email,
+        require_instagram: data.require_instagram,
+        require_phone: data.require_phone,
         regular_ticket_price: data.regular_ticket_price,
         start_date: data.start_date,
         end_date: data.end_date,
@@ -310,7 +316,9 @@ function EventoForm({ eventParam, isSlug = false, privateToken }: { eventParam: 
           email: email.trim(),
           event_id: activeEvent.id,
           receipt_url: receiptUrl || undefined,
-          private_token: activeEvent.is_private ? activeEvent.private_token : undefined
+          private_token: activeEvent.is_private ? activeEvent.private_token : undefined,
+          instagram: activeEvent.require_instagram ? instagram.trim() : undefined,
+          phone: activeEvent.require_phone ? phone.trim() : undefined,
         })
       })
 
@@ -479,6 +487,37 @@ function EventoForm({ eventParam, isSlug = false, privateToken }: { eventParam: 
                 </button>
               )}
 
+              {activeEvent.require_instagram && (
+                <div>
+                  <label className="text-white/70 text-xs font-medium mb-1.5 block">Instagram <span className="text-red-400">*</span></label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">@</span>
+                    <input
+                      type="text"
+                      value={instagram}
+                      onChange={e => setInstagram(e.target.value.replace(/^@/, ''))}
+                      required
+                      placeholder="tuusuario"
+                      className="w-full bg-white/15 border border-white/25 rounded-2xl pl-8 pr-4 py-3.5 text-white placeholder-gray-400 focus:outline-none focus:border-emerald-400 transition-colors text-sm"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {activeEvent.require_phone && (
+                <div>
+                  <label className="text-white/70 text-xs font-medium mb-1.5 block">Teléfono <span className="text-red-400">*</span></label>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={e => setPhone(e.target.value)}
+                    required
+                    placeholder="Ej: 11 2345 6789"
+                    className="w-full bg-white/15 border border-white/25 rounded-2xl px-4 py-3.5 text-white placeholder-gray-400 focus:outline-none focus:border-emerald-400 transition-colors text-sm"
+                  />
+                </div>
+              )}
+
               {activeEvent.is_paid && (
                 <>
                   <div className="border-t border-white/10" />
@@ -590,7 +629,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken }: { eventParam: 
               ) : (
                 <button
                   type="submit"
-                  disabled={submitting || !email.trim() || attendeeCount === 0 || (activeEvent.is_paid && !receiptUrl)}
+                  disabled={submitting || !email.trim() || attendeeCount === 0 || (activeEvent.is_paid && !receiptUrl) || (activeEvent.require_instagram && !instagram.trim()) || (activeEvent.require_phone && !phone.trim())}
                   className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-white/10 disabled:text-gray-600 text-white font-semibold py-4 rounded-2xl transition-all active:scale-95 text-sm"
                 >
                   {submitting

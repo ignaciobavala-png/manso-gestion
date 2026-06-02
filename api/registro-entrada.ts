@@ -14,6 +14,8 @@ interface RequestBody {
   event_id: string
   receipt_url?: string
   private_token?: string
+  instagram?: string
+  phone?: string
 }
 
 interface TicketResult {
@@ -33,7 +35,7 @@ export default async function handler(req: Request): Promise<Response> {
     return json({ error: 'Body inválido' }, 400)
   }
 
-  const { attendees, email, event_id, receipt_url, private_token } = body as RequestBody
+  const { attendees, email, event_id, receipt_url, private_token, instagram, phone } = body as RequestBody
 
   if (!email?.trim() || !event_id || !attendees?.length) {
     return json({ error: 'Datos incompletos' }, 400)
@@ -58,7 +60,7 @@ export default async function handler(req: Request): Promise<Response> {
 
   const { data: event, error: eventError } = await supabase
     .from('events')
-    .select('id, is_active, registrations_open, max_capacity, is_private, private_token, one_ticket_per_email')
+    .select('id, is_active, registrations_open, max_capacity, is_private, private_token, one_ticket_per_email, require_instagram, require_phone')
     .eq('id', event_id)
     .single()
 
@@ -109,6 +111,14 @@ export default async function handler(req: Request): Promise<Response> {
     .filter(n => existingMap.has(n.toLowerCase()))
     .map(n => ({ name: n, token: existingMap.get(n.toLowerCase())! }))
 
+  if (event.require_instagram && !instagram?.trim()) {
+    return json({ error: 'El Instagram es obligatorio para este evento' }, 400)
+  }
+
+  if (event.require_phone && !phone?.trim()) {
+    return json({ error: 'El teléfono es obligatorio para este evento' }, 400)
+  }
+
   if (event.one_ticket_per_email && (existing ?? []).length > 0) {
     return json({ error: 'Este email ya tiene una entrada registrada para este evento' }, 409)
   }
@@ -129,6 +139,8 @@ export default async function handler(req: Request): Promise<Response> {
         email: normalizedEmail,
         token,
         receipt_url: receipt,
+        instagram: instagram?.trim() || null,
+        phone: phone?.trim() || null,
       })
 
     if (error) {

@@ -59,6 +59,8 @@ export default function EventCreator({ onCreated }: Props) {
         is_paid: isPaid,
         is_private: isPrivate,
         one_ticket_per_email: oneTicketPerEmail,
+        require_instagram: false,
+        require_phone: false,
         is_active: true,
         registrations_open: true,
         max_capacity: null,
