@@ -497,7 +497,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken }: { eventParam: 
                       value={instagram}
                       onChange={e => setInstagram(e.target.value.replace(/^@/, ''))}
                       required
-                      placeholder="@"
+                      placeholder=""
                       className="w-full bg-white/15 border border-white/25 rounded-2xl pl-8 pr-4 py-3.5 text-white placeholder-gray-400 focus:outline-none focus:border-emerald-400 transition-colors text-sm"
                     />
                   </div>
