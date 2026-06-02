@@ -47,7 +47,7 @@ interface AppState {
   addTicketSale: (ticket: Omit<TicketSale, 'id' | 'created_at'>) => Promise<void>
   
   // Acciones de eventos
-  addEvent: (event: Omit<Event, 'id' | 'created_at' | 'updated_at' | 'closed_at'>) => Promise<Event>
+  addEvent: (event: Omit<Event, 'id' | 'created_at' | 'updated_at' | 'closed_at' | 'private_token'>) => Promise<Event>
   setActiveEventStatus: (eventId: string, isActive: boolean) => Promise<void>
   selectOperatingEvent: (eventId: string) => Promise<void>
   closeEvent: (eventId: string) => Promise<void>
