@@ -7,12 +7,14 @@ export default function BottomNav() {
   const { role, signOut } = useAuth()
 
   const tabs = [
-    ...(role === 'control'
+    ...(role === 'control' || role === 'owner'
       ? [
           { path: '/admin/home', label: 'Control', icon: '📊' },
-          { path: '/admin/comunidad', label: 'Comunidad', icon: '👥' },
           { path: '/admin/publico', label: 'Público', icon: '🌐' },
         ]
+      : []),
+    ...(role === 'owner'
+      ? [{ path: '/admin/comunidad', label: 'Comunidad', icon: '👥' }]
       : []),
     { path: '/admin/barra', label: 'Barra', icon: '🍺' },
     { path: '/admin/entradas', label: 'Entradas', icon: '🎫' },

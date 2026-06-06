@@ -48,7 +48,7 @@ function App() {
             <Route
               path="comunidad"
               element={
-                <ProtectedRoute requiredRole="control">
+                <ProtectedRoute requiredRole="owner">
                   <Comunidad />
                 </ProtectedRoute>
               }

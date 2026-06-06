@@ -5,10 +5,11 @@ import { supabase } from '../lib/supabase'
 
 const CONTROL_EMAIL = 'control@manso.internal'
 const EMPLEADO_EMAIL = 'empleado@manso.internal'
+const OWNER_EMAIL = 'owner@manso.internal'
 
-const DEFAULT_USERNAMES = { control: 'control', empleados: 'empleados' }
+const DEFAULT_USERNAMES = { control: 'control', empleados: 'empleados', owner: 'ah33' }
 
-type Role = 'control' | 'empleado' | null
+type Role = 'owner' | 'control' | 'empleado' | null
 
 interface AuthContextType {
   session: Session | null
@@ -16,13 +17,14 @@ interface AuthContextType {
   isLoading: boolean
   signIn: (username: string, password: string) => Promise<Role>
   signOut: () => Promise<void>
-  usernames: { control: string; empleados: string }
+  usernames: { control: string; empleados: string; owner: string }
   refreshUsernames: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
 
 function getRoleFromEmail(email: string | undefined): Role {
+  if (email === OWNER_EMAIL) return 'owner'
   if (email === CONTROL_EMAIL) return 'control'
   if (email === EMPLEADO_EMAIL) return 'empleado'
   return null
@@ -31,12 +33,12 @@ function getRoleFromEmail(email: string | undefined): Role {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [usernames, setUsernames] = useState(DEFAULT_USERNAMES)
+  const [usernames, setUsernames] = useState<{ control: string; empleados: string; owner: string }>(DEFAULT_USERNAMES)
 
   const refreshUsernames = async () => {
     const { data } = await supabase
       .from('venue_config')
-      .select('control_username, empleado_username')
+      .select('control_username, empleado_username, owner_username')
       .eq('id', 1)
       .single()
 
@@ -44,6 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUsernames({
         control: data.control_username || DEFAULT_USERNAMES.control,
         empleados: data.empleado_username || DEFAULT_USERNAMES.empleados,
+        owner: data.owner_username || DEFAULT_USERNAMES.owner,
       })
     }
   }
@@ -68,7 +71,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const u = username.toLowerCase().trim()
     let email: string | null = null
 
-    if (u === usernames.control.toLowerCase()) email = CONTROL_EMAIL
+    if (u === usernames.owner.toLowerCase()) email = OWNER_EMAIL
+    else if (u === usernames.control.toLowerCase()) email = CONTROL_EMAIL
     else if (u === usernames.empleados.toLowerCase()) email = EMPLEADO_EMAIL
 
     if (!email) return null

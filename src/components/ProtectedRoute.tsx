@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 
 interface Props {
   children: ReactNode
-  requiredRole?: 'control' | 'empleado'
+  requiredRole?: 'owner' | 'control' | 'empleado'
 }
 
 export default function ProtectedRoute({ children, requiredRole }: Props) {
@@ -20,8 +20,13 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
 
   if (!session) return <Navigate to="/login" replace />
 
-  // Si la ruta requiere Control y el usuario es Empleado, redirigir a Barra
-  if (requiredRole === 'control' && role !== 'control') {
+  // owner tiene acceso a todo lo de control
+  if (requiredRole === 'owner' && role !== 'owner') {
+    return <Navigate to="/admin/home" replace />
+  }
+
+  // control y owner tienen acceso a rutas de control; empleado no
+  if (requiredRole === 'control' && role !== 'control' && role !== 'owner') {
     return <Navigate to="/admin/barra" replace />
   }
 
