@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAppStore } from '../store/useAppStore'
+import { compressImage } from '../lib/compressImage'
 import EventCreator from './EventCreator'
 import EventEditor from './EventEditor'
 
@@ -46,12 +47,12 @@ export default function GestionEventos() {
     setUploadingFor(eventId)
     setUploadError(null)
     try {
-      const ext = file.name.split('.').pop()
-      const path = `${eventId}.${ext}`
+      const compressed = await compressImage(file)
+      const path = `${eventId}.jpg`
 
       const { error: storageError } = await supabase.storage
         .from('event-flyers')
-        .upload(path, file, { upsert: true })
+        .upload(path, compressed, { upsert: true, contentType: 'image/jpeg' })
 
       if (storageError) throw storageError
 
@@ -73,12 +74,12 @@ export default function GestionEventos() {
     setUploadingBgFor(eventId)
     setUploadError(null)
     try {
-      const ext = file.name.split('.').pop()
-      const path = `bg_${eventId}.${ext}`
+      const compressed = await compressImage(file)
+      const path = `bg_${eventId}.jpg`
 
       const { error: storageError } = await supabase.storage
         .from('event-flyers')
-        .upload(path, file, { upsert: true })
+        .upload(path, compressed, { upsert: true, contentType: 'image/jpeg' })
 
       if (storageError) throw storageError
 
