@@ -7,7 +7,7 @@ const CONTROL_EMAIL = 'control@manso.internal'
 const EMPLEADO_EMAIL = 'empleado@manso.internal'
 const OWNER_EMAIL = 'owner@manso.internal'
 
-const DEFAULT_USERNAMES = { control: 'control', empleados: 'empleados', owner: 'ana33' }
+const DEFAULT_USERNAMES = { control: 'control22', empleados: 'empleados', owner: 'ah33' }
 
 type Role = 'owner' | 'control' | 'empleado' | null
 
