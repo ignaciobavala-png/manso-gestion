@@ -58,9 +58,9 @@ function Cartelera() {
     supabase
       .from('events')
       .select('id, name, start_date, flyer_url, slug')
-      .eq('is_active', true)
       .eq('registrations_open', true)
       .eq('is_private', false)
+      .is('closed_at', null)
       .order('start_date', { ascending: true })
       .then(({ data }) => {
         setEvents(data ?? [])
@@ -213,7 +213,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken }: { eventParam: 
         .from('events')
         .select('id, name, registrations_open, max_capacity, is_paid, regular_ticket_price, start_date, end_date, ticket_alias_pago, ticket_cbu_pago, is_private, private_token, one_ticket_per_email, require_instagram, require_phone, background_url')
         .eq(isSlug ? 'slug' : 'id', eventParam)
-        .eq('is_active', true)
+        .is('closed_at', null)
         .single()
 
       setLoadingEvent(false)

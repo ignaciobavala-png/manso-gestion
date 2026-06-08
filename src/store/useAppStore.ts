@@ -437,6 +437,10 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
+  // Convención de campos en events:
+  // - is_active: true = evento operando AHORA (barra abierta, control en vivo). NO usar para visibilidad.
+  // - closed_at: null = evento vigente (visible en listas). Fecha = evento terminado (va al historial).
+  // - registrations_open: controla si el público puede registrarse.
   closeEvent: async (eventId) => {
     try {
       // Cerrar el evento

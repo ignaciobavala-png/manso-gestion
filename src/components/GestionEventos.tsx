@@ -22,8 +22,8 @@ export default function GestionEventos() {
     document.getElementById('arqueo')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
-  const openEvents = events.filter(e => e.is_active && !e.closed_at)
-  const closedEvents = events.filter(e => !e.is_active || e.closed_at)
+  const openEvents = events.filter(e => !e.closed_at)
+  const closedEvents = events.filter(e => !!e.closed_at)
 
   useEffect(() => {
     if (events.length === 0) return
