@@ -58,6 +58,13 @@ export default async function handler(req: Request): Promise<Response> {
     process.env.VITE_SUPABASE_ANON_KEY!
   )
 
+  // Cliente admin para SELECTs internos — la política pública SELECT fue removida
+  const adminSupabase = createClient(
+    process.env.VITE_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
+
   const { data: event, error: eventError } = await supabase
     .from('events')
     .select('id, closed_at, registrations_open, max_capacity, is_private, private_token, one_ticket_per_email, require_instagram, require_phone')
@@ -81,7 +88,7 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   if (event.max_capacity !== null) {
-    const { count, error: countError } = await supabase
+    const { count, error: countError } = await adminSupabase
       .from('ticket_registrations')
       .select('id', { count: 'exact', head: true })
       .eq('event_id', event_id)
@@ -96,7 +103,7 @@ export default async function handler(req: Request): Promise<Response> {
 
   // Fetch already-registered names for this email+event to avoid duplicates
   // (also used for one_ticket_per_email validation)
-  const { data: existing } = await supabase
+  const { data: existing } = await adminSupabase
     .from('ticket_registrations')
     .select('name, token')
     .eq('event_id', event_id)

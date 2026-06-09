@@ -236,14 +236,14 @@ export default function MiEntrada() {
       const storedEmail = localStorage.getItem('manso_email')
       if (!storedEmail) return
 
-      const [{ data: rows, error: fetchError }, { data: eventData }] = await Promise.all([
-        supabase
-          .from('ticket_registrations')
-          .select('token, name, event_id')
-          .eq('email', storedEmail)
-          .eq('event_id', eventId),
+      const [rpcResult, { data: eventData }] = await Promise.all([
+        supabase.rpc('get_my_tickets', { p_email: storedEmail }),
         supabase.from('events').select('name, end_date').eq('id', eventId).single(),
       ])
+
+      const fetchError = rpcResult.error
+      const rows = (rpcResult.data as { token: string; name: string; event_id: string }[] | null)
+        ?.filter(r => r.event_id === eventId) ?? null
 
       if (fetchError || !rows || rows.length === 0) return
 
@@ -269,10 +269,8 @@ export default function MiEntrada() {
     setSearching(true)
     setSearchError('')
 
-    const { data, error } = await supabase
-      .from('ticket_registrations')
-      .select('token, name, event_id')
-      .eq('email', email.trim().toLowerCase())
+    const { data: rawData, error } = await supabase.rpc('get_my_tickets', { p_email: email.trim().toLowerCase() })
+    const data = rawData as { token: string; name: string; event_id: string }[] | null
 
     if (error) {
       setSearchError('Error al buscar. Intentá de nuevo.')
