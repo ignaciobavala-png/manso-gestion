@@ -92,6 +92,7 @@ export default async function handler(req: Request): Promise<Response> {
       .from('ticket_registrations')
       .select('id', { count: 'exact', head: true })
       .eq('event_id', event_id)
+      .eq('is_banned', false)
 
     if (!countError && count !== null && count + names.length > event.max_capacity) {
       return json({ error: 'No hay suficiente capacidad disponible' }, 409)
