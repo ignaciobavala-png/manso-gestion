@@ -246,13 +246,11 @@ function EventoForm({ eventParam, isSlug = false, privateToken }: { eventParam: 
       })
 
       if (data.max_capacity !== null) {
-        const { count } = await supabase
-          .from('ticket_registrations')
-          .select('id', { count: 'exact', head: true })
-          .eq('event_id', data.id)
+        const { data: countData } = await supabase
+          .rpc('get_event_registration_count', { p_event_id: data.id })
 
-        if (count !== null) {
-          setCapacityInfo({ max: data.max_capacity, current: count })
+        if (countData !== null) {
+          setCapacityInfo({ max: data.max_capacity, current: countData as number })
         }
       }
     }
