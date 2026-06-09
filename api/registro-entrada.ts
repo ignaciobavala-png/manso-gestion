@@ -60,7 +60,7 @@ export default async function handler(req: Request): Promise<Response> {
 
   const { data: event, error: eventError } = await supabase
     .from('events')
-    .select('id, is_active, registrations_open, max_capacity, is_private, private_token, one_ticket_per_email, require_instagram, require_phone')
+    .select('id, closed_at, registrations_open, max_capacity, is_private, private_token, one_ticket_per_email, require_instagram, require_phone')
     .eq('id', event_id)
     .single()
 
@@ -68,8 +68,8 @@ export default async function handler(req: Request): Promise<Response> {
     return json({ error: 'Evento no encontrado' }, 404)
   }
 
-  if (!event.is_active) {
-    return json({ error: 'El evento ya no está activo' }, 409)
+  if (event.closed_at) {
+    return json({ error: 'El evento ya finalizó' }, 409)
   }
 
   if (!event.registrations_open) {
