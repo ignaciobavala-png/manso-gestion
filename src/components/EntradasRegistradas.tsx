@@ -15,6 +15,7 @@ interface Registration {
   used_at: string | null
   receipt_url: string | null
   payment_verified: boolean
+  is_banned: boolean
   instagram: string | null
   phone: string | null
 }
@@ -37,6 +38,7 @@ export default function EntradasRegistradas() {
   const [loading, setLoading] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const [verifyingId, setVerifyingId] = useState<string | null>(null)
+  const [banningId, setBanningId] = useState<string | null>(null)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
   const [toast, setToast] = useState({ isOpen: false, message: '', type: 'info' as 'info' | 'success' | 'warning', name: '' })
   const [search, setSearch] = useState('')
@@ -47,7 +49,7 @@ export default function EntradasRegistradas() {
     setLoading(true)
     const { data, error } = await supabase
       .from('ticket_registrations')
-      .select('id, name, email, event_id, token, registered_at, used_at, receipt_url, payment_verified, instagram, phone')
+      .select('id, name, email, event_id, token, registered_at, used_at, receipt_url, payment_verified, is_banned, instagram, phone')
       .eq('event_id', activeEvent.id)
       .order('registered_at', { ascending: false })
 
@@ -137,6 +139,32 @@ export default function EntradasRegistradas() {
       setRows(prev => prev.map(r => r.id === id ? { ...r, payment_verified: true } : r))
     }
     setVerifyingId(null)
+  }
+
+  const handleBan = async (id: string) => {
+    setBanningId(id)
+    const { error } = await supabase
+      .from('ticket_registrations')
+      .update({ is_banned: true })
+      .eq('id', id)
+
+    if (!error) {
+      setRows(prev => prev.map(r => r.id === id ? { ...r, is_banned: true } : r))
+    }
+    setBanningId(null)
+  }
+
+  const handleUnban = async (id: string) => {
+    setBanningId(id)
+    const { error } = await supabase
+      .from('ticket_registrations')
+      .update({ is_banned: false })
+      .eq('id', id)
+
+    if (!error) {
+      setRows(prev => prev.map(r => r.id === id ? { ...r, is_banned: false } : r))
+    }
+    setBanningId(null)
   }
 
   const handleDownloadQr = useCallback(async (token: string, name: string) => {
@@ -319,7 +347,7 @@ export default function EntradasRegistradas() {
                   return (
                     <div
                       key={r.id}
-                      className="bg-neutral-900 border border-white/10 rounded-2xl px-4 py-3 flex flex-col gap-2"
+                      className={`bg-neutral-900 rounded-2xl px-4 py-3 flex flex-col gap-2 border ${r.is_banned ? 'border-red-700/60' : 'border-white/10'}`}
                     >
                       <div className="flex items-center gap-3 min-w-0">
                         {r.signedReceiptUrl ? (
@@ -363,19 +391,21 @@ export default function EntradasRegistradas() {
 
                         <span
                           className={`sm:hidden text-xs px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 ${
-                            r.used_at
-                              ? 'bg-emerald-900/50 text-emerald-400'
-                              : r.payment_verified
+                            r.is_banned
+                              ? 'bg-red-900/50 text-red-400'
+                              : r.used_at
                                 ? 'bg-emerald-900/50 text-emerald-400'
-                                : 'bg-white/10 text-gray-400'
+                                : r.payment_verified
+                                  ? 'bg-emerald-900/50 text-emerald-400'
+                                  : 'bg-white/10 text-gray-400'
                           }`}
                         >
-                          {r.used_at ? 'Ingresó' : r.payment_verified ? 'Verificado' : 'Pendiente'}
+                          {r.is_banned ? 'Rechazado' : r.used_at ? 'Ingresó' : r.payment_verified ? 'Verificado' : 'Pendiente'}
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-2 pl-[3.25rem] sm:pl-0">
-                        {isPending && r.receipt_url && (
+                      <div className="flex items-center gap-2 pl-[3.25rem] sm:pl-0 flex-wrap">
+                        {isPending && r.receipt_url && !r.is_banned && (
                           <button
                             onClick={() => handleVerify(r.id)}
                             disabled={verifyingId === r.id}
@@ -386,6 +416,26 @@ export default function EntradasRegistradas() {
                         )}
 
                         {!r.used_at && (
+                          r.is_banned ? (
+                            <button
+                              onClick={() => handleUnban(r.id)}
+                              disabled={banningId === r.id}
+                              className="bg-white/10 hover:bg-white/20 disabled:opacity-50 text-gray-400 text-xs px-2.5 py-1.5 rounded-lg transition-colors whitespace-nowrap"
+                            >
+                              {banningId === r.id ? '...' : 'Restaurar QR'}
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleBan(r.id)}
+                              disabled={banningId === r.id}
+                              className="bg-red-900/60 hover:bg-red-800 disabled:opacity-50 text-red-300 text-xs px-2.5 py-1.5 rounded-lg transition-colors whitespace-nowrap"
+                            >
+                              {banningId === r.id ? '...' : 'Rechazar QR'}
+                            </button>
+                          )
+                        )}
+
+                        {!r.used_at && !r.is_banned && (
                           <button
                             onClick={() => handleDownloadQr(r.token, r.name)}
                             disabled={downloadingId === r.token}
@@ -397,14 +447,16 @@ export default function EntradasRegistradas() {
 
                         <span
                           className={`hidden sm:inline text-xs px-2 py-0.5 rounded-full whitespace-nowrap ${
-                            r.used_at
-                              ? 'bg-emerald-900/50 text-emerald-400'
-                              : r.payment_verified
+                            r.is_banned
+                              ? 'bg-red-900/50 text-red-400'
+                              : r.used_at
                                 ? 'bg-emerald-900/50 text-emerald-400'
-                                : 'bg-white/10 text-gray-400'
+                                : r.payment_verified
+                                  ? 'bg-emerald-900/50 text-emerald-400'
+                                  : 'bg-white/10 text-gray-400'
                           }`}
                         >
-                          {r.used_at ? 'Ingresó' : r.payment_verified ? 'Verificado' : 'Pendiente'}
+                          {r.is_banned ? 'Rechazado' : r.used_at ? 'Ingresó' : r.payment_verified ? 'Verificado' : 'Pendiente'}
                         </span>
                       </div>
                     </div>

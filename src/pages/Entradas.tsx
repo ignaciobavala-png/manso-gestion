@@ -120,7 +120,7 @@ export default function Entradas(): React.JSX.Element {
 
     const { data, error } = await supabase
       .from('ticket_registrations')
-      .select('name, event_id, used_at, payment_verified')
+      .select('name, event_id, used_at, payment_verified, is_banned')
       .eq('token', token)
       .single()
 
@@ -132,6 +132,10 @@ export default function Entradas(): React.JSX.Element {
     }
     if (data.event_id !== activeEvent?.id) {
       setAlertModal({ isOpen: true, message: 'Este QR pertenece a otro evento.', type: 'error' })
+      return
+    }
+    if (data.is_banned) {
+      setAlertModal({ isOpen: true, message: 'Esta entrada fue rechazada. No puede ingresar.', type: 'error' })
       return
     }
     if (data.used_at) {
