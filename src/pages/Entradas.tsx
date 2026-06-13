@@ -130,10 +130,6 @@ export default function Entradas(): React.JSX.Element {
       setAlertModal({ isOpen: true, message: 'Token no encontrado.', type: 'error' })
       return
     }
-    if (data.event_id !== activeEvent?.id) {
-      setAlertModal({ isOpen: true, message: 'Este QR pertenece a otro evento.', type: 'error' })
-      return
-    }
     if (data.is_banned) {
       setAlertModal({ isOpen: true, message: 'Esta entrada fue rechazada. No puede ingresar.', type: 'error' })
       return
