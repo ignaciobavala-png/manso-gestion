@@ -60,7 +60,7 @@ export default function GestionEventos() {
         .from('event-flyers')
         .getPublicUrl(path)
 
-      await updateEventFlyer(eventId, urlData.publicUrl)
+      await updateEventFlyer(eventId, `${urlData.publicUrl}?t=${Date.now()}`)
     } catch (err) {
       console.error('Error subiendo flyer:', err)
       setUploadError('Error al subir el flyer. Intentá de nuevo.')
@@ -87,7 +87,7 @@ export default function GestionEventos() {
         .from('event-flyers')
         .getPublicUrl(path)
 
-      await updateEventBackground(eventId, urlData.publicUrl)
+      await updateEventBackground(eventId, `${urlData.publicUrl}?t=${Date.now()}`)
     } catch (err) {
       console.error('Error subiendo fondo:', err)
       setUploadError('Error al subir el fondo. Intentá de nuevo.')
