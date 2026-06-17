@@ -43,7 +43,7 @@ export default async function handler(req: Request): Promise<Response> {
 
   const { data, error } = await supabase
     .from('ticket_registrations')
-    .select('id, event_id, name, email, instagram, phone, registered_at, used_at, payment_verified, is_banned')
+    .select('id, event_id, name, email, instagram, phone, registered_at, used_at, payment_verified, is_banned, price_per_ticket')
     .eq('event_id', id)
     .order('registered_at', { ascending: false })
 

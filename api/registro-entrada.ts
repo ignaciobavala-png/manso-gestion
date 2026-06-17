@@ -17,6 +17,7 @@ interface RequestBody {
   private_token?: string
   instagram?: string
   phone?: string
+  price_per_ticket?: number
 }
 
 interface TicketResult {
@@ -36,7 +37,7 @@ export default async function handler(req: Request): Promise<Response> {
     return json({ error: 'Body inválido' }, 400)
   }
 
-  const { attendees, email, event_id, receipt_url, private_token, instagram, phone } = body as RequestBody
+  const { attendees, email, event_id, receipt_url, private_token, instagram, phone, price_per_ticket } = body as RequestBody
 
   if (!email?.trim() || !event_id || !attendees?.length) {
     return json({ error: 'Datos incompletos' }, 400)
@@ -150,6 +151,7 @@ export default async function handler(req: Request): Promise<Response> {
         receipt_url: receipt,
         instagram: instagram?.trim() || null,
         phone: phone?.trim() || null,
+        price_per_ticket: price_per_ticket ?? null,
       })
 
     if (error) {

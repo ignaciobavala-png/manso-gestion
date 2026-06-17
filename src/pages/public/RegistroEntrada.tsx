@@ -317,6 +317,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken }: { eventParam: 
           private_token: activeEvent.is_private ? activeEvent.private_token : undefined,
           instagram: activeEvent.require_instagram ? instagram.trim() : undefined,
           phone: activeEvent.require_phone ? phone.trim() : undefined,
+          price_per_ticket: activeEvent.is_paid ? ticketPrice : undefined,
         })
       })
 
