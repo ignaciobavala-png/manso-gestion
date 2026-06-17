@@ -118,7 +118,7 @@ export default async function handler(req: Request): Promise<Response> {
   const newNames = names.filter(n => !existingMap.has(n.toLowerCase()))
   const tickets: TicketResult[] = names
     .filter(n => existingMap.has(n.toLowerCase()))
-    .map(n => ({ name: n, token: existingMap.get(n.toLowerCase())! }))
+    .map(n => ({ name: n, token: existingMap.get(n.toLowerCase()) as string }))
 
   if (event.require_instagram && !instagram?.trim()) {
     return json({ error: 'El Instagram es obligatorio para este evento' }, 400)
