@@ -35,7 +35,7 @@ export default async function handler(req: Request): Promise<Response> {
   const [eventsResult, regIdsResult, ticketIdsResult] = await Promise.all([
     supabase
       .from('events')
-      .select('id, name, description, slug, start_date, end_date, is_active, registrations_open, max_capacity, regular_ticket_price, invited_ticket_price, is_paid, is_private, flyer_url')
+      .select('id, name, description, slug, start_date, end_date, is_active, registrations_open, max_capacity, regular_ticket_price, invited_ticket_price, is_paid, is_private, flyer_url, ticket_alias_pago')
       .order('start_date', { ascending: false }),
     supabase
       .from('ticket_registrations')
