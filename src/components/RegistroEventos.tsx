@@ -29,7 +29,8 @@ export default function RegistroEventos() {
       await deleteEvent(eventId)
       setConfirmingDelete(null)
     } catch (err) {
-      setDeleteError(err instanceof Error ? err.message : 'No se pudo eliminar el evento.')
+      const msg = err instanceof Error ? err.message : (err as { message?: string })?.message ?? 'No se pudo eliminar el evento.'
+      setDeleteError(msg)
     } finally {
       setDeleting(false)
     }
