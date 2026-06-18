@@ -19,6 +19,7 @@ interface Egreso {
 interface Inversion {
   socio: string | null
   monto_ars: number | null
+  monto_usd: number | null
 }
 
 const MES_KEY = (d: string) => {
@@ -65,7 +66,7 @@ export default function Stats() {
     Promise.all([
       supabase.from('financial_ingresos').select('fecha, monto_ars, concepto'),
       supabase.from('financial_egresos').select('fecha, monto_ars'),
-      supabase.from('financial_inversiones_socio').select('socio, monto_ars'),
+      supabase.from('financial_inversiones_socio').select('socio, monto_ars, monto_usd'),
     ]).then(([i, e, inv]) => {
       setIngresos((i.data ?? []) as Ingreso[])
       setEgresos((e.data ?? []) as Egreso[])
@@ -104,19 +105,23 @@ export default function Stats() {
     .sort((a, b) => b.value - a.value)
 
   // — Inversión por socio —
-  const porSocio: Record<string, number> = {}
+  const porSocioARS: Record<string, number> = {}
+  const porSocioUSD: Record<string, number> = {}
   inversiones.forEach(r => {
-    if (!r.socio || !r.monto_ars) return
-    porSocio[r.socio] = (porSocio[r.socio] ?? 0) + r.monto_ars
+    if (!r.socio) return
+    if (r.monto_ars) porSocioARS[r.socio] = (porSocioARS[r.socio] ?? 0) + r.monto_ars
+    if (r.monto_usd) porSocioUSD[r.socio] = (porSocioUSD[r.socio] ?? 0) + r.monto_usd
   })
-  const socioData = Object.entries(porSocio)
-    .map(([socio, total]) => ({ socio, total: Math.round(total) }))
-    .sort((a, b) => b.total - a.total)
+  const socios = [...new Set([...Object.keys(porSocioARS), ...Object.keys(porSocioUSD)])]
+  const socioData = socios
+    .map(socio => ({ socio, ars: Math.round(porSocioARS[socio] ?? 0), usd: Math.round(porSocioUSD[socio] ?? 0) }))
+    .sort((a, b) => b.ars - a.ars)
 
   // — KPIs globales —
   const totalIngresos = ingresos.reduce((s, r) => s + (r.monto_ars ?? 0), 0)
   const totalEgresos = egresos.reduce((s, r) => s + (r.monto_ars ?? 0), 0)
-  const totalInv = inversiones.reduce((s, r) => s + (r.monto_ars ?? 0), 0)
+  const totalInvARS = inversiones.reduce((s, r) => s + (r.monto_ars ?? 0), 0)
+  const totalInvUSD = inversiones.reduce((s, r) => s + (r.monto_usd ?? 0), 0)
 
   const tooltipStyle = {
     backgroundColor: '#18181b',
@@ -143,7 +148,7 @@ export default function Stats() {
         {[
           { label: 'Ingresos totales', value: totalIngresos, color: 'text-emerald-400' },
           { label: 'Egresos totales', value: totalEgresos, color: 'text-red-400' },
-          { label: 'Inversión socios', value: totalInv, color: 'text-blue-400' },
+          { label: 'Inversión socios', value: totalInvARS, color: 'text-blue-400' },
         ].map(k => (
           <div key={k.label} className="bg-white/5 rounded-2xl p-4 border border-white/10">
             <p className="text-gray-400 text-xs mb-1">{k.label}</p>
@@ -206,20 +211,35 @@ export default function Stats() {
 
         {/* Inversión por socio */}
         <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-          <h2 className="text-white font-semibold mb-4 text-sm">Inversión por socio (ARS)</h2>
-          <div className="space-y-3 mt-2">
+          <h2 className="text-white font-semibold mb-4 text-sm">Inversión por socio</h2>
+          <div className="space-y-4 mt-2">
             {socioData.map(s => {
-              const pct = totalInv > 0 ? (s.total / totalInv) * 100 : 0
+              const pctARS = totalInvARS > 0 ? (s.ars / totalInvARS) * 100 : 0
+              const pctUSD = totalInvUSD > 0 ? (s.usd / totalInvUSD) * 100 : 0
               const color = COLORS_SOCIOS[s.socio] ?? '#a78bfa'
               return (
-                <div key={s.socio}>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-gray-300 font-medium">{s.socio}</span>
-                    <span className="text-gray-400">{fmt(s.total)} · {pct.toFixed(0)}%</span>
+                <div key={s.socio} className="space-y-1.5">
+                  <span className="text-gray-300 font-medium text-xs">{s.socio}</span>
+                  <div>
+                    <div className="flex justify-between text-xs mb-0.5">
+                      <span className="text-gray-500">ARS</span>
+                      <span className="text-gray-400">{fmt(s.ars)} · {pctARS.toFixed(1)}%</span>
+                    </div>
+                    <div className="w-full bg-white/10 rounded-full h-1.5">
+                      <div className="h-1.5 rounded-full transition-all" style={{ width: `${pctARS}%`, backgroundColor: color }} />
+                    </div>
                   </div>
-                  <div className="w-full bg-white/10 rounded-full h-2">
-                    <div className="h-2 rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: color }} />
-                  </div>
+                  {s.usd > 0 && (
+                    <div>
+                      <div className="flex justify-between text-xs mb-0.5">
+                        <span className="text-gray-500">USD</span>
+                        <span className="text-gray-400">u$s{s.usd.toLocaleString()} · {pctUSD.toFixed(1)}%</span>
+                      </div>
+                      <div className="w-full bg-white/10 rounded-full h-1.5">
+                        <div className="h-1.5 rounded-full transition-all opacity-70" style={{ width: `${pctUSD}%`, backgroundColor: color }} />
+                      </div>
+                    </div>
+                  )}
                 </div>
               )
             })}
