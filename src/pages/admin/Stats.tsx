@@ -21,7 +21,6 @@ interface Inversion {
   monto_ars: number | null
 }
 
-const MESES = ['Nov', 'Dic', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun']
 const MES_KEY = (d: string) => {
   const dt = new Date(d)
   return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`
@@ -161,7 +160,7 @@ export default function Stats() {
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
             <XAxis dataKey="mes" tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} />
             <YAxis tickFormatter={v => fmt(v)} tick={{ fill: '#9ca3af', fontSize: 10 }} axisLine={false} tickLine={false} width={55} />
-            <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => fmt(v)} />
+            <Tooltip contentStyle={tooltipStyle} formatter={(v) => typeof v === 'number' ? fmt(v) : ''} />
             <Legend wrapperStyle={{ fontSize: 12, color: '#9ca3af' }} />
             <Bar dataKey="ingresos" name="Ingresos" fill="#34d399" radius={[4, 4, 0, 0]} />
             <Bar dataKey="egresos" name="Egresos" fill="#f87171" radius={[4, 4, 0, 0]} />
@@ -177,7 +176,7 @@ export default function Stats() {
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
             <XAxis dataKey="mes" tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} />
             <YAxis tickFormatter={v => fmt(v)} tick={{ fill: '#9ca3af', fontSize: 10 }} axisLine={false} tickLine={false} width={55} />
-            <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => fmt(v)} />
+            <Tooltip contentStyle={tooltipStyle} formatter={(v) => typeof v === 'number' ? fmt(v) : ''} />
             <Line
               type="monotone" dataKey="acumulado" name="Balance acum."
               stroke={acum >= 0 ? '#34d399' : '#f87171'}
@@ -199,7 +198,7 @@ export default function Stats() {
                   <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => fmt(v)} />
+              <Tooltip contentStyle={tooltipStyle} formatter={(v) => typeof v === 'number' ? fmt(v) : ''} />
               <Legend wrapperStyle={{ fontSize: 11, color: '#9ca3af' }} />
             </PieChart>
           </ResponsiveContainer>
