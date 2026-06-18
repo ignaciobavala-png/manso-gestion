@@ -12,6 +12,7 @@ import Carta from './pages/public/Carta'
 import Inicio from './pages/public/Inicio'
 import Comunidad from './pages/admin/Comunidad'
 import VistasPublicas from './pages/admin/VistasPublicas'
+import Stats from './pages/admin/Stats'
 
 function App() {
   return (
@@ -50,6 +51,14 @@ function App() {
               element={
                 <ProtectedRoute requiredRole="owner">
                   <Comunidad />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="stats"
+              element={
+                <ProtectedRoute requiredRole="owner">
+                  <Stats />
                 </ProtectedRoute>
               }
             />

@@ -14,7 +14,10 @@ export default function BottomNav() {
         ]
       : []),
     ...(role === 'owner'
-      ? [{ path: '/admin/comunidad', label: 'Comunidad', icon: '👥' }]
+      ? [
+          { path: '/admin/comunidad', label: 'Comunidad', icon: '👥' },
+          { path: '/admin/stats', label: 'Stats', icon: '📈' },
+        ]
       : []),
     { path: '/admin/barra', label: 'Barra', icon: '🍺' },
     { path: '/admin/entradas', label: 'Entradas', icon: '🎫' },
