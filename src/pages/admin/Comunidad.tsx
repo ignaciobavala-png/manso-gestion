@@ -39,6 +39,7 @@ export default function Comunidad() {
         .from('ticket_registrations')
         .select('id, name, email, event_id, registered_at, used_at')
         .order('registered_at', { ascending: false })
+        .limit(10000)
 
       if (error || !data) {
         setLoading(false)
