@@ -27,19 +27,42 @@ export default function GestionEventos() {
 
   useEffect(() => {
     if (events.length === 0) return
-    const ids = events.map(e => e.id)
-    supabase
-      .from('ticket_registrations')
-      .select('event_id')
-      .in('event_id', ids)
-      .then(({ data }) => {
-        if (!data) return
-        const counts: Record<string, number> = {}
-        data.forEach(r => {
-          counts[r.event_id] = (counts[r.event_id] ?? 0) + 1
-        })
-        setRegCounts(counts)
-      })
+    Promise.all(
+      events.map(e =>
+        supabase
+          .from('ticket_registrations')
+          .select('*', { count: 'exact', head: true })
+          .eq('event_id', e.id)
+          .then(({ count }) => ({ id: e.id, count: count ?? 0 }))
+      )
+    ).then(results => {
+      const counts: Record<string, number> = {}
+      results.forEach(({ id, count }) => { counts[id] = count })
+      setRegCounts(counts)
+    })
+  }, [events])
+
+  useEffect(() => {
+    if (events.length === 0) return
+    const ids = new Set(events.map(e => e.id))
+
+    const channel = supabase
+      .channel('gestion-ticket-registrations')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'ticket_registrations' },
+        (payload: { new: { event_id: string } }) => {
+          const eventId = payload.new.event_id
+          if (!ids.has(eventId)) return
+          setRegCounts(prev => ({
+            ...prev,
+            [eventId]: (prev[eventId] ?? 0) + 1,
+          }))
+        }
+      )
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
   }, [events])
 
   const handleFlyerUpload = async (eventId: string, file: File) => {
