@@ -53,6 +53,7 @@ export default function EventoActivo() {
       .from('ticket_registrations')
       .select('id', { count: 'exact', head: true })
       .eq('event_id', activeEvent.id)
+      .eq('is_banned', false)
       .then(({ count }) => setRegistrationCount(count ?? 0))
   }, [activeEvent])
 
