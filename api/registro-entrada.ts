@@ -89,6 +89,9 @@ export default async function handler(req: Request): Promise<Response> {
     return json({ error: 'Acceso no autorizado' }, 403)
   }
 
+  // Fast-fail: evita inserts obvios cuando ya está lleno, pero NO es la
+  // garantía real de límite — esa la da el trigger enforce_event_capacity
+  // en la DB, que usa SELECT ... FOR UPDATE para serializar concurrencia.
   if (event.max_capacity !== null) {
     const { count, error: countError } = await adminSupabase
       .from('ticket_registrations')
@@ -155,6 +158,10 @@ export default async function handler(req: Request): Promise<Response> {
       })
 
     if (error) {
+      // P0001 es el ERRCODE que lanza el trigger enforce_event_capacity
+      if (error.code === 'P0001' || error.message?.includes('capacity_exceeded')) {
+        return json({ error: 'No hay suficiente capacidad disponible' }, 409)
+      }
       return json({ error: 'Error al registrar' }, 500)
     }
 
