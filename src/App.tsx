@@ -13,6 +13,8 @@ import Inicio from './pages/public/Inicio'
 import Comunidad from './pages/admin/Comunidad'
 import VistasPublicas from './pages/admin/VistasPublicas'
 import Stats from './pages/admin/Stats'
+import CineclubAdmin from './pages/admin/Cineclub'
+import Cineclub from './pages/public/Cineclub'
 
 function App() {
   return (
@@ -27,6 +29,7 @@ function App() {
           <Route path="/registro/:slug" element={<RegistroEntrada />} />
           <Route path="/mi-entrada" element={<MiEntrada />} />
           <Route path="/carta" element={<Carta />} />
+          <Route path="/cineclub" element={<Cineclub />} />
 
           <Route
             path="/admin"
@@ -67,6 +70,14 @@ function App() {
               element={
                 <ProtectedRoute requiredRole="control">
                   <VistasPublicas />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="cineclub"
+              element={
+                <ProtectedRoute requiredRole="owner">
+                  <CineclubAdmin />
                 </ProtectedRoute>
               }
             />

@@ -261,6 +261,67 @@ export interface Database {
           phone?: string | null
         }
       }
+      cineclub_polls: {
+        Row: {
+          id: string
+          status: 'voting' | 'closed'
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          status?: 'voting' | 'closed'
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          status?: 'voting' | 'closed'
+        }
+      }
+      cineclub_movies: {
+        Row: {
+          id: string
+          poll_id: string
+          title: string
+          synopsis: string
+          flyer_url: string | null
+          sort_order: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          poll_id: string
+          title: string
+          synopsis?: string
+          flyer_url?: string | null
+          sort_order?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          poll_id?: string
+          title?: string
+          synopsis?: string
+          flyer_url?: string | null
+          sort_order?: number
+        }
+      }
+      cineclub_votes: {
+        Row: {
+          id: string
+          poll_id: string
+          movie_id: string
+          voter_fingerprint: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          poll_id: string
+          movie_id: string
+          voter_fingerprint: string
+          created_at?: string
+        }
+        Update: never
+      }
       venue_config: {
         Row: {
           id: number

@@ -20,6 +20,12 @@ const PAGES = [
     path: '/carta',
     icon: '🍻',
   },
+  {
+    label: 'Cineclub',
+    description: 'Votación pública de películas',
+    path: '/cineclub',
+    icon: '🎬',
+  },
 ]
 
 export default function VistasPublicas() {
