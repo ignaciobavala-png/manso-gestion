@@ -42,6 +42,24 @@ export default function Cineclub() {
   const [voting, setVoting] = useState(false)
   const [totalVotes, setTotalVotes] = useState(0)
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [sharedId, setSharedId] = useState<string | null>(null)
+
+  const handleShare = async (movieTitle: string, movieId: string) => {
+    const url = window.location.href
+    const text = `🎬 ¡Votá por "${movieTitle}"! Elegí la próxima película del Cineclub → ${url}`
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ text })
+      } catch {
+        // usuario canceló el share nativo, no hacer nada
+      }
+    } else {
+      await navigator.clipboard.writeText(text)
+      setSharedId(movieId)
+      setTimeout(() => setSharedId(null), 2000)
+    }
+  }
 
   const loadPoll = useCallback(async () => {
     const { data: polls } = await supabase
@@ -287,6 +305,13 @@ export default function Cineclub() {
                     }`}
                   >
                     {isVoted ? '✓ Tu voto' : 'Votar'}
+                  </button>
+
+                  <button
+                    onClick={() => handleShare(movie.title, movie.id)}
+                    className="w-full py-2 rounded-xl text-xs font-semibold border border-white/15 text-white/70 hover:border-white/30 hover:text-white transition-all active:scale-95"
+                  >
+                    {sharedId === movie.id ? '✓ Link copiado' : '↗ Compartir'}
                   </button>
                 </div>
               </div>
