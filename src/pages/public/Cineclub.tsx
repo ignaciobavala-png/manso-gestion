@@ -21,6 +21,7 @@ function getVotedKey(pollId: string) {
 interface Poll {
   id: string
   status: 'voting' | 'closed'
+  closes_at: string | null
 }
 
 interface Movie {
@@ -40,11 +41,12 @@ export default function Cineclub() {
   const [votedMovieId, setVotedMovieId] = useState<string | null>(null)
   const [voting, setVoting] = useState(false)
   const [totalVotes, setTotalVotes] = useState(0)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
 
   const loadPoll = useCallback(async () => {
     const { data: polls } = await supabase
       .from('cineclub_polls')
-      .select('id, status')
+      .select('id, status, closes_at')
       .order('created_at', { ascending: false })
       .limit(1)
 
@@ -53,7 +55,14 @@ export default function Cineclub() {
       return
     }
 
-    const currentPoll = polls[0] as Poll
+    let currentPoll = polls[0] as Poll
+
+    // Si el plazo venció y todavía figura como abierta, cerrarla automáticamente
+    if (currentPoll.status === 'voting' && currentPoll.closes_at && new Date(currentPoll.closes_at) <= new Date()) {
+      await supabase.from('cineclub_polls').update({ status: 'closed' }).eq('id', currentPoll.id)
+      currentPoll = { ...currentPoll, status: 'closed' }
+    }
+
     setPoll(currentPoll)
 
     const storedVote = localStorage.getItem(getVotedKey(currentPoll.id))
@@ -237,7 +246,17 @@ export default function Cineclub() {
                   </p>
 
                   {movie.synopsis && (
-                    <p className="text-gray-400 text-xs leading-relaxed line-clamp-3">{movie.synopsis}</p>
+                    <div>
+                      <p className={`text-gray-400 text-xs leading-relaxed ${expandedId === movie.id ? '' : 'line-clamp-3'}`}>
+                        {movie.synopsis}
+                      </p>
+                      <button
+                        onClick={() => setExpandedId(expandedId === movie.id ? null : movie.id)}
+                        className="text-white font-semibold text-xs mt-1 transition-all drop-shadow-[0_0_6px_rgba(255,255,255,0.6)] hover:drop-shadow-[0_0_10px_rgba(255,255,255,0.9)]"
+                      >
+                        {expandedId === movie.id ? 'Ver menos ↑' : 'Ver más ↓'}
+                      </button>
+                    </div>
                   )}
 
                   {/* Barra de votos — visible solo después de votar */}

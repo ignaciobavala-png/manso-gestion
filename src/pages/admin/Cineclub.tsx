@@ -5,6 +5,7 @@ import { compressImage } from '../../lib/compressImage'
 interface Poll {
   id: string
   status: 'voting' | 'closed'
+  closes_at: string | null
   created_at: string
 }
 
@@ -37,16 +38,19 @@ export default function CineclubAdmin() {
   const [formFlyerPreview, setFormFlyerPreview] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [closingPoll, setClosingPoll] = useState(false)
+  const [closesAt, setClosesAt] = useState('')
+  const [savingDeadline, setSavingDeadline] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   // Edición inline por película
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editState, setEditState] = useState<EditState>({ title: '', synopsis: '', saving: false })
+  const [expandedId, setExpandedId] = useState<string | null>(null)
 
   const loadData = useCallback(async () => {
     const { data: polls } = await supabase
       .from('cineclub_polls')
-      .select('id, status, created_at')
+      .select('id, status, closes_at, created_at')
       .order('created_at', { ascending: false })
       .limit(1)
 
@@ -57,6 +61,12 @@ export default function CineclubAdmin() {
 
     const currentPoll = polls[0] as Poll
     setPoll(currentPoll)
+    if (currentPoll.closes_at) {
+      // Convertir ISO a formato local para el input datetime-local
+      const d = new Date(currentPoll.closes_at)
+      const pad = (n: number) => String(n).padStart(2, '0')
+      setClosesAt(`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`)
+    }
 
     const [moviesRes, votesRes] = await Promise.all([
       supabase
@@ -210,6 +220,24 @@ export default function CineclubAdmin() {
     if (!error) setPoll(prev => prev ? { ...prev, status: 'voting' } : prev)
   }
 
+  const handleSaveDeadline = async () => {
+    if (!poll) return
+    setSavingDeadline(true)
+    const closes_at = closesAt ? new Date(closesAt).toISOString() : null
+    const { error } = await supabase.from('cineclub_polls').update({ closes_at }).eq('id', poll.id)
+    if (!error) setPoll(prev => prev ? { ...prev, closes_at } : prev)
+    setSavingDeadline(false)
+  }
+
+  const handleClearDeadline = async () => {
+    if (!poll) return
+    const { error } = await supabase.from('cineclub_polls').update({ closes_at: null }).eq('id', poll.id)
+    if (!error) { setPoll(prev => prev ? { ...prev, closes_at: null } : prev); setClosesAt('') }
+  }
+
+  const formatDeadline = (iso: string) =>
+    new Date(iso).toLocaleString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
+
   if (loading) {
     return <div className="flex-1 flex items-center justify-center text-white/60 pb-20">Cargando...</div>
   }
@@ -230,33 +258,68 @@ export default function CineclubAdmin() {
       {poll && (
         <>
           {/* Estado */}
-          <div className="bg-black/40 border border-white/10 rounded-2xl p-4 flex items-center justify-between">
-            <div>
-              <p className="text-white text-sm font-semibold">
-                {poll.status === 'voting' ? 'Votación abierta' : 'Votación cerrada'}
-              </p>
-              <p className="text-white/40 text-xs mt-0.5">{totalVotes} votos emitidos</p>
-            </div>
-            <div className="flex gap-2">
-              {poll.status === 'voting' ? (
-                <button
-                  onClick={handleClosePoll}
-                  disabled={closingPoll}
-                  className="bg-red-500/20 text-red-400 border border-red-400/40 px-3 py-1.5 rounded-xl text-xs font-semibold hover:bg-red-500/30 transition-colors"
-                >
-                  Cerrar votación
-                </button>
-              ) : (
-                <>
-                  <button onClick={handleReopenPoll} className="bg-emerald-500/20 text-emerald-400 border border-emerald-400/40 px-3 py-1.5 rounded-xl text-xs font-semibold hover:bg-emerald-500/30 transition-colors">
-                    Reabrir
+          <div className="bg-black/40 border border-white/10 rounded-2xl p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-white text-sm font-semibold">
+                  {poll.status === 'voting' ? 'Votación abierta' : 'Votación cerrada'}
+                </p>
+                <p className="text-white/40 text-xs mt-0.5">{totalVotes} votos emitidos</p>
+              </div>
+              <div className="flex gap-2">
+                {poll.status === 'voting' ? (
+                  <button
+                    onClick={handleClosePoll}
+                    disabled={closingPoll}
+                    className="bg-red-500/20 text-red-400 border border-red-400/40 px-3 py-1.5 rounded-xl text-xs font-semibold hover:bg-red-500/30 transition-colors"
+                  >
+                    Cerrar
                   </button>
-                  <button onClick={handleCreatePoll} className="bg-white/10 text-white/70 border border-white/20 px-3 py-1.5 rounded-xl text-xs font-semibold hover:bg-white/20 transition-colors">
-                    Nueva votación
-                  </button>
-                </>
-              )}
+                ) : (
+                  <>
+                    <button onClick={handleReopenPoll} className="bg-emerald-500/20 text-emerald-400 border border-emerald-400/40 px-3 py-1.5 rounded-xl text-xs font-semibold hover:bg-emerald-500/30 transition-colors">
+                      Reabrir
+                    </button>
+                    <button onClick={handleCreatePoll} className="bg-white/10 text-white/70 border border-white/20 px-3 py-1.5 rounded-xl text-xs font-semibold hover:bg-white/20 transition-colors">
+                      Nueva
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
+
+            {/* Fecha límite opcional */}
+            {poll.status === 'voting' && (
+              <div className="border-t border-white/10 pt-3 space-y-2">
+                <p className="text-white/50 text-xs font-semibold uppercase tracking-wide">
+                  Cierre automático <span className="normal-case font-normal">(opcional)</span>
+                </p>
+                {poll.closes_at ? (
+                  <div className="flex items-center justify-between">
+                    <p className="text-white/70 text-xs capitalize">{formatDeadline(poll.closes_at)}</p>
+                    <button onClick={handleClearDeadline} className="text-white/30 hover:text-red-400 text-xs transition-colors">
+                      Quitar
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="datetime-local"
+                      value={closesAt}
+                      onChange={e => setClosesAt(e.target.value)}
+                      className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-white/30 [color-scheme:dark]"
+                    />
+                    <button
+                      onClick={handleSaveDeadline}
+                      disabled={!closesAt || savingDeadline}
+                      className="bg-white/10 text-white/70 border border-white/20 px-3 py-2 rounded-xl text-xs font-semibold hover:bg-white/20 disabled:opacity-40 transition-colors"
+                    >
+                      {savingDeadline ? '...' : 'Guardar'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Grid 2 columnas — correlativo con la vista pública */}
@@ -333,7 +396,17 @@ export default function CineclubAdmin() {
                           <>
                             <p className="text-white font-semibold text-xs leading-tight">{movie.title}</p>
                             {movie.synopsis && (
-                              <p className="text-white/50 text-xs leading-relaxed line-clamp-3">{movie.synopsis}</p>
+                              <div>
+                                <p className={`text-white/50 text-xs leading-relaxed ${expandedId === movie.id ? '' : 'line-clamp-3'}`}>
+                                  {movie.synopsis}
+                                </p>
+                                <button
+                                  onClick={() => setExpandedId(expandedId === movie.id ? null : movie.id)}
+                                  className="text-white font-semibold text-xs mt-1 transition-all drop-shadow-[0_0_6px_rgba(255,255,255,0.6)] hover:drop-shadow-[0_0_10px_rgba(255,255,255,0.9)]"
+                                >
+                                  {expandedId === movie.id ? 'Ver menos ↑' : 'Ver más ↓'}
+                                </button>
+                              </div>
                             )}
                             <div className="space-y-1">
                               <div className="flex justify-between text-xs text-white/40">

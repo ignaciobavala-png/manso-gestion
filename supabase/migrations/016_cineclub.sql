@@ -4,6 +4,7 @@ CREATE TABLE public.cineclub_polls (
   id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   status     text NOT NULL DEFAULT 'voting'
                CHECK (status IN ('voting', 'closed')),
+  closes_at  timestamptz NULL,
   created_at timestamptz NOT NULL DEFAULT now()
 );
 

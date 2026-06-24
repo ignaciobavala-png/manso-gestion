@@ -265,16 +265,19 @@ export interface Database {
         Row: {
           id: string
           status: 'voting' | 'closed'
+          closes_at: string | null
           created_at: string
         }
         Insert: {
           id?: string
           status?: 'voting' | 'closed'
+          closes_at?: string | null
           created_at?: string
         }
         Update: {
           id?: string
           status?: 'voting' | 'closed'
+          closes_at?: string | null
         }
       }
       cineclub_movies: {
