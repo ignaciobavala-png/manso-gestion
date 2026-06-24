@@ -20,6 +20,12 @@ const PAGES = [
     path: '/carta',
     icon: '🍻',
   },
+  {
+    label: 'Cineclub',
+    description: 'votá la próxima película',
+    path: '/cineclub',
+    icon: '🎬',
+  },
 ]
 
 export default function Inicio() {
