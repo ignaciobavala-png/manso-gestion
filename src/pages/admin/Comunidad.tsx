@@ -23,6 +23,12 @@ interface UniqueEmail {
   lastDate: string
 }
 
+interface CineclubVoter {
+  email: string
+  movie_title: string
+  created_at: string
+}
+
 export default function Comunidad() {
   const navigate = useNavigate()
   const { events } = useAppStore()
@@ -30,8 +36,10 @@ export default function Comunidad() {
   const [loading, setLoading] = useState(true)
   const [selectedEvent, setSelectedEvent] = useState<string>('todos')
   const [deletingId, setDeletingId] = useState<string | null>(null)
-  const [viewMode, setViewMode] = useState<'emails' | 'registros'>('emails')
+  const [viewMode, setViewMode] = useState<'emails' | 'registros' | 'cineclub'>('emails')
   const [copied, setCopied] = useState(false)
+  const [cineclubVoters, setCineclubVoters] = useState<CineclubVoter[]>([])
+  const [cineclubCopied, setCineclubCopied] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -46,7 +54,6 @@ export default function Comunidad() {
         return
       }
 
-      // Enriquecer con nombre de evento
       const enriched: Registration[] = data.map(r => ({
         ...r,
         event_name: events.find(e => e.id === r.event_id)?.name ?? r.event_id.slice(0, 8)
@@ -57,6 +64,37 @@ export default function Comunidad() {
     }
     load()
   }, [events])
+
+  useEffect(() => {
+    async function loadCineclub() {
+      const [emailsRes, votesRes] = await Promise.all([
+        supabase
+          .from('cineclub_voter_emails')
+          .select('email, poll_id, voter_fingerprint, created_at')
+          .order('created_at', { ascending: false })
+          .limit(10000),
+        supabase
+          .from('cineclub_votes')
+          .select('poll_id, voter_fingerprint, movie_id, cineclub_movies(title)'),
+      ])
+
+      if (!emailsRes.data) return
+
+      const voteMap = new Map<string, string>()
+      for (const v of votesRes.data ?? []) {
+        const key = `${v.poll_id}:${v.voter_fingerprint}`
+        voteMap.set(key, (v.cineclub_movies as any)?.title ?? '—')
+      }
+
+      const voters: CineclubVoter[] = emailsRes.data.map(r => ({
+        email: r.email,
+        movie_title: voteMap.get(`${r.poll_id}:${r.voter_fingerprint}`) ?? '—',
+        created_at: r.created_at,
+      }))
+      setCineclubVoters(voters)
+    }
+    loadCineclub()
+  }, [])
 
   const filtered = selectedEvent === 'todos'
     ? rows
@@ -101,6 +139,25 @@ export default function Comunidad() {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  const handleCopyCineclubEmails = async () => {
+    const list = cineclubVoters.map(v => v.email).join('; ')
+    await navigator.clipboard.writeText(list)
+    setCineclubCopied(true)
+    setTimeout(() => setCineclubCopied(false), 2000)
+  }
+
+  const handleExportCineclub = () => {
+    const data = cineclubVoters.map(v => ({
+      Email: v.email,
+      'Película votada': v.movie_title,
+      Fecha: new Date(v.created_at).toLocaleString('es-AR'),
+    }))
+    const ws = XLSX.utils.json_to_sheet(data)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Cineclub')
+    XLSX.writeFile(wb, 'manso-cineclub-voters.xlsx')
+  }
+
   const handleExport = () => {
     const data = uniqueEmails.map(u => ({
       Email: u.email,
@@ -134,40 +191,11 @@ export default function Comunidad() {
             <p className="text-gray-500 text-sm">
               {viewMode === 'emails'
                 ? `${uniqueEmails.length} personas`
-                : `${filtered.length} registros`}
+                : viewMode === 'registros'
+                ? `${filtered.length} registros`
+                : `${cineclubVoters.length} votos`}
             </p>
           </div>
-        </div>
-
-        {/* Controles */}
-        <div className="flex gap-3 mb-3">
-          <select
-            value={selectedEvent}
-            onChange={e => setSelectedEvent(e.target.value)}
-            className="flex-1 bg-black/40 border border-white/20 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-emerald-500"
-          >
-            <option value="todos">Todos los eventos ({rows.length})</option>
-            {events.map(e => (
-              <option key={e.id} value={e.id}>
-                {e.name} ({rows.filter(r => r.event_id === e.id).length})
-              </option>
-            ))}
-          </select>
-
-          <button
-            onClick={handleCopyEmails}
-            disabled={uniqueEmails.length === 0}
-            className="bg-neutral-800 hover:bg-neutral-700 disabled:opacity-40 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap"
-          >
-            {copied ? '¡Copiado!' : 'Copiar mails'}
-          </button>
-          <button
-            onClick={handleExport}
-            disabled={uniqueEmails.length === 0}
-            className="bg-emerald-700 hover:bg-emerald-600 disabled:opacity-40 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap"
-          >
-            Exportar .xlsx
-          </button>
         </div>
 
         {/* Toggle vista */}
@@ -175,9 +203,7 @@ export default function Comunidad() {
           <button
             onClick={() => setViewMode('emails')}
             className={`flex-1 text-sm py-1.5 rounded-lg font-medium transition-colors ${
-              viewMode === 'emails'
-                ? 'bg-emerald-700 text-white'
-                : 'text-gray-400 hover:text-white'
+              viewMode === 'emails' ? 'bg-emerald-700 text-white' : 'text-gray-400 hover:text-white'
             }`}
           >
             Emails únicos
@@ -185,17 +211,98 @@ export default function Comunidad() {
           <button
             onClick={() => setViewMode('registros')}
             className={`flex-1 text-sm py-1.5 rounded-lg font-medium transition-colors ${
-              viewMode === 'registros'
-                ? 'bg-white/15 text-white'
-                : 'text-gray-400 hover:text-white'
+              viewMode === 'registros' ? 'bg-white/15 text-white' : 'text-gray-400 hover:text-white'
             }`}
           >
-            Todos los registros
+            Registros
+          </button>
+          <button
+            onClick={() => setViewMode('cineclub')}
+            className={`flex-1 text-sm py-1.5 rounded-lg font-medium transition-colors ${
+              viewMode === 'cineclub' ? 'bg-white/15 text-white' : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            Cineclub
           </button>
         </div>
 
-        {/* Lista */}
-        {loading ? (
+        {/* Controles — solo para tabs de eventos */}
+        {viewMode !== 'cineclub' && (
+          <div className="flex gap-3 mb-3">
+            <select
+              value={selectedEvent}
+              onChange={e => setSelectedEvent(e.target.value)}
+              className="flex-1 bg-black/40 border border-white/20 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-emerald-500"
+            >
+              <option value="todos">Todos los eventos ({rows.length})</option>
+              {events.map(e => (
+                <option key={e.id} value={e.id}>
+                  {e.name} ({rows.filter(r => r.event_id === e.id).length})
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={handleCopyEmails}
+              disabled={uniqueEmails.length === 0}
+              className="bg-neutral-800 hover:bg-neutral-700 disabled:opacity-40 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap"
+            >
+              {copied ? '¡Copiado!' : 'Copiar mails'}
+            </button>
+            <button
+              onClick={handleExport}
+              disabled={uniqueEmails.length === 0}
+              className="bg-emerald-700 hover:bg-emerald-600 disabled:opacity-40 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap"
+            >
+              Exportar .xlsx
+            </button>
+          </div>
+        )}
+
+        {/* Controles Cineclub */}
+        {viewMode === 'cineclub' && (
+          <div className="flex gap-3 mb-3 justify-end">
+            <button
+              onClick={handleCopyCineclubEmails}
+              disabled={cineclubVoters.length === 0}
+              className="bg-neutral-800 hover:bg-neutral-700 disabled:opacity-40 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap"
+            >
+              {cineclubCopied ? '¡Copiado!' : 'Copiar mails'}
+            </button>
+            <button
+              onClick={handleExportCineclub}
+              disabled={cineclubVoters.length === 0}
+              className="bg-emerald-700 hover:bg-emerald-600 disabled:opacity-40 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap"
+            >
+              Exportar .xlsx
+            </button>
+          </div>
+        )}
+
+        {/* Lista Cineclub */}
+        {viewMode === 'cineclub' && (
+          cineclubVoters.length === 0 ? (
+            <div className="text-center text-gray-500 py-16 text-sm">No hay votos registrados aún.</div>
+          ) : (
+            <div className="space-y-2">
+              {cineclubVoters.map((v, i) => (
+                <div key={i} className="bg-neutral-900 border border-white/10 rounded-2xl px-4 py-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-white font-medium text-sm truncate">{v.email}</p>
+                      <p className="text-gray-600 text-xs mt-0.5">{new Date(v.created_at).toLocaleDateString('es-AR')}</p>
+                    </div>
+                    <span className="text-xs bg-white/10 text-gray-300 px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">
+                      🎬 {v.movie_title}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        )}
+
+        {/* Lista eventos */}
+        {viewMode !== 'cineclub' && (loading ? (
           <div className="flex justify-center items-center h-48">
             <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-emerald-500" />
           </div>
@@ -272,7 +379,7 @@ export default function Comunidad() {
               </div>
             ))}
           </div>
-        )}
+        ))}
       </div>
     </Background>
   )

@@ -43,6 +43,9 @@ export default function Cineclub() {
   const [totalVotes, setTotalVotes] = useState(0)
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [sharedId, setSharedId] = useState<string | null>(null)
+  const [pendingMovieId, setPendingMovieId] = useState<string | null>(null)
+  const [emailInput, setEmailInput] = useState('')
+  const [emailError, setEmailError] = useState('')
 
   const handleShare = async (movieTitle: string, movieId: string) => {
     const url = window.location.href
@@ -136,18 +139,40 @@ export default function Cineclub() {
     return () => { supabase.removeChannel(channel) }
   }, [poll])
 
-  const handleVote = async (movieId: string) => {
+  const handleVote = (movieId: string) => {
     if (!poll || voting || votedMovieId) return
+    setPendingMovieId(movieId)
+    setEmailInput('')
+    setEmailError('')
+  }
+
+  const confirmVote = async () => {
+    if (!poll || !pendingMovieId) return
+    const trimmed = emailInput.trim().toLowerCase()
+    if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      setEmailError('Ingresá un email válido')
+      return
+    }
     setVoting(true)
     const fingerprint = getOrCreateFingerprint()
-    const { error } = await supabase.from('cineclub_votes').insert({
-      poll_id: poll.id,
-      movie_id: movieId,
-      voter_fingerprint: fingerprint,
-    })
-    if (!error) {
-      localStorage.setItem(getVotedKey(poll.id), movieId)
-      setVotedMovieId(movieId)
+    const [voteRes] = await Promise.all([
+      supabase.from('cineclub_votes').insert({
+        poll_id: poll.id,
+        movie_id: pendingMovieId,
+        voter_fingerprint: fingerprint,
+      }),
+      supabase.from('cineclub_voter_emails').insert({
+        poll_id: poll.id,
+        voter_fingerprint: fingerprint,
+        email: trimmed,
+      }),
+    ])
+    if (!voteRes.error) {
+      localStorage.setItem(getVotedKey(poll.id), pendingMovieId)
+      setVotedMovieId(pendingMovieId)
+      setPendingMovieId(null)
+    } else {
+      setEmailError('Hubo un error al registrar tu voto. Intentá de nuevo.')
     }
     setVoting(false)
   }
@@ -325,6 +350,47 @@ export default function Cineclub() {
           </p>
         )}
       </div>
+
+      {/* Modal email */}
+      {pendingMovieId && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm px-4 pb-6 sm:pb-0">
+          <div className="w-full max-w-sm bg-neutral-900 border border-white/10 rounded-2xl p-6 space-y-4">
+            <div>
+              <p className="text-white font-bold text-lg">Confirmá tu voto</p>
+              <p className="text-gray-400 text-sm mt-1">
+                Ingresá tu email para votar. Te avisaremos qué película ganó.
+              </p>
+            </div>
+            <div className="space-y-1">
+              <input
+                type="email"
+                placeholder="tu@email.com"
+                value={emailInput}
+                onChange={e => { setEmailInput(e.target.value); setEmailError('') }}
+                onKeyDown={e => e.key === 'Enter' && confirmVote()}
+                autoFocus
+                className="w-full bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-emerald-500"
+              />
+              {emailError && <p className="text-red-400 text-xs px-1">{emailError}</p>}
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setPendingMovieId(null)}
+                className="flex-1 py-3 rounded-xl text-sm font-semibold border border-white/15 text-white/60 hover:text-white hover:border-white/30 transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmVote}
+                disabled={voting}
+                className="flex-1 py-3 rounded-xl text-sm font-semibold bg-white text-black hover:bg-white/90 transition-all disabled:opacity-50"
+              >
+                {voting ? 'Votando…' : 'Confirmar voto'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </PublicLayout>
   )
 }
