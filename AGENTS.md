@@ -1,107 +1,101 @@
-# Manso Gestión — Contexto para Agentes de IA
+# AGENTS.md — Manso Gestión
 
-## Stack
-- React 19 + TypeScript + Vite + Tailwind CSS
-- Supabase (PostgreSQL, Auth, RLS)
-- Vercel (Edge Functions vía `/api/*`)
-- React Router v6 (SPA)
+> Generado automáticamente por brain-agents-inject desde brain-data.
+> No editar manualmente — se sobreescribe al abrir Claude Code.
 
-## Autenticación
-- Dos cuentas fijas en Supabase Auth: `control@manso.internal` y `empleado@manso.internal`
-- El PIN de 4 dígitos ES la contraseña de Supabase Auth
-- Login: intenta con `control@` primero, luego `empleado@`
-- `getRoleFromEmail()` mapea email → `'control' | 'empleado'`
-- `ProtectedRoute` component: `requiredRole="control"` restringe acceso
-- Cambio de PIN: Edge Function `/api/change-pin.ts` usa `SUPABASE_SERVICE_ROLE_KEY`
+## Proyecto
 
-## Store (`src/store/useAppStore.ts`)
-- Store único con Zustand (no usar useReducer ni Context para datos)
-- `fetchData()` carga todas las tablas + `active_event` en paralelo, cache 30s
-- `refreshData()` fuerza refetch
-- Operaciones CRUD sobre: products, guests, sales, ticket_sales, events
-- `addSale`, `addTicketSale` agregan automáticamente `activeEvent.id` como event_id
-- `addSaleBatch(items, paymentMethod)` llama RPC `add_sale_batch` (bulk insert + stock decrement)
-- `closeEvent(eventId)` setea is_active=false, closed_at=now, limpia venue_config.current_event_id
-- `flushBalance()` existe en el store pero NO se usa (eliminado de Barra porque pisaba el balance a 0 tras cada venta)
+| Campo | Valor |
+|-------|-------|
+| Nombre | Manso Gestión |
+| Tipo | App interna |
+| Cliente | Manso |
+| Stack | React 19.2.4 + Supabase + Tailwind v4 + Zustand + Vite |
+| Estado | activo |
+| Último commit | 2026-06-24 |
 
-## Rutas (App.tsx)
-- `/` — landing pública
-- `/login` — teclado PIN (sin enlaces públicos, solo accesible escribiendo la URL)
-- `/registro`, `/mi-entrada`, `/carta` — públicas
-- `/admin/home` — solo Control, incluye sección EntradasRegistradas (comprobantes + gestión del evento activo)
-- `/admin/barra`, `/admin/entradas` — cualquier rol autenticado
-- `/admin/comunidad`, `/admin/publico` — solo Control
-- `*` (catch-all) — redirige a `/` (landing), no a `/login`
+## Perfil del desarrollador
 
-## RLS Policies (staff por email en JWT)
-- `products`, `guests`, `sales`, `ticket_sales`, `events`: `auth.jwt()->>'email' IN ('control@manso.internal','empleado@manso.internal')` para ALL
-- `ticket_registrations`: INSERT público, SELECT público, ALL staff
-- `venue_config`: SELECT público, ALL solo `control@manso.internal`
-- `drink_orders`: INSERT público, SELECT/UPDATE autenticado (heredado)
-- `storage.comprobantes`: INSERT público, SELECT/DELETE solo staff
+# SKILL — perfil-desarrollador
 
-## Esquema DB relevante
-- `events` — is_active, is_paid, registrations_open, max_capacity, flyer_url, ticket_alias_pago, ticket_cbu_pago, closed_at
-- `products` — visible_en_carta (bool), stock, price, category, sort_order (int, controla orden en carta/barra)
-- `ticket_registrations` — event_id, name, email, token, receipt_url, payment_verified (bool), used_at (UNIQUE email+event_id)
-- `guests` — event_id, type (invitado|regular)
-- `sales`, `ticket_sales` — event_id FK
-- `venue_config` — fila única (id=1), current_event_id, alias_pago, cbu_pago, carta_activa
-- `active_event` — view: JOIN events + venue_config WHERE current_event_id = events.id
+## Descripción
+Perfil técnico del desarrollador Ignacio Bavala. Define el stack tecnológico, convenciones y preferencias para cualquier proyecto nuevo.
 
-## Storage Buckets
-- `event-flyers` — flyers de eventos, SELECT público, INSERT/UPDATE/DELETE staff
-- `comprobantes` — comprobantes de pago, INSERT público, SELECT/DELETE solo staff. Las URLs se generan con `createSignedUrl()` para el panel admin (RLS no permite acceso público a las imágenes)
+## Cuándo usarla
+- Al iniciar un proyecto nuevo
+- Cuando necesites saber qué stack usar por defecto
+- Para mantener consistencia tecnológica entre proyectos
 
-## API Edge Functions (`/api/*`)
-- `registro-entrada.ts` — POST, público, usa anon key, valida capacidad + unicidad email, acepta `receipt_url` opcional
-- `change-pin.ts` — POST, solo control, usa service_role key
-- `keep-alive.ts` — GET, público, evita suspensión Supabase
+## Stack por defecto para nuevos proyectos
 
-## RPCs almacenados
-- `get_current_balance(p_event_id)` — suma sales.total + ticket_sales.price
-- `get_sales_by_payment_method(p_event_id)` — agrega por payment_method
-- `add_sale_batch(p_event_id, p_payment_method, p_items)` — bulk insert + stock update
+```
+Framework:    Next.js 16 (App Router)
+UI:           React 19 + Tailwind CSS v4 + Framer Motion v12
+Estado:       Zustand v5
+DB:           Supabase (PostgreSQL + Auth + Storage + RLS)
+Deploy:       Vercel
+Package:      pnpm
+Linting:      ESLint 9 (flat config)
+Lenguaje:     TypeScript strict
+```
 
-## Bugs conocidos
-- #7 Stale activeEvent 30s — RPC server-side debería auto-detectar
-- #8 Sin rate limiting en registro público
-- #10 deleteEvent no limpia guests del store
-- #11 setTimeout sin cleanup en EventoActivo
-- #12 Sin manejo de SIGNED_OUT por expiración de token
-- #13 setActiveEventStatus redundante en EventCreator
+## Convenciones
 
-## Convenios de código
-- Tailwind CSS, sin CSS modules ni styled-components
-- Tipos DB manuales en `src/lib/supabase.ts` (no generar con supabase CLI)
-- Store con Zustand, `get()` para acceso fuera de hooks
-- Botella de fondo negro sólido, sin glass effect, texto blanco
+- Server Components por defecto, Client Components solo cuando hay interactividad
+- State global con Zustand v5 (no Context a menos que sea trivial)
+- Animaciones con Framer Motion v12
+- Estilos con Tailwind v4, configuración vía CSS `@theme` tokens
+- Migraciones SQL como archivos `.sql` planos
+- `vercel.json` con crons para keep-alive de Supabase
+- Cada proyecto necesita su `AGENTS.md`
+- **Next.js 16**: `middleware.ts` fue renombrado a `proxy.ts`; exportar `export function proxy(request)` en vez de `middleware`. Runtime Node.js por defecto. Codemod: `npx @next/codemod@canary middleware-to-proxy .`
+- Sin testing, sin Docker
+- Sin CSS-in-JS más allá de Tailwind
+- `@/*` como path alias (apunta a `./*` o `./src/*`)
 
-## Directorio de migraciones
-- Migraciones SQL en `supabase/migrations/` (numeradas: 001_schema, 002_rls, etc.)
-- `supabase-schema.sql` es la base inicial; las migraciones numeradas son cambios posteriores sobre el schema original
+## ESLint
 
-## Docs
-- `AGENTS.md` (raíz) — contexto para agentes de IA
-- `docs/` — READMEs y documentación del proyecto
+Usar flat config (`eslint.config.mjs`):
+```js
+import { dirname } from "path"
+import { fileURLToPath } from "url"
+import { FlatCompat } from "@eslint/eslintrc"
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+const compat = new FlatCompat({ baseDirectory: __dirname })
+const eslintConfig = [...compat.extends("next/core-web-vitals", "next/typescript")]
+export default eslintConfig
+```
 
-## Features implementadas recientemente
+## Skills relevantes para este proyecto
 
-### Editar precio en Barra (Barra.tsx)
-- Botón lápiz en cada product-card → input inline → Enter/Tick guarda, Escape/Cancel cancela
-- Usa `updateProduct(id, { price })` del store
+Leer el archivo completo solo si la tarea actual lo requiere — esta lista es solo un índice.
 
-### Orden del menú (Carta.tsx, Barra.tsx, store)
-- Columna `sort_order INTEGER NOT NULL DEFAULT 0` en products
-- Productos ordenados por `sort_order` en Carta pública y Barra
-- Flechas ↑↓ en cada product-card de Barra para reordenar dentro de su categoría
-- Categorías con orden fijo: bebida → comida → otro
-
-### Notificación de comprobantes (EntradasRegistradas.tsx, Toast.tsx)
-- Realtime subscription a `ticket_registrations` para detectar INSERT con `receipt_url`
-- Componente `Toast` — notificación no-bloqueante con auto-dismiss 5s y botón "Ver"
-- Animación `slide-down` en index.css
-- Al recibir un nuevo comprobante, recarga la lista de registros automáticamente
-
-### Fix security_invoker (active_event view)
-- `ALTER VIEW active_event SET (security_invoker = true)` — el view ahora respeta RLS del usuario que consulta
+- **Tiquetera Vite + Supabase — bugs silenciosos y patrones seguros** (`/home/nch/Escritorio/brain-data/skills/tiquetera-vite-supabase/SKILL.md`)
+  Al trabajar en cualquier sistema de tickets/entradas con: localStorage como caché de tickets en el cliente Supabase como fuente de verdad Escaneo de QR con confirmación de ingreso Registro de asistentes por email
+- **Google OAuth con Supabase SSR en Next.js 16** (`/home/nch/Escritorio/brain-data/skills/supabase-oauth-nextjs/SKILL.md`)
+  Guía completa para instalar Google OAuth en Next.js 16 (App Router) con `@supabase/ssr`. Incluye los bugs conocidos que rompen el login silenciosamente.  ## 1. Google Cloud Console 1. Crear proyecto en https://console.cl…
+- **Next.js 16 — App Router patterns y convenciones** (`/home/nch/Escritorio/brain-data/skills/nextjs-app-router-patterns/SKILL.md`)
+  Al iniciar o trabajar en cualquier proyecto Next.js: estructura de rutas, data fetching, Server Actions, proxy (middleware), metadata, layouts.
+- **TypeScript strict — tipos útiles en el stack Next.js + Supabase** (`/home/nch/Escritorio/brain-data/skills/typescript-advanced-types/SKILL.md`)
+  Al definir tipos para API responses, props de componentes, Server Actions, datos de Supabase, o cuando TS emite un error de tipos que no se entiende.
+- **Supabase + Postgres — esquemas, RLS y queries eficientes** (`/home/nch/Escritorio/brain-data/skills/supabase-postgres-best-practices/SKILL.md`)
+  Al diseñar tablas, escribir políticas RLS, optimizar queries, o integrar Supabase con Next.js 16.
+- **Supabase Storage — egress, límites y buenas prácticas** (`/home/nch/Escritorio/brain-data/skills/supabase-storage-egress/SKILL.md`)
+  Al subir archivos a Supabase Storage, especialmente videos o imágenes pesadas que se sirven públicamente. También al diseñar el hero de un sitio o cualquier sección con media grande.
+- **Testing E2E con Playwright — ecommerce Next.js + Supabase** (`/home/nch/Escritorio/brain-data/skills/playwright-ecommerce/SKILL.md`)
+  Cuando haya un proyecto Next.js + Supabase con autenticación por roles y flujos de compra que necesiten cobertura de regresión antes del lanzamiento.
+- **Tailwind CSS v4 — configuración y patrones mobile-first** (`/home/nch/Escritorio/brain-data/skills/tailwindcss-mobile-first/SKILL.md`)
+  Al configurar Tailwind v4 en un proyecto nuevo, definir tokens de diseño, o implementar layouts responsivos.
+- **Vercel + React — performance y patrones críticos** (`/home/nch/Escritorio/brain-data/skills/vercel-react-best-practices/SKILL.md`)
+  Al optimizar una página lenta, reducir el bundle, revisar re-renders, o hacer deploy en Vercel.
+- **Comprimir imágenes client-side antes de subir al storage** (`/home/nch/Escritorio/brain-data/skills/client-side-image-compress/SKILL.md`)
+  Siempre que se implemente un uploader de imágenes (flyers, avatares, fondos, productos, etc.). Sin compresión, los usuarios pueden subir archivos de 10–25 MB que se sirven a cada visitante, generando egress masivo en Sup…
+- **Contenido dual público/comunidad con columna visibilidad** (`/home/nch/Escritorio/brain-data/skills/contenido-dual-visibilidad/SKILL.md`)
+  Cuando un sitio tiene usuarios con diferentes niveles de acceso (público, registrado, miembro) y querés extender las páginas existentes con contenido exclusivo **sin crear rutas nuevas**. El sitio es el mismo en esencia…
+- **Conectar Supabase CLI con PAT** (`/home/nch/Escritorio/brain-data/skills/supabase-conexion-cli/SKILL.md`)
+  El PAT de Supabase es **por cuenta**, no por proyecto. Un solo token sirve para todos los proyectos de la organización. ### Generar token 1. Ir a https://supabase.com/dashboard/account/tokens 2. Crear nuevo token 3. Copi…
+- **Supabase MCP Multiproyecto** (`/home/nch/Escritorio/brain-data/skills/supabase-mcp-multiproyecto/SKILL.md`)
+  Siempre. Esta skill es un guard automático: cada vez que se use cualquier herramienta MCP de Supabase, se debe verificar que el proyecto destino coincide con el proyecto activo del directorio de trabajo. No se debe deleg…
+- **Lenis smooth scroll — bugs silenciosos con drawers y overlays** (`/home/nch/Escritorio/brain-data/skills/lenis-smooth-scroll/SKILL.md`)
+  Cuando un proyecto usa Lenis para smooth scroll y hay drawers, modales o cualquier contenedor con `overflow-y-auto` que no responde al trackpad.
