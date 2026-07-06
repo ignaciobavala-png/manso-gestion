@@ -229,6 +229,7 @@ export default function EventEditor({ event, onDone }: Props) {
                 type="number" min="0"
                 value={form.ticketPrice}
                 onChange={(e) => setForm(prev => ({ ...prev, ticketPrice: e.target.value }))}
+                onWheel={(e) => e.currentTarget.blur()}
                 placeholder="0"
                 className="w-full pl-8 pr-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
               />
