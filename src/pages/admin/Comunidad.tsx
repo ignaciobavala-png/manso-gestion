@@ -29,6 +29,23 @@ interface CineclubVoter {
   created_at: string
 }
 
+const PAGE_SIZE = 1000
+
+async function fetchAllRows<T>(
+  build: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>
+): Promise<T[]> {
+  const all: T[] = []
+  let from = 0
+  while (true) {
+    const { data, error } = await build(from, from + PAGE_SIZE - 1)
+    if (error || !data || data.length === 0) break
+    all.push(...data)
+    if (data.length < PAGE_SIZE) break
+    from += PAGE_SIZE
+  }
+  return all
+}
+
 export default function Comunidad() {
   const navigate = useNavigate()
   const { events } = useAppStore()
@@ -43,16 +60,13 @@ export default function Comunidad() {
 
   useEffect(() => {
     async function load() {
-      const { data, error } = await supabase
-        .from('ticket_registrations')
-        .select('id, name, email, event_id, registered_at, used_at')
-        .order('registered_at', { ascending: false })
-        .limit(10000)
-
-      if (error || !data) {
-        setLoading(false)
-        return
-      }
+      const data = await fetchAllRows<Registration>((from, to) =>
+        supabase
+          .from('ticket_registrations')
+          .select('id, name, email, event_id, registered_at, used_at')
+          .order('registered_at', { ascending: false })
+          .range(from, to)
+      )
 
       const enriched: Registration[] = data.map(r => ({
         ...r,
@@ -67,26 +81,32 @@ export default function Comunidad() {
 
   useEffect(() => {
     async function loadCineclub() {
-      const [emailsRes, votesRes] = await Promise.all([
-        supabase
-          .from('cineclub_voter_emails')
-          .select('email, poll_id, voter_fingerprint, created_at')
-          .order('created_at', { ascending: false })
-          .limit(10000),
-        supabase
-          .from('cineclub_votes')
-          .select('poll_id, voter_fingerprint, movie_id, cineclub_movies(title)'),
+      type VoterEmailRow = { email: string; poll_id: string; voter_fingerprint: string; created_at: string }
+      type VoteRow = { poll_id: string; voter_fingerprint: string; movie_id: string; cineclub_movies: unknown }
+
+      const [emails, votesRes] = await Promise.all([
+        fetchAllRows<VoterEmailRow>((from, to) =>
+          supabase
+            .from('cineclub_voter_emails')
+            .select('email, poll_id, voter_fingerprint, created_at')
+            .order('created_at', { ascending: false })
+            .range(from, to)
+        ),
+        fetchAllRows<VoteRow>((from, to) =>
+          supabase
+            .from('cineclub_votes')
+            .select('poll_id, voter_fingerprint, movie_id, cineclub_movies(title)')
+            .range(from, to)
+        ),
       ])
 
-      if (!emailsRes.data) return
-
       const voteMap = new Map<string, string>()
-      for (const v of votesRes.data ?? []) {
+      for (const v of votesRes) {
         const key = `${v.poll_id}:${v.voter_fingerprint}`
         voteMap.set(key, (v.cineclub_movies as any)?.title ?? '—')
       }
 
-      const voters: CineclubVoter[] = emailsRes.data.map(r => ({
+      const voters: CineclubVoter[] = emails.map(r => ({
         email: r.email,
         movie_title: voteMap.get(`${r.poll_id}:${r.voter_fingerprint}`) ?? '—',
         created_at: r.created_at,
