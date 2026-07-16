@@ -142,12 +142,11 @@ export default function Entradas(): React.JSX.Element {
 
     const isWildcardSource = data.event_id === WILDCARD_SOURCE_EVENT_ID
 
-    if (!isWildcardSource && data.event_id !== activeEvent?.id) {
-      setValidating(false)
-      setAlertModal({ isOpen: true, message: 'Este QR pertenece a otro evento y no es válido acá.', type: 'error' })
-      return
-    }
-
+    // Nota: NO se rechaza por event_id !== activeEvent.id en el caso general.
+    // Ver brain-data/skills/tiquetera-vite-supabase (bug #18): en noches con
+    // dos eventos simultáneos, venue_config solo puede apuntar a uno, y ese
+    // chequeo rebota tickets válidos del otro evento. El token UUID + is_banned
+    // + used_at + confirmación visual del staff ya cubren la seguridad real.
     if (isWildcardSource && data.event_id !== activeEvent?.id) {
       if (!activeEvent?.accepts_wildcard_qr) {
         setValidating(false)
@@ -173,7 +172,7 @@ export default function Entradas(): React.JSX.Element {
       return
     }
 
-    // Ticket normal del evento activo
+    // Ticket normal (del evento activo o de cualquier otro evento no-comodín)
     setValidating(false)
     if (data.used_at) {
       setAlertModal({
