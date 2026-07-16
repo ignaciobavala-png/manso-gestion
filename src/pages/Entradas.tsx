@@ -33,7 +33,7 @@ export default function Entradas(): React.JSX.Element {
   const [showInvitadoInput, setShowInvitadoInput] = useState(false)
   const [invitadoName, setInvitadoName] = useState('')
   const [submittingInvitado, setSubmittingInvitado] = useState(false)
-  const [mansoTicketPending, setMansoTicketPending] = useState<{ token: string; name: string; paymentVerified: boolean } | null>(null)
+  const [mansoTicketPending, setMansoTicketPending] = useState<{ ticketId: string; token: string; name: string; paymentVerified: boolean; isWildcard: boolean } | null>(null)
   const [validating, setValidating] = useState(false)
   const [alertModal, setAlertModal] = useState({
     isOpen: false,
@@ -110,6 +110,11 @@ export default function Entradas(): React.JSX.Element {
   const isMansoTicket = (raw: string) => raw.startsWith('manso-ticket|')
   const getMansoTicketToken = (raw: string) => raw.split('|')[1] || ''
 
+  // Evento "FREES PARA MANSO": sus tickets son el QR comodín. Un mismo ticket
+  // puede redimirse en varios eventos reales distintos (uno por evento), a
+  // diferencia de un ticket normal que se quema para siempre con used_at.
+  const WILDCARD_SOURCE_EVENT_ID = 'eaaa1b0f-26fb-4653-b58d-0ac7828c59e2'
+
   const handleValidateMansoTicket = async (rawData: string) => {
     const token = getMansoTicketToken(rawData)
     if (!token) {
@@ -120,20 +125,56 @@ export default function Entradas(): React.JSX.Element {
 
     const { data, error } = await supabase
       .from('ticket_registrations')
-      .select('name, event_id, used_at, payment_verified, is_banned')
+      .select('id, name, event_id, used_at, payment_verified, is_banned')
       .eq('token', token)
       .single()
 
-    setValidating(false)
-
     if (error || !data) {
+      setValidating(false)
       setAlertModal({ isOpen: true, message: 'Token no encontrado.', type: 'error' })
       return
     }
     if (data.is_banned) {
+      setValidating(false)
       setAlertModal({ isOpen: true, message: 'Esta entrada fue rechazada. No puede ingresar.', type: 'error' })
       return
     }
+
+    const isWildcardSource = data.event_id === WILDCARD_SOURCE_EVENT_ID
+
+    if (!isWildcardSource && data.event_id !== activeEvent?.id) {
+      setValidating(false)
+      setAlertModal({ isOpen: true, message: 'Este QR pertenece a otro evento y no es válido acá.', type: 'error' })
+      return
+    }
+
+    if (isWildcardSource && data.event_id !== activeEvent?.id) {
+      if (!activeEvent?.accepts_wildcard_qr) {
+        setValidating(false)
+        setAlertModal({ isOpen: true, message: 'El QR comodín no está habilitado para este evento.', type: 'error' })
+        return
+      }
+
+      const { data: redemption } = await supabase
+        .from('wildcard_qr_redemptions')
+        .select('id')
+        .eq('ticket_registration_id', data.id)
+        .eq('event_id', activeEvent.id)
+        .maybeSingle()
+
+      setValidating(false)
+
+      if (redemption) {
+        setAlertModal({ isOpen: true, message: 'Este QR comodín ya fue usado en este evento.', type: 'error' })
+        return
+      }
+
+      setMansoTicketPending({ ticketId: data.id, token, name: data.name, paymentVerified: data.payment_verified, isWildcard: true })
+      return
+    }
+
+    // Ticket normal del evento activo
+    setValidating(false)
     if (data.used_at) {
       setAlertModal({
         isOpen: true,
@@ -143,23 +184,40 @@ export default function Entradas(): React.JSX.Element {
       return
     }
 
-    setMansoTicketPending({ token, name: data.name, paymentVerified: data.payment_verified })
+    setMansoTicketPending({ ticketId: data.id, token, name: data.name, paymentVerified: data.payment_verified, isWildcard: false })
   }
 
   const handleConfirmMansoTicket = async () => {
-    if (!mansoTicketPending) return
+    if (!mansoTicketPending || !activeEvent) return
     setConfirming(true)
 
-    const { error } = await supabase
-      .from('ticket_registrations')
-      .update({ used_at: new Date().toISOString() })
-      .eq('token', mansoTicketPending.token)
-      .is('used_at', null)
+    if (mansoTicketPending.isWildcard) {
+      const { error } = await supabase
+        .from('wildcard_qr_redemptions')
+        .insert({ ticket_registration_id: mansoTicketPending.ticketId, event_id: activeEvent.id })
 
-    if (error) {
-      setConfirming(false)
-      setAlertModal({ isOpen: true, message: 'Error al registrar el ingreso.', type: 'error' })
-      return
+      if (error) {
+        setConfirming(false)
+        const message = error.message.includes('capacity_exceeded')
+          ? 'El evento alcanzó su capacidad máxima.'
+          : error.message.includes('duplicate key')
+            ? 'Este QR comodín ya fue usado en este evento.'
+            : 'Error al registrar el ingreso.'
+        setAlertModal({ isOpen: true, message, type: 'error' })
+        return
+      }
+    } else {
+      const { error } = await supabase
+        .from('ticket_registrations')
+        .update({ used_at: new Date().toISOString() })
+        .eq('token', mansoTicketPending.token)
+        .is('used_at', null)
+
+      if (error) {
+        setConfirming(false)
+        setAlertModal({ isOpen: true, message: 'Error al registrar el ingreso.', type: 'error' })
+        return
+      }
     }
 
     try {

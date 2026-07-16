@@ -17,6 +17,7 @@ interface Event {
   one_ticket_per_email: boolean
   require_instagram: boolean
   require_phone: boolean
+  accepts_wildcard_qr: boolean
 }
 
 interface Props {
@@ -56,6 +57,7 @@ export default function EventEditor({ event, onDone }: Props) {
   const [oneTicketPerEmail, setOneTicketPerEmail] = useState(event.one_ticket_per_email)
   const [requireInstagram, setRequireInstagram] = useState(event.require_instagram)
   const [requirePhone, setRequirePhone] = useState(event.require_phone)
+  const [acceptsWildcardQr, setAcceptsWildcardQr] = useState(event.accepts_wildcard_qr)
   const [slugEdited, setSlugEdited] = useState(!!event.slug)
   const [saving, setSaving] = useState(false)
   const [alertModal, setAlertModal] = useState({
@@ -99,6 +101,7 @@ export default function EventEditor({ event, onDone }: Props) {
         one_ticket_per_email: oneTicketPerEmail,
         require_instagram: requireInstagram,
         require_phone: requirePhone,
+        accepts_wildcard_qr: acceptsWildcardQr,
       })
       onDone()
     } catch {
@@ -202,6 +205,22 @@ export default function EventEditor({ event, onDone }: Props) {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* QR comodín */}
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-3">QR comodín (Frees para Manso)</label>
+        <div className="flex items-center justify-between bg-neutral-900/80 border border-white/20 rounded-xl px-4 py-3">
+          <span className="text-sm text-gray-300">Aceptar entrada gratis con QR comodín</span>
+          <button
+            type="button"
+            onClick={() => setAcceptsWildcardQr(prev => !prev)}
+            className={`relative w-10 h-5 rounded-full transition-colors ${acceptsWildcardQr ? 'bg-emerald-600' : 'bg-white/20'}`}
+          >
+            <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${acceptsWildcardQr ? 'translate-x-5' : ''}`} />
+          </button>
+        </div>
+        {acceptsWildcardQr && <p className="text-xs text-gray-500 mt-1">Los QR registrados en el evento "Frees para Manso" van a poder ingresar gratis a este evento.</p>}
       </div>
 
       {/* Tipo de entrada */}

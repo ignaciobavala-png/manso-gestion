@@ -61,6 +61,7 @@ export default function EventCreator({ onCreated }: Props) {
         one_ticket_per_email: oneTicketPerEmail,
         require_instagram: false,
         require_phone: false,
+        accepts_wildcard_qr: false,
         is_active: true,
         registrations_open: true,
         max_capacity: null,

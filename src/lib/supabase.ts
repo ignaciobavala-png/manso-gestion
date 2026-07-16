@@ -163,6 +163,7 @@ export interface Database {
           one_ticket_per_email: boolean
           require_instagram: boolean
           require_phone: boolean
+          accepts_wildcard_qr: boolean
           closed_at?: string
           created_at: string
           updated_at: string
@@ -189,6 +190,7 @@ export interface Database {
           one_ticket_per_email?: boolean
           require_instagram?: boolean
           require_phone?: boolean
+          accepts_wildcard_qr?: boolean
           closed_at?: string
           created_at?: string
           updated_at?: string
@@ -215,6 +217,7 @@ export interface Database {
           one_ticket_per_email?: boolean
           require_instagram?: boolean
           require_phone?: boolean
+          accepts_wildcard_qr?: boolean
           closed_at?: string
           created_at?: string
           updated_at?: string
@@ -259,6 +262,26 @@ export interface Database {
           used_at?: string
           instagram?: string | null
           phone?: string | null
+        }
+      }
+      wildcard_qr_redemptions: {
+        Row: {
+          id: string
+          ticket_registration_id: string
+          event_id: string
+          used_at: string
+        }
+        Insert: {
+          id?: string
+          ticket_registration_id: string
+          event_id: string
+          used_at?: string
+        }
+        Update: {
+          id?: string
+          ticket_registration_id?: string
+          event_id?: string
+          used_at?: string
         }
       }
       cineclub_polls: {
