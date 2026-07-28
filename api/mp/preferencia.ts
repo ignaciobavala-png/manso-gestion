@@ -57,7 +57,48 @@ export default async function handler(req: Request): Promise<Response> {
   const surcharge = Number(event.mp_surcharge_pct) || 0
   const unitPrice = redondear(event.regular_ticket_price * (1 + surcharge / 100))
 
-  const items: PreferenceItem[] = tickets.map(t => ({
+  const admin = adminClient()
+
+  // registrarTickets es idempotente: si estos nombres ya estaban registrados
+  // devuelve los tokens existentes SIN tocarles el mp_external_reference. Sin
+  // este paso, un segundo intento de pago (volver atrás, reintentar, doble
+  // click) creaba una preference con un external_reference que no apuntaba a
+  // ningún ticket: MP cobraba, mp_apply_payment no encontraba filas y devolvía
+  // 0 sin error. Plata cobrada, entrada sin acreditar, nadie se entera.
+  // Por eso la orden se arma acá por token, que sí cubre nuevos y existentes.
+  const { data: filas, error: filasError } = await admin
+    .from('ticket_registrations')
+    .select('token, payment_verified')
+    .in('token', tickets.map(t => t.token))
+
+  if (filasError || !filas) {
+    return json({ error: 'No se pudo preparar la orden' }, 500)
+  }
+
+  const yaPagos = new Set(filas.filter(f => f.payment_verified).map(f => f.token))
+  const pendientes = tickets.filter(t => !yaPagos.has(t.token))
+
+  // Cobrar de nuevo una entrada ya acreditada sería un cobro duplicado.
+  if (pendientes.length === 0) {
+    return json({ error: 'Estas entradas ya están pagadas', tickets }, 409)
+  }
+
+  const { error: updateError } = await admin
+    .from('ticket_registrations')
+    .update({
+      mp_external_reference: externalReference,
+      payment_provider: 'mercadopago',
+      // price_per_ticket guarda el precio realmente cobrado (con recargo), para
+      // que los reportes de ingresos cierren contra lo que pasó por MP.
+      price_per_ticket: unitPrice,
+    })
+    .in('token', pendientes.map(t => t.token))
+
+  if (updateError) {
+    return json({ error: 'No se pudo preparar la orden' }, 500)
+  }
+
+  const items: PreferenceItem[] = pendientes.map(t => ({
     id: t.token,
     title: `${event.name} — ${t.name}`,
     quantity: 1,
@@ -66,7 +107,7 @@ export default async function handler(req: Request): Promise<Response> {
   }))
 
   const totalPreference = redondear(items.reduce((acc, i) => acc + i.unit_price * i.quantity, 0))
-  const totalEsperado = redondear(unitPrice * tickets.length)
+  const totalEsperado = redondear(unitPrice * pendientes.length)
 
   // Guardarraíl: lo que MP va a cobrar tiene que ser exactamente lo que
   // queda guardado en la DB. Si esto se desalinea no falla nada visible —
@@ -74,15 +115,6 @@ export default async function handler(req: Request): Promise<Response> {
   if (totalPreference !== totalEsperado) {
     return json({ error: 'Error de consistencia en el monto' }, 500)
   }
-
-  const admin = adminClient()
-
-  // price_per_ticket guarda el precio realmente cobrado (con recargo), para
-  // que los reportes de ingresos cierren contra lo que pasó por MP.
-  await admin
-    .from('ticket_registrations')
-    .update({ price_per_ticket: unitPrice })
-    .eq('mp_external_reference', externalReference)
 
   const baseUrl = resolverBaseUrl(req)
   const expiresAt = new Date(Date.now() + EXPIRA_EN_MINUTOS * 60_000)

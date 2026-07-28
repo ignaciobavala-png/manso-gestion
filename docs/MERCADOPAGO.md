@@ -67,11 +67,34 @@ Los tres caminos —webhook, retorno del usuario y el botón "Revisar en MP" del
 admin— terminan en la misma RPC. Es idempotente (`mp_payments.payment_id UNIQUE`),
 así que da igual cuál llegue primero o cuántas veces se repita.
 
+### El QR es multievento, el aviso de pago también
+
+Los QR se validan contra cualquier evento a propósito (ver `Entradas.tsx`: en
+noches con dos eventos simultáneos, `venue_config` sólo puede apuntar a uno y
+filtrar por `event_id` rebotaría entradas válidas del otro).
+
+Por eso el aviso "Pago no verificado" se decide por el evento **del ticket**, no
+por `activeEvent`. Con `activeEvent` había un falso negativo silencioso: una
+entrada impaga de un evento pago escaneada durante un evento gratuito no mostraba
+ningún aviso, porque el evento en operación no era pago. El QR comodín (evento
+"FREES PARA MANSO", gratuito) tenía el problema inverso: avisaba de un pago que
+nunca existió.
+
 ### `external_reference` es la orden, no el ticket
 
 Un registro puede generar varias entradas (varios asistentes) y un solo pago. La
 clave que las une es `mp_external_reference`. La RPC prorratea `mp_fee_amount` y
 `mp_net_amount` entre todos los tickets de la orden.
+
+`registrarTickets()` es idempotente: si los nombres ya estaban registrados
+devuelve los tokens existentes sin tocarles el `mp_external_reference`. Por eso
+`preferencia.ts` arma la orden **por token** y no confía en que el insert haya
+escrito la referencia. Si no lo hiciera, un segundo intento de pago —volver
+atrás, reintentar, doble click— generaría una preference con una referencia
+huérfana: MP cobra, `mp_apply_payment` no encuentra filas y devuelve 0 sin error.
+
+Los tickets ya acreditados quedan fuera de la orden nueva. Si todos lo están,
+`/api/mp/preferencia` responde 409 en vez de cobrar dos veces.
 
 ---
 
