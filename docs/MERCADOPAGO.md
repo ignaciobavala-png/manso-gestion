@@ -32,13 +32,11 @@ con `payment_verified = false`. No se espera a la aprobación.
   flujo es idéntico al de transferencia (que ya emitía el QR sin verificar).
 - **En contra:** quedan entradas sin pagar en la tabla.
 - **Mitigación:** al escanear un QR sin `payment_verified` en un evento pago, el
-  scanner muestra el aviso naranja "Comprobante no verificado". **No bloquea el
-  ingreso** — la decisión final es de quien está en la puerta, igual que con una
-  transferencia sin comprobante. La preference expira a los **30 minutos**
+  scanner muestra el aviso naranja "Pago no verificado", con el detalle según el
+  medio ("Mercado Pago todavía no acreditó este pago" o "El comprobante aún no fue
+  verificado por el staff"). **No bloquea el ingreso** — la decisión final es de
+  quien está en la puerta. La preference expira a los **30 minutos**
   (`EXPIRA_EN_MINUTOS` en `api/mp/preferencia.ts`).
-
-> El texto del aviso dice "Comprobante", que para una entrada de MP no aplica.
-> Vale generalizarlo a "Pago no verificado" (`src/pages/Entradas.tsx:397`).
 
 ---
 
@@ -79,14 +77,11 @@ clave que las une es `mp_external_reference`. La RPC prorratea `mp_fee_amount` y
 
 ## Reglas que no se rompen
 
-**El precio nunca viene del cliente.** `/api/mp/preferencia` ignora cualquier monto
-del body: lee `regular_ticket_price` y `mp_surcharge_pct` de la base y recalcula.
-Antes de crear la preference compara el total contra el esperado y aborta con 500
-si no coinciden.
-
-> El camino de transferencia todavía confía en el `price_per_ticket` que manda el
-> cliente. Es un agujero preexistente, ajeno a esta integración, pero conviene
-> cerrarlo.
+**El precio nunca viene del cliente.** `registrarTickets()` no acepta un monto en
+el body: lee `regular_ticket_price` de la base y lo guarda. Vale para los dos
+caminos, transferencia incluida. `/api/mp/preferencia` después lo recalcula con
+`mp_surcharge_pct`, y antes de crear la preference compara el total contra el
+esperado y aborta con 500 si no coinciden.
 
 **El webhook nunca confía en el body.** Toma el `data.id`, vuelve a consultar
 `GET /v1/payments/{id}` y actúa sobre esa respuesta.

@@ -36,8 +36,6 @@ export default async function handler(req: Request): Promise<Response> {
     ...input,
     payment_provider: 'mercadopago',
     mp_external_reference: externalReference,
-    // El precio NO se toma del cliente: se calcula abajo desde la DB.
-    price_per_ticket: undefined,
   })
 
   if (!result.ok) {
@@ -54,8 +52,8 @@ export default async function handler(req: Request): Promise<Response> {
     return json({ error: 'Este evento no tiene un precio configurado' }, 409)
   }
 
-  // Precio unitario siempre desde la DB, nunca desde el body: si viniera del
-  // cliente, cualquiera podría pagar la entrada al precio que quisiera.
+  // registrarTickets ya guardó el precio base desde la DB. Acá se recalcula
+  // con el recargo, que sólo aplica al pagar con MP.
   const surcharge = Number(event.mp_surcharge_pct) || 0
   const unitPrice = redondear(event.regular_ticket_price * (1 + surcharge / 100))
 

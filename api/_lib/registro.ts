@@ -21,7 +21,6 @@ export interface RegistroInput {
   private_token?: string
   instagram?: string
   phone?: string
-  price_per_ticket?: number
   payment_provider?: 'transferencia' | 'mercadopago'
   mp_external_reference?: string
 }
@@ -87,7 +86,7 @@ export function json(body: unknown, status: number): Response {
 export async function registrarTickets(input: RegistroInput): Promise<RegistroResult> {
   const {
     attendees, email, event_id, receipt_url, private_token,
-    instagram, phone, price_per_ticket, payment_provider, mp_external_reference,
+    instagram, phone, payment_provider, mp_external_reference,
   } = input
 
   if (!email?.trim() || !event_id || !attendees?.length) {
@@ -184,6 +183,12 @@ export async function registrarTickets(input: RegistroInput): Promise<RegistroRe
     return { ok: true, status: 200, tickets, event }
   }
 
+  // El precio sale de la DB, nunca del body: si viniera del cliente,
+  // cualquiera podría registrarse declarando que la entrada salía $1 y el
+  // reporte de ingresos cerraría contra ese número inventado.
+  // El flujo de MP lo pisa después con el precio con recargo.
+  const precioUnitario = event.is_paid ? event.regular_ticket_price : null
+
   for (const name of newNames) {
     const token = crypto.randomUUID()
 
@@ -197,7 +202,7 @@ export async function registrarTickets(input: RegistroInput): Promise<RegistroRe
         receipt_url: receipt,
         instagram: instagram?.trim() || null,
         phone: phone?.trim() || null,
-        price_per_ticket: price_per_ticket ?? null,
+        price_per_ticket: precioUnitario,
         payment_provider: payment_provider ?? null,
         mp_external_reference: mp_external_reference ?? null,
       })
