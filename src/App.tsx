@@ -8,6 +8,7 @@ import Barra from './pages/Barra'
 import Entradas from './pages/Entradas'
 import RegistroEntrada from './pages/public/RegistroEntrada'
 import MiEntrada from './pages/public/MiEntrada'
+import PagoRetorno from './pages/public/PagoRetorno'
 import Carta from './pages/public/Carta'
 import Inicio from './pages/public/Inicio'
 import Comunidad from './pages/admin/Comunidad'
@@ -28,6 +29,9 @@ function App() {
           <Route path="/registro" element={<RegistroEntrada />} />
           <Route path="/registro/:slug" element={<RegistroEntrada />} />
           <Route path="/mi-entrada" element={<MiEntrada />} />
+          {/* Retorno de Mercado Pago. Fuera de /registro/* para no colisionar
+              con /registro/:slug si un evento tuviera el slug "pago". */}
+          <Route path="/pago" element={<PagoRetorno />} />
           <Route path="/carta" element={<Carta />} />
           <Route path="/cineclub" element={<Cineclub />} />
 

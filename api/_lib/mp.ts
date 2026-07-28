@@ -61,10 +61,12 @@ export async function createPreference(input: CreatePreferenceInput): Promise<Pr
       payer: { email: payerEmail },
       external_reference: externalReference,
       notification_url: `${baseUrl}/api/mp/webhook`,
+      // /pago y no /registro/pago: esta última colisionaría con la ruta
+      // /registro/:slug si algún evento llegara a tener el slug "pago".
       back_urls: {
-        success: `${baseUrl}/registro/pago?ref=${encodeURIComponent(externalReference)}`,
-        pending: `${baseUrl}/registro/pago?ref=${encodeURIComponent(externalReference)}`,
-        failure: `${baseUrl}/registro/pago?ref=${encodeURIComponent(externalReference)}`,
+        success: `${baseUrl}/pago?ref=${encodeURIComponent(externalReference)}`,
+        pending: `${baseUrl}/pago?ref=${encodeURIComponent(externalReference)}`,
+        failure: `${baseUrl}/pago?ref=${encodeURIComponent(externalReference)}`,
       },
       auto_return: 'approved',
       expires: true,
