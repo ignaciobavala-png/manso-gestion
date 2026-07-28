@@ -186,10 +186,19 @@ BEGIN
   END IF;
 
   -- Cuántos tickets cubre esta orden (para prorratear comisión y neto)
-  SELECT COUNT(*), MIN(event_id)
-  INTO v_ticket_count, v_event_id
+  SELECT COUNT(*)
+  INTO v_ticket_count
   FROM public.ticket_registrations
   WHERE mp_external_reference = p_external_reference;
+
+  -- Todos los tickets de una orden son del mismo evento, así que alcanza uno.
+  -- Ojo: no usar MIN(event_id) — no existe MIN() para uuid en Postgres, y la
+  -- función falla en TODA llamada, no sólo en casos borde.
+  SELECT event_id
+  INTO v_event_id
+  FROM public.ticket_registrations
+  WHERE mp_external_reference = p_external_reference
+  LIMIT 1;
 
   IF v_ticket_count > 0 THEN
     v_fee_per_ticket := ROUND(COALESCE(p_fee_amount, 0) / v_ticket_count, 2);
