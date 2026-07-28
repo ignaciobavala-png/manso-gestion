@@ -18,7 +18,11 @@ interface Event {
   require_instagram: boolean
   require_phone: boolean
   accepts_wildcard_qr: boolean
+  payment_mode?: PaymentMode
+  mp_surcharge_pct?: number
 }
+
+type PaymentMode = 'transferencia' | 'mercadopago' | 'ambos'
 
 interface Props {
   event: Event
@@ -51,8 +55,10 @@ export default function EventEditor({ event, onDone }: Props) {
     aliasPago: event.ticket_alias_pago ?? '',
     cbuPago: event.ticket_cbu_pago ?? '',
     maxCapacity: event.max_capacity !== null ? String(event.max_capacity) : '',
+    mpSurcharge: String(event.mp_surcharge_pct ?? 0),
   })
   const [isPaid, setIsPaid] = useState(event.is_paid)
+  const [paymentMode, setPaymentMode] = useState<PaymentMode>(event.payment_mode ?? 'transferencia')
   const [isPrivate, setIsPrivate] = useState(event.is_private)
   const [oneTicketPerEmail, setOneTicketPerEmail] = useState(event.one_ticket_per_email)
   const [requireInstagram, setRequireInstagram] = useState(event.require_instagram)
@@ -84,6 +90,16 @@ export default function EventEditor({ event, onDone }: Props) {
       return
     }
 
+    // Recargo en es-AR: se acepta coma y se normaliza a punto para la DB.
+    const surcharge = parseFloat(form.mpSurcharge.replace(',', '.')) || 0
+    if (surcharge < 0 || surcharge > 100) {
+      setAlertModal({ isOpen: true, message: 'El recargo debe estar entre 0 y 100%', type: 'warning' })
+      return
+    }
+
+    // Un evento gratuito no tiene medio de pago que elegir.
+    const modoPago: PaymentMode = isPaid ? paymentMode : 'transferencia'
+
     setSaving(true)
     try {
       await updateEvent(event.id, {
@@ -102,6 +118,8 @@ export default function EventEditor({ event, onDone }: Props) {
         require_instagram: requireInstagram,
         require_phone: requirePhone,
         accepts_wildcard_qr: acceptsWildcardQr,
+        payment_mode: modoPago,
+        mp_surcharge_pct: surcharge,
       })
       onDone()
     } catch {
@@ -254,22 +272,81 @@ export default function EventEditor({ event, onDone }: Props) {
               />
             </div>
           </div>
+          {/* Medio de pago */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Alias de pago</label>
-            <input type="text" value={form.aliasPago}
-              onChange={(e) => setForm(prev => ({ ...prev, aliasPago: e.target.value }))}
-              placeholder="Ej: PROD.NOCHE.123"
-              className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-            />
+            <label className="block text-sm font-medium text-gray-300 mb-3">¿Cómo se paga la entrada?</label>
+            <div className="grid grid-cols-3 gap-2">
+              {([
+                ['transferencia', 'Transferencia'],
+                ['mercadopago', 'Mercado Pago'],
+                ['ambos', 'Ambos'],
+              ] as [PaymentMode, string][]).map(([modo, etiqueta]) => (
+                <button
+                  key={modo}
+                  type="button"
+                  onClick={() => setPaymentMode(modo)}
+                  className={`py-3 px-2 rounded-xl text-sm font-medium transition-colors border ${
+                    paymentMode === modo
+                      ? 'bg-emerald-600 border-emerald-500 text-white'
+                      : 'bg-neutral-900/80 border-white/20 text-gray-400 hover:text-white'
+                  }`}
+                >
+                  {etiqueta}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              {paymentMode === 'transferencia'
+                ? 'El asistente transfiere y sube el comprobante. Hay que verificar cada entrada a mano.'
+                : paymentMode === 'mercadopago'
+                  ? 'El asistente paga con Mercado Pago y la entrada se verifica sola al acreditarse.'
+                  : 'El asistente elige. Las de Mercado Pago se verifican solas; las de transferencia, a mano.'}
+            </p>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">CBU de pago</label>
-            <input type="text" value={form.cbuPago}
-              onChange={(e) => setForm(prev => ({ ...prev, cbuPago: e.target.value }))}
-              placeholder="Opcional"
-              className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-            />
-          </div>
+
+          {paymentMode !== 'transferencia' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Recargo por pagar con Mercado Pago
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={form.mpSurcharge}
+                  onChange={(e) => setForm(prev => ({ ...prev, mpSurcharge: e.target.value }))}
+                  placeholder="0"
+                  className="w-full pl-4 pr-10 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">%</span>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                Mercado Pago cobra una comisión de alrededor del 6,3% + IVA. Dejalo en 0
+                para absorberla, o cargá un porcentaje para trasladarla al precio.
+              </p>
+            </div>
+          )}
+
+          {paymentMode !== 'mercadopago' && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Alias de pago</label>
+                <input type="text" value={form.aliasPago}
+                  onChange={(e) => setForm(prev => ({ ...prev, aliasPago: e.target.value }))}
+                  placeholder="Ej: PROD.NOCHE.123"
+                  className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">CBU de pago</label>
+                <input type="text" value={form.cbuPago}
+                  onChange={(e) => setForm(prev => ({ ...prev, cbuPago: e.target.value }))}
+                  placeholder="Opcional"
+                  className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                />
+              </div>
+            </>
+          )}
         </>
       )}
 

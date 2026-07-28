@@ -164,6 +164,8 @@ export interface Database {
           require_instagram: boolean
           require_phone: boolean
           accepts_wildcard_qr: boolean
+          payment_mode: 'transferencia' | 'mercadopago' | 'ambos'
+          mp_surcharge_pct: number
           closed_at?: string
           created_at: string
           updated_at: string
@@ -191,6 +193,8 @@ export interface Database {
           require_instagram?: boolean
           require_phone?: boolean
           accepts_wildcard_qr?: boolean
+          payment_mode?: 'transferencia' | 'mercadopago' | 'ambos'
+          mp_surcharge_pct?: number
           closed_at?: string
           created_at?: string
           updated_at?: string
@@ -218,6 +222,8 @@ export interface Database {
           require_instagram?: boolean
           require_phone?: boolean
           accepts_wildcard_qr?: boolean
+          payment_mode?: 'transferencia' | 'mercadopago' | 'ambos'
+          mp_surcharge_pct?: number
           closed_at?: string
           created_at?: string
           updated_at?: string
@@ -236,6 +242,14 @@ export interface Database {
           used_at?: string | null
           instagram?: string | null
           phone?: string | null
+          payment_provider?: 'transferencia' | 'mercadopago' | null
+          mp_external_reference?: string | null
+          mp_preference_id?: string | null
+          mp_payment_id?: string | null
+          mp_status?: string | null
+          mp_fee_amount?: number | null
+          mp_net_amount?: number | null
+          paid_at?: string | null
         }
         Insert: {
           id?: string
@@ -249,6 +263,14 @@ export interface Database {
           used_at?: string
           instagram?: string | null
           phone?: string | null
+          payment_provider?: 'transferencia' | 'mercadopago' | null
+          mp_external_reference?: string | null
+          mp_preference_id?: string | null
+          mp_payment_id?: string | null
+          mp_status?: string | null
+          mp_fee_amount?: number | null
+          mp_net_amount?: number | null
+          paid_at?: string | null
         }
         Update: {
           id?: string
@@ -262,6 +284,14 @@ export interface Database {
           used_at?: string
           instagram?: string | null
           phone?: string | null
+          payment_provider?: 'transferencia' | 'mercadopago' | null
+          mp_external_reference?: string | null
+          mp_preference_id?: string | null
+          mp_payment_id?: string | null
+          mp_status?: string | null
+          mp_fee_amount?: number | null
+          mp_net_amount?: number | null
+          paid_at?: string | null
         }
       }
       wildcard_qr_redemptions: {

@@ -7,6 +7,8 @@ interface Props {
   onCreated?: () => void
 }
 
+type PaymentMode = 'transferencia' | 'mercadopago' | 'ambos'
+
 const slugify = (text: string) =>
   text.toLowerCase()
     .normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -21,6 +23,7 @@ export default function EventCreator({ onCreated }: Props) {
   const [form, setForm] = useState({ name: '', slug: '', description: '', ticketPrice: '', startDate: '', aliasPago: '', cbuPago: '' })
   const [slugEdited, setSlugEdited] = useState(false)
   const [isPaid, setIsPaid] = useState(false)
+  const [paymentMode, setPaymentMode] = useState<PaymentMode>('transferencia')
   const [isPrivate, setIsPrivate] = useState(false)
   const [oneTicketPerEmail, setOneTicketPerEmail] = useState(false)
   const [qrCodeUrl, setQrCodeUrl] = useState('')
@@ -62,6 +65,9 @@ export default function EventCreator({ onCreated }: Props) {
         require_instagram: false,
         require_phone: false,
         accepts_wildcard_qr: false,
+        // Un evento gratuito no tiene medio de pago que elegir.
+        payment_mode: isPaid ? paymentMode : 'transferencia',
+        mp_surcharge_pct: 0,
         is_active: true,
         registrations_open: true,
         max_capacity: null,
@@ -278,6 +284,39 @@ export default function EventCreator({ onCreated }: Props) {
             </div>
             <p className="text-sm text-gray-500 mt-1">Se aplica igual para regular e invitado.</p>
           </div>
+
+          {/* Medio de pago. El recargo de MP se configura al editar el evento. */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-3">¿Cómo se paga la entrada?</label>
+            <div className="grid grid-cols-3 gap-2">
+              {([
+                ['transferencia', 'Transferencia'],
+                ['mercadopago', 'Mercado Pago'],
+                ['ambos', 'Ambos'],
+              ] as [PaymentMode, string][]).map(([modo, etiqueta]) => (
+                <button
+                  key={modo}
+                  type="button"
+                  onClick={() => setPaymentMode(modo)}
+                  className={`py-3 px-2 rounded-xl text-sm font-medium transition-colors border ${
+                    paymentMode === modo
+                      ? 'bg-emerald-600 border-emerald-500 text-white'
+                      : 'bg-neutral-900/80 border-white/20 text-gray-400 hover:text-white'
+                  }`}
+                >
+                  {etiqueta}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              {paymentMode === 'transferencia'
+                ? 'Hay que verificar cada entrada a mano contra el comprobante.'
+                : paymentMode === 'mercadopago'
+                  ? 'Las entradas se verifican solas cuando el pago se acredita.'
+                  : 'El asistente elige. Las de Mercado Pago se verifican solas.'}
+            </p>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Alias de pago (entradas)</label>
             <input
