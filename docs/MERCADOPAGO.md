@@ -162,17 +162,46 @@ La ruta pública es `/pago` y no `/registro/pago`: esta última colisionaría co
 
 ## Puesta en marcha
 
-1. Deployar la rama para tener una URL pública estable.
-2. `vercel env add MP_ACCESS_TOKEN`.
-3. En MP: Tus integraciones → la app → Webhooks → Configurar notificaciones.
-   URL = `<dominio>/api/mp/webhook`, evento **Pagos** (topic `payment`). Guardar.
-4. Copiar el secreto que aparece recién ahí → `vercel env add MP_WEBHOOK_SECRET`.
-5. Probar con una cuenta de prueba **compradora** (las credenciales de test que da
-   MP por defecto son las del vendedor, no sirven para comprar).
-6. Prender `payment_mode` en un evento real desde el admin.
+1. ✅ Deploy en `https://manso-gestion.vercel.app`.
+2. ✅ `MP_ACCESS_TOKEN` y `PUBLIC_BASE_URL` cargadas en Vercel (Production).
+   `PUBLIC_BASE_URL` va sólo en Production: si estuviera en Preview, un deploy de
+   prueba mandaría a MP las URLs del sitio real.
+3. ⬜ En MP: Tus integraciones → la app → Webhooks → Configurar notificaciones.
+   URL = `https://manso-gestion.vercel.app/api/mp/webhook`, evento **Pagos**
+   (topic `payment`). Guardar.
+4. ⬜ Copiar el secreto que aparece recién ahí → `MP_WEBHOOK_SECRET` → redeploy.
+5. ⬜ Cuenta de prueba **compradora** para futuros cambios (las credenciales de
+   test que da MP por defecto son las del vendedor, no sirven para comprar).
 
-Para producción Ana necesita además activar las credenciales productivas en su
-cuenta: rubro, URL del sitio, términos y reCAPTCHA.
+Ana ya activó las credenciales productivas.
+
+### Validación en producción — 28/07/2026
+
+Cobro real de $500 en el evento "prueba" (`payment_mode = 'ambos'`), con
+`MP_WEBHOOK_SECRET` **todavía sin configurar**:
+
+```
+23:50:53  registro y emisión del QR
+23:51:09  MP aprueba → payment_verified = true   (16 s, sin intervención)
+23:51:12  segunda pasada del mismo pago → sin duplicar
+```
+
+Tres cosas quedaron probadas: el camino sin webhook alcanza para acreditar solo,
+la idempotencia aguanta un aviso repetido (un `mp_payments`, un ticket), y el
+prorrateo de fee/net funciona.
+
+| | |
+|---|---|
+| Cobrado | $500,00 |
+| Comisión MP | $21,51 (4,3%) |
+| Neto | $478,49 |
+
+Con `mp_surcharge_pct = 0` la comisión la absorbe Manso. Para cobrar $500 netos
+el recargo tiene que ser ~4,5% ($522,50 al comprador). Lo define Ana por evento.
+
+El webhook sigue siendo deseable aunque no sea bloqueante: sin él, una entrada se
+acredita cuando el comprador vuelve a `/pago` o cuando Ana aprieta "Revisar en
+MP". Si alguien paga y cierra el navegador, queda pendiente hasta esa revisión.
 
 ---
 
