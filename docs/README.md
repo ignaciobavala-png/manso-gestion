@@ -59,6 +59,14 @@ Cada evento puede tener su propio alias y CBU para cobro de entradas (`ticket_al
 - En el formulario público de registro, se prioriza el alias del evento. Si no tiene, se usa el alias general del venue (`venue_config.alias_pago`) como fallback
 - No afecta al alias de la barra (`venue_config.alias_pago`), que sigue siendo el del venue
 
+### Medio de cobro por evento
+
+Cada evento elige cómo cobra las entradas (`events.payment_mode`): `transferencia` (alias + comprobante, el histórico), `mercadopago` (Checkout Pro, se verifica solo) o `ambos` (elige el asistente). Un evento gratuito guarda siempre `transferencia`.
+
+`events.mp_surcharge_pct` suma un recargo al precio cuando se paga con MP, para cubrir la comisión. Default 0.
+
+Detalle completo de la integración: [MERCADOPAGO.md](./MERCADOPAGO.md).
+
 ### Flujo típico
 
 1. Ana crea los eventos de la semana desde antemano (todos quedan como "abiertos")
@@ -195,6 +203,9 @@ Los usuarios staff se identifican via `auth.jwt() ->> 'email'` contra los emails
 | `POST /api/registro-entrada` | Registra asistente y genera token UUID |
 | `POST /api/change-pin` | Cambia PIN de Control o Empleados (requiere sesión de Control + service_role) |
 | `GET /api/keep-alive` | Ping a Supabase para evitar suspensión (cron cada 10 min) |
+| `POST /api/mp/preferencia` | Crea las entradas y la preference de Mercado Pago. El precio se calcula en el servidor |
+| `POST /api/mp/webhook` | Notificaciones de pago de MP. Nunca confía en el body: reconsulta el pago |
+| `GET /api/mp/estado?ref=` | Reconciliación bajo demanda de una orden contra MP |
 
 ---
 
@@ -203,8 +214,13 @@ Los usuarios staff se identifican via `auth.jwt() ->> 'email'` contra los emails
 ```
 VITE_SUPABASE_URL=...
 VITE_SUPABASE_ANON_KEY=...
-SUPABASE_SERVICE_ROLE_KEY=...   # solo servidor, para /api/change-pin
+SUPABASE_SERVICE_ROLE_KEY=...   # solo servidor: /api/change-pin y Mercado Pago
+MP_ACCESS_TOKEN=...             # solo servidor. Sin esto los endpoints de MP dan 503
+MP_WEBHOOK_SECRET=...           # opcional. Sin esto no se valida la firma del webhook
+PUBLIC_BASE_URL=...             # opcional. Fuerza el dominio de back_urls y notification_url
 ```
+
+Las credenciales de Mercado Pago van en `.env` (local) o `vercel env add` (producción), nunca al repo. Ver [MERCADOPAGO.md](./MERCADOPAGO.md).
 
 ---
 

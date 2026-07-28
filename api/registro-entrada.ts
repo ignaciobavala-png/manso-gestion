@@ -1,29 +1,12 @@
 /// <reference types="node" />
-import { createClient } from '@supabase/supabase-js'
+import { json, registrarTickets, type RegistroInput } from './_lib/registro'
 
 export const config = {
   runtime: 'edge'
 }
 
-interface Attendee {
-  name: string
-}
-
-interface RequestBody {
-  attendees: Attendee[]
-  email: string
-  event_id: string
-  receipt_url?: string
-  private_token?: string
-  instagram?: string
-  phone?: string
-  price_per_ticket?: number
-}
-
-interface TicketResult {
-  name: string
-  token: string
-}
+// Flujo de transferencia + comprobante. La validación y el alta de tickets
+// viven en _lib/registro.ts, compartidas con el flujo de Mercado Pago.
 
 export default async function handler(req: Request): Promise<Response> {
   if (req.method !== 'POST') {
@@ -37,143 +20,15 @@ export default async function handler(req: Request): Promise<Response> {
     return json({ error: 'Body inválido' }, 400)
   }
 
-  const { attendees, email, event_id, receipt_url, private_token, instagram, phone, price_per_ticket } = body as RequestBody
-
-  if (!email?.trim() || !event_id || !attendees?.length) {
-    return json({ error: 'Datos incompletos' }, 400)
-  }
-
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return json({ error: 'Email inválido' }, 400)
-  }
-
-  const names = attendees
-    .map(a => a.name?.trim())
-    .filter(n => n.length > 0)
-
-  if (names.length === 0) {
-    return json({ error: 'Ingresá al menos un nombre' }, 400)
-  }
-
-  const supabase = createClient(
-    process.env.VITE_SUPABASE_URL!,
-    process.env.VITE_SUPABASE_ANON_KEY!
-  )
-
-  // Cliente admin para SELECTs internos — la política pública SELECT fue removida
-  const adminSupabase = createClient(
-    process.env.VITE_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
-
-  const { data: event, error: eventError } = await supabase
-    .from('events')
-    .select('id, closed_at, registrations_open, max_capacity, is_private, private_token, one_ticket_per_email, require_instagram, require_phone')
-    .eq('id', event_id)
-    .single()
-
-  if (eventError || !event) {
-    return json({ error: 'Evento no encontrado' }, 404)
-  }
-
-  if (event.closed_at) {
-    return json({ error: 'El evento ya finalizó' }, 409)
-  }
-
-  if (!event.registrations_open) {
-    return json({ error: 'El registro de entradas está pausado momentáneamente' }, 503)
-  }
-
-  if (event.is_private && event.private_token !== private_token) {
-    return json({ error: 'Acceso no autorizado' }, 403)
-  }
-
-  // Fast-fail: evita inserts obvios cuando ya está lleno, pero NO es la
-  // garantía real de límite — esa la da el trigger enforce_event_capacity
-  // en la DB, que usa SELECT ... FOR UPDATE para serializar concurrencia.
-  if (event.max_capacity !== null) {
-    const { count, error: countError } = await adminSupabase
-      .from('ticket_registrations')
-      .select('id', { count: 'exact', head: true })
-      .eq('event_id', event_id)
-      .eq('is_banned', false)
-
-    if (!countError && count !== null && count + names.length > event.max_capacity) {
-      return json({ error: 'No hay suficiente capacidad disponible' }, 409)
-    }
-  }
-
-  const normalizedEmail = email.toLowerCase().trim()
-  const receipt = receipt_url?.trim() || null
-
-  // Fetch already-registered names for this email+event to avoid duplicates
-  // (also used for one_ticket_per_email validation)
-  const { data: existing } = await adminSupabase
-    .from('ticket_registrations')
-    .select('name, token')
-    .eq('event_id', event_id)
-    .eq('email', normalizedEmail)
-
-  const existingMap = new Map(
-    (existing ?? []).map(r => [r.name.toLowerCase().trim(), r.token])
-  )
-
-  const newNames = names.filter(n => !existingMap.has(n.toLowerCase()))
-  const tickets: TicketResult[] = names
-    .filter(n => existingMap.has(n.toLowerCase()))
-    .map(n => ({ name: n, token: existingMap.get(n.toLowerCase()) as string }))
-
-  if (event.require_instagram && !instagram?.trim()) {
-    return json({ error: 'El Instagram es obligatorio para este evento' }, 400)
-  }
-
-  if (event.require_phone && !phone?.trim()) {
-    return json({ error: 'El teléfono es obligatorio para este evento' }, 400)
-  }
-
-  if (event.one_ticket_per_email && (existing ?? []).length > 0) {
-    return json({ error: 'Este email ya tiene una entrada registrada para este evento' }, 409)
-  }
-
-  // All names already registered → idempotent response, nothing inserted
-  if (newNames.length === 0) {
-    return json({ tickets }, 200)
-  }
-
-  for (const name of newNames) {
-    const token = crypto.randomUUID()
-
-    const { error } = await supabase
-      .from('ticket_registrations')
-      .insert({
-        event_id,
-        name,
-        email: normalizedEmail,
-        token,
-        receipt_url: receipt,
-        instagram: instagram?.trim() || null,
-        phone: phone?.trim() || null,
-        price_per_ticket: price_per_ticket ?? null,
-      })
-
-    if (error) {
-      // P0001 es el ERRCODE que lanza el trigger enforce_event_capacity
-      if (error.code === 'P0001' || error.message?.includes('capacity_exceeded')) {
-        return json({ error: 'No hay suficiente capacidad disponible' }, 409)
-      }
-      return json({ error: 'Error al registrar' }, 500)
-    }
-
-    tickets.push({ name, token })
-  }
-
-  return json({ tickets }, 201)
-}
-
-function json(body: unknown, status: number) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' }
+  const input = body as RegistroInput
+  const result = await registrarTickets({
+    ...input,
+    payment_provider: 'transferencia',
   })
+
+  if (!result.ok) {
+    return json({ error: result.error }, result.status)
+  }
+
+  return json({ tickets: result.tickets }, result.status)
 }

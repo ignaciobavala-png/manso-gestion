@@ -26,7 +26,12 @@ interface ActiveEvent {
   ticket_alias_pago: string | null
   ticket_cbu_pago: string | null
   background_url: string | null
+  payment_mode: PaymentMode
+  mp_surcharge_pct: number
 }
+
+type PaymentMode = 'transferencia' | 'mercadopago' | 'ambos'
+type MetodoPago = 'transferencia' | 'mercadopago'
 
 interface VenueConfig {
   alias_pago: string | null
@@ -180,6 +185,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken }: { eventParam: 
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
+  const [metodoPago, setMetodoPago] = useState<MetodoPago>('transferencia')
   const submittingRef = useRef(false)
 
   const handleReceiptUpload = async (file: File) => {
@@ -211,7 +217,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken }: { eventParam: 
       setLoadingEvent(true)
       const { data, error } = await supabase
         .from('events')
-        .select('id, name, registrations_open, max_capacity, is_paid, regular_ticket_price, start_date, end_date, ticket_alias_pago, ticket_cbu_pago, is_private, private_token, one_ticket_per_email, require_instagram, require_phone, background_url')
+        .select('id, name, registrations_open, max_capacity, is_paid, regular_ticket_price, start_date, end_date, ticket_alias_pago, ticket_cbu_pago, is_private, private_token, one_ticket_per_email, require_instagram, require_phone, background_url, payment_mode, mp_surcharge_pct')
         .eq(isSlug ? 'slug' : 'id', eventParam)
         .is('closed_at', null)
         .single()
@@ -243,7 +249,15 @@ function EventoForm({ eventParam, isSlug = false, privateToken }: { eventParam: 
         ticket_alias_pago: data.ticket_alias_pago,
         ticket_cbu_pago: data.ticket_cbu_pago,
         background_url: data.background_url ?? null,
+        payment_mode: (data.payment_mode ?? 'transferencia') as PaymentMode,
+        mp_surcharge_pct: Number(data.mp_surcharge_pct ?? 0),
       })
+
+      // Con 'ambos' se arranca en Mercado Pago: es el camino que se verifica
+      // solo. La transferencia queda a un toque de distancia.
+      if (data.payment_mode === 'mercadopago' || data.payment_mode === 'ambos') {
+        setMetodoPago('mercadopago')
+      }
 
       if (data.max_capacity !== null) {
         const { data: countData } = await supabase
@@ -267,8 +281,22 @@ function EventoForm({ eventParam, isSlug = false, privateToken }: { eventParam: 
   }, [eventParam])
 
   const attendeeCount = attendeeNames.filter(n => n.trim().length > 0).length
-  const ticketPrice = activeEvent?.regular_ticket_price ?? 0
+  const basePrice = activeEvent?.regular_ticket_price ?? 0
+  const surcharge = activeEvent?.mp_surcharge_pct ?? 0
+
+  // El recargo sólo aplica al pagar con MP. Este cálculo es espejo del que
+  // hace api/mp/preferencia.ts, que es el que manda: el precio real se
+  // resuelve en el servidor y este número es sólo para mostrar.
+  const ticketPrice = metodoPago === 'mercadopago' && surcharge > 0
+    ? Math.round(basePrice * (1 + surcharge / 100) * 100) / 100
+    : basePrice
   const totalAmount = attendeeCount * ticketPrice
+
+  const aceptaMp = activeEvent?.payment_mode === 'mercadopago' || activeEvent?.payment_mode === 'ambos'
+  const aceptaTransferencia = activeEvent?.payment_mode === 'transferencia' || activeEvent?.payment_mode === 'ambos'
+  const pagandoConMp = activeEvent?.is_paid === true && metodoPago === 'mercadopago' && aceptaMp
+  // El comprobante sólo es obligatorio en el camino de transferencia.
+  const requiereComprobante = activeEvent?.is_paid === true && !pagandoConMp
 
   const setAttendeeName = (index: number, value: string) => {
     setAttendeeNames(prev => {
@@ -289,12 +317,78 @@ function EventoForm({ eventParam, isSlug = false, privateToken }: { eventParam: 
     })
   }
 
+  /** Guarda los tickets en localStorage con las mismas claves que usa MiEntrada. */
+  const persistirTickets = (tickets: { name: string; token: string }[]) => {
+    if (!activeEvent) return
+    const payload = tickets.map(t => ({
+      token: t.token,
+      name: t.name,
+      event_name: activeEvent.name,
+      event_id: activeEvent.id,
+    }))
+    localStorage.setItem(LS_KEY(activeEvent.id), JSON.stringify(payload))
+    localStorage.setItem(`manso_tickets_ts_${activeEvent.id}`, Date.now().toString())
+    if (activeEvent.end_date) localStorage.setItem(`manso_tickets_end_${activeEvent.id}`, activeEvent.end_date)
+    localStorage.setItem('manso_email', email.trim().toLowerCase())
+  }
+
+  const handleMercadoPago = async () => {
+    if (!activeEvent) return
+    if (submittingRef.current) return
+
+    submittingRef.current = true
+    setSubmitting(true)
+    setError('')
+
+    const validNames = attendeeNames.map(n => n.trim()).filter(n => n.length > 0)
+
+    try {
+      const res = await fetch('/api/mp/preferencia', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          attendees: validNames.map(name => ({ name })),
+          email: email.trim(),
+          event_id: activeEvent.id,
+          private_token: activeEvent.is_private ? activeEvent.private_token : undefined,
+          instagram: activeEvent.require_instagram ? instagram.trim() : undefined,
+          phone: activeEvent.require_phone ? phone.trim() : undefined,
+          // El precio no se manda: lo calcula el servidor desde la DB.
+        })
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error || 'No se pudo iniciar el pago. Intentá de nuevo.')
+        submittingRef.current = false
+        setSubmitting(false)
+        return
+      }
+
+      // Los tickets ya existen (pendientes de pago). Se guardan antes de irse
+      // a MP para que el usuario conserve su QR aunque abandone el checkout.
+      persistirTickets(data.tickets)
+
+      window.location.href = data.init_point
+    } catch {
+      setError('Sin conexión. Intentá de nuevo.')
+      submittingRef.current = false
+      setSubmitting(false)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!activeEvent) return
     if (submittingRef.current) return
 
-    if (activeEvent.is_paid && !receiptUrl) {
+    if (pagandoConMp) {
+      handleMercadoPago()
+      return
+    }
+
+    if (requiereComprobante && !receiptUrl) {
       setError('Subí el comprobante de pago para continuar')
       return
     }
@@ -317,7 +411,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken }: { eventParam: 
           private_token: activeEvent.is_private ? activeEvent.private_token : undefined,
           instagram: activeEvent.require_instagram ? instagram.trim() : undefined,
           phone: activeEvent.require_phone ? phone.trim() : undefined,
-          price_per_ticket: activeEvent.is_paid ? ticketPrice : undefined,
+          // El precio no se manda: lo resuelve el servidor desde la DB.
         })
       })
 
@@ -337,17 +431,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken }: { eventParam: 
         return
       }
 
-      const tickets = data.tickets.map((t: { name: string; token: string }) => ({
-        token: t.token,
-        name: t.name,
-        event_name: activeEvent.name,
-        event_id: activeEvent.id,
-      }))
-
-      localStorage.setItem(LS_KEY(activeEvent.id), JSON.stringify(tickets))
-      localStorage.setItem(`manso_tickets_ts_${activeEvent.id}`, Date.now().toString())
-      if (activeEvent.end_date) localStorage.setItem(`manso_tickets_end_${activeEvent.id}`, activeEvent.end_date)
-      localStorage.setItem('manso_email', email.trim().toLowerCase())
+      persistirTickets(data.tickets)
       setSubmitted(true)
       setTimeout(() => navigate('/mi-entrada'), 1800)
     } catch {
@@ -406,12 +490,14 @@ function EventoForm({ eventParam, isSlug = false, privateToken }: { eventParam: 
           {activeEvent.is_paid && activeEvent.regular_ticket_price > 0 && (
             <div className="mt-2 space-y-1">
               <p className="text-emerald-400 text-sm font-medium">
-                Entrada general · ${activeEvent.regular_ticket_price.toLocaleString('es-AR')}
+                Entrada general · ${ticketPrice.toLocaleString('es-AR')}
               </p>
-              <div className="inline-block bg-white/5 border border-white/10 rounded-xl px-5 py-2.5">
-                <span className="text-white font-bold text-sm">Alias: </span>
-                <span className="text-white font-mono font-semibold tracking-wide">{activeEvent.ticket_alias_pago || venueConfig?.alias_pago || 'MANSO.CLUB'}</span>
-              </div>
+              {!pagandoConMp && (
+                <div className="inline-block bg-white/5 border border-white/10 rounded-xl px-5 py-2.5">
+                  <span className="text-white font-bold text-sm">Alias: </span>
+                  <span className="text-white font-mono font-semibold tracking-wide">{activeEvent.ticket_alias_pago || venueConfig?.alias_pago || 'MANSO.CLUB'}</span>
+                </div>
+              )}
             </div>
           )}
           {!activeEvent.is_paid && (
@@ -521,6 +607,37 @@ function EventoForm({ eventParam, isSlug = false, privateToken }: { eventParam: 
                 <>
                   <div className="border-t border-white/10" />
 
+                  {/* Selector visible sólo cuando el evento acepta las dos vías */}
+                  {aceptaMp && aceptaTransferencia && (
+                    <div className="space-y-2">
+                      <p className="text-white/70 text-xs font-medium">¿Cómo querés pagar?</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setMetodoPago('mercadopago')}
+                          className={`rounded-2xl py-3 px-3 text-sm font-semibold transition-all active:scale-95 border ${
+                            metodoPago === 'mercadopago'
+                              ? 'bg-emerald-600 border-emerald-500 text-white'
+                              : 'bg-white/5 border-white/15 text-gray-300 hover:bg-white/10'
+                          }`}
+                        >
+                          Mercado Pago
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setMetodoPago('transferencia')}
+                          className={`rounded-2xl py-3 px-3 text-sm font-semibold transition-all active:scale-95 border ${
+                            metodoPago === 'transferencia'
+                              ? 'bg-emerald-600 border-emerald-500 text-white'
+                              : 'bg-white/5 border-white/15 text-gray-300 hover:bg-white/10'
+                          }`}
+                        >
+                          Transferencia
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   {attendeeCount > 0 && ticketPrice > 0 && (
                     <div className="bg-emerald-950/40 border border-emerald-800/40 rounded-2xl p-4 space-y-2">
                       <div className="flex justify-between text-sm">
@@ -532,7 +649,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken }: { eventParam: 
                         <span className="text-emerald-300 font-bold text-lg">${totalAmount.toLocaleString('es-AR')}</span>
                       </div>
 
-                      {(activeEvent.ticket_alias_pago || venueConfig?.alias_pago || activeEvent.ticket_cbu_pago || venueConfig?.cbu_pago) && (
+                      {!pagandoConMp && (activeEvent.ticket_alias_pago || venueConfig?.alias_pago || activeEvent.ticket_cbu_pago || venueConfig?.cbu_pago) && (
                         <div className="mt-3 pt-3 border-t border-emerald-800/30 text-xs space-y-1">
                           <p className="text-gray-400 font-medium mb-1">Datos para transferencia:</p>
                           {(activeEvent.ticket_alias_pago || venueConfig?.alias_pago) && (
@@ -564,6 +681,18 @@ function EventoForm({ eventParam, isSlug = false, privateToken }: { eventParam: 
                     </div>
                   )}
 
+                  {pagandoConMp && (
+                    <div className="flex items-start gap-3 p-3 bg-white/5 border border-white/15 rounded-2xl">
+                      <span className="text-xl leading-none">🔒</span>
+                      <p className="text-gray-300 text-xs leading-relaxed">
+                        Te vamos a llevar a Mercado Pago para completar el pago.
+                        Tu entrada se genera igual y queda confirmada
+                        automáticamente cuando se acredite.
+                      </p>
+                    </div>
+                  )}
+
+                  {requiereComprobante && (
                   <div className="space-y-3">
                     <p className="text-white text-sm font-medium">Subí tu comprobante de pago</p>
                     {!receiptUrl ? (
@@ -608,6 +737,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken }: { eventParam: 
                     )}
                     {uploadError && <p className="text-red-400 text-sm text-center">{uploadError}</p>}
                   </div>
+                  )}
                 </>
               )}
 
@@ -628,14 +758,16 @@ function EventoForm({ eventParam, isSlug = false, privateToken }: { eventParam: 
               ) : (
                 <button
                   type="submit"
-                  disabled={submitting || !email.trim() || attendeeCount === 0 || (activeEvent.is_paid && !receiptUrl) || (activeEvent.require_instagram && !instagram.trim()) || (activeEvent.require_phone && !phone.trim())}
+                  disabled={submitting || !email.trim() || attendeeCount === 0 || (requiereComprobante && !receiptUrl) || (activeEvent.require_instagram && !instagram.trim()) || (activeEvent.require_phone && !phone.trim())}
                   className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-white/10 disabled:text-gray-600 text-white font-semibold py-4 rounded-2xl transition-all active:scale-95 text-sm"
                 >
                   {submitting
-                    ? 'Generando entradas...'
-                    : attendeeCount > 1
-                      ? `Reservar ${attendeeCount} entradas →`
-                      : 'Quiero mi entrada →'}
+                    ? (pagandoConMp ? 'Redirigiendo a Mercado Pago...' : 'Generando entradas...')
+                    : pagandoConMp
+                      ? `Pagar $${totalAmount.toLocaleString('es-AR')} con Mercado Pago →`
+                      : attendeeCount > 1
+                        ? `Reservar ${attendeeCount} entradas →`
+                        : 'Quiero mi entrada →'}
                 </button>
               )}
             </form>

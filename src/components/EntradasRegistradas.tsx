@@ -18,10 +18,28 @@ interface Registration {
   is_banned: boolean
   instagram: string | null
   phone: string | null
+  payment_provider: 'transferencia' | 'mercadopago' | null
+  mp_status: string | null
+  mp_external_reference: string | null
 }
 
 interface EnrichedRegistration extends Registration {
   signedReceiptUrl?: string
+}
+
+/** Estados de pago de Mercado Pago, en castellano para la vista del staff. */
+function traducirEstadoMp(status: string | null): string {
+  switch (status) {
+    case 'approved':     return 'aprobado'
+    case 'pending':      return 'pendiente'
+    case 'in_process':   return 'en revisión'
+    case 'authorized':   return 'autorizado, sin acreditar'
+    case 'rejected':     return 'rechazado'
+    case 'cancelled':    return 'cancelado'
+    case 'refunded':     return 'devuelto'
+    case 'charged_back': return 'contracargo'
+    default:             return status ?? 'sin datos'
+  }
 }
 
 function extractStoragePath(publicUrl: string): string | null {
@@ -38,6 +56,7 @@ export default function EntradasRegistradas() {
   const [loading, setLoading] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const [verifyingId, setVerifyingId] = useState<string | null>(null)
+  const [checkingRef, setCheckingRef] = useState<string | null>(null)
   const [banningId, setBanningId] = useState<string | null>(null)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
   const [toast, setToast] = useState({ isOpen: false, message: '', type: 'info' as 'info' | 'success' | 'warning', name: '' })
@@ -49,7 +68,7 @@ export default function EntradasRegistradas() {
     setLoading(true)
     const { data, error } = await supabase
       .from('ticket_registrations')
-      .select('id, name, email, event_id, token, registered_at, used_at, receipt_url, payment_verified, is_banned, instagram, phone')
+      .select('id, name, email, event_id, token, registered_at, used_at, receipt_url, payment_verified, is_banned, instagram, phone, payment_provider, mp_status, mp_external_reference')
       .eq('event_id', activeEvent.id)
       .order('registered_at', { ascending: false })
 
@@ -139,6 +158,48 @@ export default function EntradasRegistradas() {
       setRows(prev => prev.map(r => r.id === id ? { ...r, payment_verified: true } : r))
     }
     setVerifyingId(null)
+  }
+
+  /**
+   * Consulta el estado real del pago en Mercado Pago y aplica el resultado.
+   * Es la red de seguridad para cuando la notificación del webhook no llegó
+   * (o el webhook nunca se configuró): no depende de él para nada.
+   */
+  const handleRevisarMp = async (ref: string) => {
+    setCheckingRef(ref)
+    try {
+      const res = await fetch(`/api/mp/estado?ref=${encodeURIComponent(ref)}`)
+      const data = await res.json()
+
+      if (!res.ok) {
+        setToast({ isOpen: true, message: data.error ?? 'No se pudo consultar Mercado Pago', type: 'warning', name: '' })
+        return
+      }
+
+      if (data.verified) {
+        // El endpoint ya persistió la verificación; se refleja en pantalla.
+        setRows(prev => prev.map(r =>
+          r.mp_external_reference === ref
+            ? { ...r, payment_verified: true, mp_status: 'approved' }
+            : r
+        ))
+        setToast({ isOpen: true, message: 'Pago confirmado en Mercado Pago', type: 'success', name: '' })
+      } else {
+        setRows(prev => prev.map(r =>
+          r.mp_external_reference === ref ? { ...r, mp_status: data.status ?? r.mp_status } : r
+        ))
+        setToast({
+          isOpen: true,
+          message: `Mercado Pago informa: ${traducirEstadoMp(data.status)}`,
+          type: 'warning',
+          name: '',
+        })
+      }
+    } catch {
+      setToast({ isOpen: true, message: 'Sin conexión con Mercado Pago', type: 'warning', name: '' })
+    } finally {
+      setCheckingRef(null)
+    }
   }
 
   const handleBan = async (id: string) => {
@@ -234,7 +295,11 @@ export default function EntradasRegistradas() {
 
   const ingresados = rows.filter(r => r.used_at).length
   const pendientes = rows.filter(r => !r.used_at).length
-  const porVerificar = rows.filter(r => r.receipt_url && !r.payment_verified && !r.used_at).length
+  // Cuenta también las de Mercado Pago sin acreditar: no tienen comprobante,
+  // así que con el filtro viejo quedaban invisibles para el staff.
+  const porVerificar = rows.filter(r =>
+    (r.receipt_url || r.mp_external_reference) && !r.payment_verified && !r.used_at
+  ).length
   const conComprobante = rows.filter(r => r.receipt_url).length
 
   if (!activeEvent) return null
@@ -387,6 +452,11 @@ export default function EntradasRegistradas() {
                               day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
                             })}
                           </p>
+                          {r.payment_provider === 'mercadopago' && (
+                            <p className="text-sky-400 text-xs mt-0.5 truncate">
+                              Mercado Pago · {traducirEstadoMp(r.mp_status)}
+                            </p>
+                          )}
                         </div>
 
                         <span
@@ -405,13 +475,27 @@ export default function EntradasRegistradas() {
                       </div>
 
                       <div className="flex items-center gap-2 pl-[3.25rem] sm:pl-0 flex-wrap">
-                        {isPending && r.receipt_url && !r.is_banned && (
+                        {/* Verificación a mano. También para las de MP: si MP
+                            no responde o el pago llegó por otra vía, el staff
+                            tiene que poder confirmar igual. */}
+                        {isPending && (r.receipt_url || r.mp_external_reference) && !r.is_banned && (
                           <button
                             onClick={() => handleVerify(r.id)}
                             disabled={verifyingId === r.id}
                             className="bg-orange-700 hover:bg-orange-600 disabled:opacity-50 text-white text-xs px-2.5 py-1.5 rounded-lg transition-colors whitespace-nowrap"
                           >
                             {verifyingId === r.id ? '...' : 'Verificar pago'}
+                          </button>
+                        )}
+
+                        {/* Reconciliación contra MP: no depende del webhook */}
+                        {isPending && r.mp_external_reference && !r.is_banned && (
+                          <button
+                            onClick={() => handleRevisarMp(r.mp_external_reference!)}
+                            disabled={checkingRef === r.mp_external_reference}
+                            className="bg-sky-700 hover:bg-sky-600 disabled:opacity-50 text-white text-xs px-2.5 py-1.5 rounded-lg transition-colors whitespace-nowrap"
+                          >
+                            {checkingRef === r.mp_external_reference ? '...' : 'Revisar en MP'}
                           </button>
                         )}
 
