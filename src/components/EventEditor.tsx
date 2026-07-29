@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAppStore } from '../store/useAppStore'
+import { previsualizarRecargo, parsearDecimal } from '../lib/mercadopago'
 import AlertModal from './AlertModal'
 
 interface Event {
@@ -72,6 +73,12 @@ export default function EventEditor({ event, onDone }: Props) {
     type: 'info' as 'info' | 'error' | 'warning' | 'success'
   })
 
+  // Qué paga el asistente y qué le queda a Manso con el recargo actual.
+  const previewRecargo = previsualizarRecargo(
+    parsearDecimal(form.ticketPrice),
+    parsearDecimal(form.mpSurcharge)
+  )
+
   const handleSave = async () => {
     if (!form.name.trim()) {
       setAlertModal({ isOpen: true, message: 'El nombre del evento es obligatorio', type: 'warning' })
@@ -91,7 +98,7 @@ export default function EventEditor({ event, onDone }: Props) {
     }
 
     // Recargo en es-AR: se acepta coma y se normaliza a punto para la DB.
-    const surcharge = parseFloat(form.mpSurcharge.replace(',', '.')) || 0
+    const surcharge = parsearDecimal(form.mpSurcharge)
     if (surcharge < 0 || surcharge > 100) {
       setAlertModal({ isOpen: true, message: 'El recargo debe estar entre 0 y 100%', type: 'warning' })
       return
@@ -321,8 +328,9 @@ export default function EventEditor({ event, onDone }: Props) {
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">%</span>
               </div>
               <p className="text-xs text-gray-500 mt-2">
-                Mercado Pago cobra una comisión de alrededor del 6,3% + IVA. Dejalo en 0
-                para absorberla, o cargá un porcentaje para trasladarla al precio.
+                {previewRecargo
+                  ? <>La entrada sale <span className="text-white font-medium">${previewRecargo.conRecargo}</span> y entran <span className="text-white font-medium">${previewRecargo.neto}</span> netos, descontada la comisión de Mercado Pago (~4,3%).</>
+                  : <>Mercado Pago descuenta alrededor del 4,3% de cada venta. Dejalo en 0 para absorberlo, o cargá un porcentaje para trasladarlo al precio.</>}
               </p>
             </div>
           )}
