@@ -168,7 +168,7 @@ function Cartelera() {
 
 // ─── Formulario de registro ─────────────────────────────────────────────────
 
-function EventoForm({ eventParam, isSlug = false, privateToken }: { eventParam: string; isSlug?: boolean; privateToken?: string }) {
+function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = false }: { eventParam: string; isSlug?: boolean; privateToken?: string; permitirOtra?: boolean }) {
   const navigate = useNavigate()
   const [activeEvent, setActiveEvent] = useState<ActiveEvent | null>(null)
   const [venueConfig, setVenueConfig] = useState<VenueConfig | null>(null)
@@ -228,8 +228,13 @@ function EventoForm({ eventParam, isSlug = false, privateToken }: { eventParam: 
       // Evento privado: verificar token en URL
       if (data.is_private && data.private_token !== privateToken) return
 
-      // If user already registered on this device, send them to their QR
-      if (localStorage.getItem(LS_KEY(data.id))) {
+      // Ya tiene entradas de este evento en este dispositivo: por defecto se
+      // lo manda a su QR, que es lo que busca quien reabre el link compartido.
+      // Con ?otra=1 no, porque ahí la intención es explícita: viene del botón
+      // "Comprar otra entrada". Nada impide comprar de nuevo — el límite por
+      // email es una opción por evento (one_ticket_per_email) y la valida el
+      // servidor, no esta pantalla.
+      if (!permitirOtra && localStorage.getItem(LS_KEY(data.id))) {
         navigate('/mi-entrada')
         return
       }
@@ -278,7 +283,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken }: { eventParam: 
       .then(({ data }) => {
         if (data) setVenueConfig(data)
       })
-  }, [eventParam])
+  }, [eventParam, permitirOtra])
 
   const attendeeCount = attendeeNames.filter(n => n.trim().length > 0).length
   const basePrice = activeEvent?.regular_ticket_price ?? 0
@@ -317,15 +322,34 @@ function EventoForm({ eventParam, isSlug = false, privateToken }: { eventParam: 
     })
   }
 
-  /** Guarda los tickets en localStorage con las mismas claves que usa MiEntrada. */
+  /**
+   * Guarda los tickets en localStorage con las mismas claves que usa MiEntrada.
+   *
+   * Acumula en vez de reemplazar: desde que se puede comprar una segunda vez
+   * para el mismo evento (?otra=1), pisar la clave borraría del dispositivo el
+   * QR de la compra anterior. Se deduplica por token porque el registro es
+   * idempotente y puede devolver entradas que ya estaban guardadas.
+   */
   const persistirTickets = (tickets: { name: string; token: string }[]) => {
     if (!activeEvent) return
-    const payload = tickets.map(t => ({
+    const nuevos = tickets.map(t => ({
       token: t.token,
       name: t.name,
       event_name: activeEvent.name,
       event_id: activeEvent.id,
     }))
+
+    let previos: typeof nuevos = []
+    try {
+      const raw = localStorage.getItem(LS_KEY(activeEvent.id))
+      const parsed = raw ? JSON.parse(raw) : null
+      if (Array.isArray(parsed)) previos = parsed
+    } catch { /* dato corrupto: se descarta y quedan los nuevos */ }
+
+    const porToken = new Map(previos.map(t => [t.token, t]))
+    nuevos.forEach(t => porToken.set(t.token, t))
+    const payload = [...porToken.values()]
+
     localStorage.setItem(LS_KEY(activeEvent.id), JSON.stringify(payload))
     localStorage.setItem(`manso_tickets_ts_${activeEvent.id}`, Date.now().toString())
     if (activeEvent.end_date) localStorage.setItem(`manso_tickets_end_${activeEvent.id}`, activeEvent.end_date)
@@ -810,8 +834,11 @@ export default function RegistroEntrada() {
   const { slug } = useParams<{ slug: string }>()
   const eventQueryParam = searchParams.get('event')
   const tokenParam = searchParams.get('token') ?? undefined
+  // ?otra=1 lo pone el botón "Comprar otra entrada" de /mi-entrada: es la
+  // señal de que el asistente quiere el formulario aunque ya tenga entradas.
+  const otraParam = searchParams.get('otra') === '1'
 
-  if (slug) return <EventoForm key={slug} eventParam={slug} isSlug={true} privateToken={tokenParam} />
-  if (eventQueryParam) return <EventoForm key={eventQueryParam} eventParam={eventQueryParam} isSlug={false} privateToken={tokenParam} />
+  if (slug) return <EventoForm key={slug} eventParam={slug} isSlug={true} privateToken={tokenParam} permitirOtra={otraParam} />
+  if (eventQueryParam) return <EventoForm key={eventQueryParam} eventParam={eventQueryParam} isSlug={false} privateToken={tokenParam} permitirOtra={otraParam} />
   return <Cartelera />
 }

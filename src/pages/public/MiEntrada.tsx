@@ -12,6 +12,16 @@ interface TicketData {
   isFinished?: boolean
 }
 
+/** Las entradas de un mismo evento. Se agrupan para poder ofrecer "Comprar
+ *  otra entrada" apuntando al evento correcto cuando hay más de uno guardado. */
+interface EventoGuardado {
+  eventId: string
+  eventName: string
+  isFinished: boolean
+  sortVal: number
+  tickets: TicketData[]
+}
+
 function GlowBorder({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
     <div className={`relative rounded-2xl p-[1.5px] overflow-hidden ${className}`}>
@@ -77,10 +87,11 @@ function purgeExpiredTickets() {
   keysToDelete.forEach(k => localStorage.removeItem(k))
 }
 
-function getAllStoredTickets(): TicketData[] {
+/** Las entradas guardadas, agrupadas por evento y de más nuevo a más viejo. */
+function getAllStoredGroups(): EventoGuardado[] {
   purgeExpiredTickets()
   const META_PREFIXES = ['manso_tickets_ts_', 'manso_tickets_end_']
-  const events: { sortVal: number; isFinished: boolean; tickets: TicketData[] }[] = []
+  const events: EventoGuardado[] = []
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i)
     if (!key?.startsWith('manso_tickets_')) continue
@@ -88,18 +99,22 @@ function getAllStoredTickets(): TicketData[] {
     try {
       const raw = localStorage.getItem(key)
       if (!raw) continue
-      const parsed = JSON.parse(raw)
+      const parsed = JSON.parse(raw) as TicketData[]
       if (!Array.isArray(parsed) || parsed.length === 0) continue
       const eventId = key.slice('manso_tickets_'.length)
       const endDateStr = localStorage.getItem(`manso_tickets_end_${eventId}`)
       const fallbackTs = parseInt(localStorage.getItem(`manso_tickets_ts_${eventId}`) ?? '0')
-      const sortVal = endDateStr ? new Date(endDateStr).getTime() : fallbackTs
-      const isFinished = endDateStr ? new Date(endDateStr) < new Date() : false
-      events.push({ sortVal, isFinished, tickets: parsed })
+      events.push({
+        eventId,
+        eventName: parsed[0].event_name ?? 'Evento',
+        sortVal: endDateStr ? new Date(endDateStr).getTime() : fallbackTs,
+        isFinished: endDateStr ? new Date(endDateStr) < new Date() : false,
+        tickets: parsed,
+      })
     } catch { /* ignorar entradas corruptas */ }
   }
   events.sort((a, b) => b.sortVal - a.sortVal)
-  return events.flatMap(e => e.tickets.map(t => ({ ...t, isFinished: e.isFinished })))
+  return events
 }
 
 function TicketCard({ ticket, isFinished = false }: { ticket: TicketData; isFinished?: boolean }) {
@@ -212,7 +227,7 @@ function TicketCard({ ticket, isFinished = false }: { ticket: TicketData; isFini
 
 export default function MiEntrada() {
   const navigate = useNavigate()
-  const [tickets, setTickets] = useState<TicketData[] | null>(null)
+  const [grupos, setGrupos] = useState<EventoGuardado[] | null>(null)
   const [loading, setLoading] = useState(true)
   const [showEmailSearch, setShowEmailSearch] = useState(false)
   const [email, setEmail] = useState('')
@@ -220,19 +235,19 @@ export default function MiEntrada() {
   const [searchError, setSearchError] = useState('')
 
   useEffect(() => {
-    supabase.from('active_event').select('id, end_date').single().then(async ({ data, error }) => {
-      const allStored = getAllStoredTickets()
+    let cancelado = false
 
-      if (error || !data?.id) {
-        setTickets(allStored.length > 0 ? allStored : [])
-        setLoading(false)
-        return
-      }
-
-      const eventId = data.id
-      setTickets(allStored.length > 0 ? allStored : null)
+    async function cargar() {
+      // Primero se pinta lo que hay en el dispositivo, sin esperar a la red:
+      // el QR tiene que aparecer aunque la conexión en la puerta sea mala.
+      const guardados = getAllStoredGroups()
+      setGrupos(guardados.length > 0 ? guardados : null)
       setLoading(false)
 
+      const { data: activo } = await supabase.from('active_event').select('id').single()
+      if (cancelado || !activo?.id) return
+
+      const eventId = activo.id
       const storedEmail = localStorage.getItem('manso_email')
       if (!storedEmail) return
 
@@ -240,12 +255,12 @@ export default function MiEntrada() {
         supabase.rpc('get_my_tickets', { p_email: storedEmail }),
         supabase.from('events').select('name, end_date').eq('id', eventId).single(),
       ])
+      if (cancelado) return
 
-      const fetchError = rpcResult.error
       const rows = (rpcResult.data as { token: string; name: string; event_id: string }[] | null)
         ?.filter(r => r.event_id === eventId) ?? null
 
-      if (fetchError || !rows || rows.length === 0) return
+      if (rpcResult.error || !rows || rows.length === 0) return
 
       // Nunca reducir tickets: si la DB devuelve menos que localStorage, es dato rancho
       const currentLocal = getTicketsForEvent(eventId)
@@ -260,8 +275,12 @@ export default function MiEntrada() {
       }))
 
       saveTicketsToStorage(eventId, freshTickets, eventData?.end_date ?? undefined)
-      setTickets(getAllStoredTickets())
-    })
+      const actualizados = getAllStoredGroups()
+      setGrupos(actualizados.length > 0 ? actualizados : null)
+    }
+
+    cargar()
+    return () => { cancelado = true }
   }, [])
 
   const handleEmailSearch = async () => {
@@ -309,7 +328,8 @@ export default function MiEntrada() {
 
     setSearching(false)
     setShowEmailSearch(false)
-    setTickets(getAllStoredTickets())
+    const encontrados = getAllStoredGroups()
+    setGrupos(encontrados.length > 0 ? encontrados : null)
   }
 
   if (loading) {
@@ -342,7 +362,9 @@ export default function MiEntrada() {
     )
   }
 
-  if (tickets === null) {
+  const totalTickets = grupos?.reduce((acc, g) => acc + g.tickets.length, 0) ?? 0
+
+  if (grupos === null) {
     return (
       <PublicLayout showHeader={false}>
         <div className="flex-1 flex flex-col items-center justify-center px-5 pb-10 max-w-sm w-full mx-auto text-center gap-5">
@@ -417,64 +439,53 @@ export default function MiEntrada() {
   return (
     <PublicLayout>
       <div className="flex-1 flex flex-col items-center px-5 pb-10">
-        {tickets.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-center gap-5 max-w-sm w-full">
-            <div className="w-full flex justify-start -mb-2">
-              <button
-                onClick={() => navigate('/')}
-                className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all text-lg"
-              >
-                ←
-              </button>
-            </div>
-            <span className="text-5xl">📲</span>
-            <div>
-              <h2 className="text-xl font-bold text-white">No tenés entradas guardadas</h2>
-              <p className="text-gray-400 text-sm mt-2 max-w-xs">
-                Las entradas se guardan solo en el dispositivo donde las registraste.
+        <div className="w-full max-w-sm space-y-5">
+
+          <div className="flex items-center justify-between">
+            <button onClick={() => navigate('/')} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all text-lg">←</button>
+            {totalTickets > 1 && (
+              <span className="text-gray-400 text-sm font-medium">{totalTickets} entradas</span>
+            )}
+          </div>
+
+          {totalTickets > 1 && (
+            <div className="bg-amber-950/60 border border-amber-700/40 rounded-2xl px-4 py-3 text-center">
+              <p className="text-amber-300 text-sm">
+                Guardá cada entrada por separado. Cada persona necesita mostrar su propio QR en la puerta.
               </p>
             </div>
-            <GlowBorder className="w-full">
-              <button
-                onClick={() => navigate('/registro')}
-                className="relative w-full bg-neutral-900 hover:bg-neutral-800 text-white font-semibold py-4 rounded-2xl transition-all active:scale-95 text-sm"
-              >
-                Obtener entrada →
-              </button>
-            </GlowBorder>
-          </div>
-        ) : (
-          <div className="w-full max-w-sm space-y-5">
+          )}
 
-            <div className="flex items-center justify-between">
-              <button onClick={() => navigate('/')} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all text-lg">←</button>
-              {tickets.length > 1 && (
-                <span className="text-gray-400 text-sm font-medium">{tickets.length} entradas</span>
+          {grupos.map(grupo => (
+            <div key={grupo.eventId} className="space-y-5">
+              {grupo.tickets.map((ticket, i) => (
+                <TicketCard key={`${ticket.token}-${i}`} ticket={ticket} isFinished={grupo.isFinished} />
+              ))}
+
+              {/* ?otra=1 es lo que evita que /registro rebote de vuelta acá al
+                  ver que este dispositivo ya tiene entradas del evento. */}
+              {!grupo.isFinished && (
+                <button
+                  onClick={() => navigate(`/registro?event=${grupo.eventId}&otra=1`)}
+                  className="w-full bg-neutral-900/80 hover:bg-neutral-800 text-white/55 hover:text-white/80 font-semibold py-4 rounded-2xl transition-all active:scale-95 text-sm"
+                >
+                  {grupos.length > 1
+                    ? `Comprar otra para ${grupo.eventName} →`
+                    : 'Comprar otra entrada →'}
+                </button>
               )}
             </div>
+          ))}
 
-            {tickets.length > 1 && (
-              <div className="bg-amber-950/60 border border-amber-700/40 rounded-2xl px-4 py-3 text-center">
-                <p className="text-amber-300 text-sm">
-                  Guardá cada entrada por separado. Cada persona necesita mostrar su propio QR en la puerta.
-                </p>
-              </div>
-            )}
+          {totalTickets === 1 && (
+            <div className="bg-amber-950/60 border border-amber-700/40 rounded-2xl px-4 py-3 text-center">
+              <p className="text-amber-300 text-sm">
+                Guardá esta imagen. No necesitás internet para mostrarla en la puerta.
+              </p>
+            </div>
+          )}
 
-            {tickets.map((ticket, i) => (
-              <TicketCard key={`${ticket.token}-${i}`} ticket={ticket} isFinished={ticket.isFinished ?? false} />
-            ))}
-
-            {tickets.length === 1 && (
-              <div className="bg-amber-950/60 border border-amber-700/40 rounded-2xl px-4 py-3 text-center">
-                <p className="text-amber-300 text-sm">
-                  Guardá esta imagen. No necesitás internet para mostrarla en la puerta.
-                </p>
-              </div>
-            )}
-
-          </div>
-        )}
+        </div>
       </div>
     </PublicLayout>
   )
