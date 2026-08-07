@@ -1,18 +1,29 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { supabase } from '../../lib/supabase'
 import PublicLayout from '../../components/PublicLayout'
+import { guardarTickets } from '../../lib/entradasStorage'
 
 // Pantalla a la que vuelve el usuario desde Mercado Pago.
 //
+// Es el único lugar donde nace el QR de una compra por MP: /api/mp/preferencia
+// no devuelve los tokens y /api/mp/estado sólo los suelta con el pago
+// acreditado. Si el pago no entra, esta pantalla no tiene nada que guardar —
+// que es exactamente lo que se buscaba: sin pago no hay entrada.
+//
 // Importante: las back_urls de MP NO son prueba de pago — que el navegador
 // vuelva por "success" no significa que la plata esté acreditada. El estado
-// real se consulta contra /api/mp/estado, que le pregunta a la API de MP.
-//
-// El QR ya existe desde antes de pagar (mismo modelo que transferencia), así
-// que si el pago queda pendiente el usuario igual llega a su entrada; la va a
-// ver como pendiente de verificación, igual que hoy con las transferencias.
+// real lo resuelve /api/mp/estado preguntándole a la API de MP.
 
 type Estado = 'consultando' | 'approved' | 'pending' | 'rejected' | 'error'
+
+interface RespuestaEstado {
+  status?: string
+  verified?: boolean
+  error?: string
+  event_id?: string
+  tickets?: { token: string; name: string }[]
+}
 
 const INTERVALO_MS = 2500
 const MAX_INTENTOS = 16 // ~40 segundos
@@ -30,60 +41,102 @@ export default function PagoRetorno() {
   const intentosRef = useRef(0)
   const canceladoRef = useRef(false)
 
-  useEffect(() => {
-    if (!ref) return
+  /**
+   * Guarda el QR en el dispositivo. Sólo se llama con verified === true, y aun
+   * así se revisa que vengan tickets: si el pago se acreditó pero la respuesta
+   * llegó vacía, es mejor mandar a /mi-entrada (que los busca por email) que
+   * guardar una lista vacía y pisar lo que hubiera.
+   */
+  const persistirYSalir = useCallback(async (data: RespuestaEstado) => {
+    const tickets = data.tickets ?? []
+    const eventId = data.event_id
 
-    canceladoRef.current = false
+    if (tickets.length > 0 && eventId) {
+      const { data: evento } = await supabase
+        .from('events')
+        .select('name, end_date')
+        .eq('id', eventId)
+        .single()
 
-    async function consultar() {
-      if (canceladoRef.current) return
-
-      try {
-        const res = await fetch(`/api/mp/estado?ref=${encodeURIComponent(ref!)}`)
-        const data = await res.json()
-
-        if (canceladoRef.current) return
-
-        if (!res.ok) {
-          setEstado('error')
-          setDetalle(data.error ?? 'No se pudo consultar el pago.')
-          return
-        }
-
-        if (data.verified || data.status === 'approved') {
-          setEstado('approved')
-          setTimeout(() => navigate('/mi-entrada'), 1800)
-          return
-        }
-
-        if (data.status === 'rejected' || data.status === 'cancelled') {
-          setEstado('rejected')
-          return
-        }
-
-        // in_process / pending / authorized: MP todavía no resolvió.
-        intentosRef.current += 1
-        if (intentosRef.current >= MAX_INTENTOS) {
-          setEstado('pending')
-          return
-        }
-        setTimeout(consultar, INTERVALO_MS)
-      } catch {
-        if (canceladoRef.current) return
-        intentosRef.current += 1
-        if (intentosRef.current >= MAX_INTENTOS) {
-          setEstado('error')
-          setDetalle('Sin conexión con el servidor.')
-          return
-        }
-        setTimeout(consultar, INTERVALO_MS)
-      }
+      guardarTickets({
+        eventId,
+        eventName: evento?.name ?? 'Evento',
+        endDate: evento?.end_date,
+        tickets,
+      })
     }
 
-    consultar()
+    if (canceladoRef.current) return
+    setEstado('approved')
+    setTimeout(() => navigate('/mi-entrada'), 1800)
+  }, [navigate])
 
+  // El reintento se agenda a través del ref y no llamando a `consultar` desde
+  // adentro: una función de useCallback no puede referenciarse a sí misma.
+  const consultarRef = useRef<() => void>(() => {})
+
+  const consultar = useCallback(async () => {
+    if (canceladoRef.current || !ref) return
+
+    try {
+      const res = await fetch(`/api/mp/estado?ref=${encodeURIComponent(ref)}`)
+      const data = await res.json() as RespuestaEstado
+
+      if (canceladoRef.current) return
+
+      if (!res.ok) {
+        setEstado('error')
+        setDetalle(data.error ?? 'No se pudo consultar el pago.')
+        return
+      }
+
+      if (data.verified || data.status === 'approved') {
+        await persistirYSalir(data)
+        return
+      }
+
+      if (data.status === 'rejected' || data.status === 'cancelled') {
+        setEstado('rejected')
+        return
+      }
+
+      // in_process / pending / authorized: MP todavía no resolvió.
+      intentosRef.current += 1
+      if (intentosRef.current >= MAX_INTENTOS) {
+        setEstado('pending')
+        return
+      }
+      setTimeout(() => consultarRef.current(), INTERVALO_MS)
+    } catch {
+      if (canceladoRef.current) return
+      intentosRef.current += 1
+      if (intentosRef.current >= MAX_INTENTOS) {
+        setEstado('error')
+        setDetalle('Sin conexión con el servidor.')
+        return
+      }
+      setTimeout(() => consultarRef.current(), INTERVALO_MS)
+    }
+  }, [ref, persistirYSalir])
+
+  // Se declara primero para que el ref ya apunte a la versión actual cuando
+  // corre el efecto de abajo (los efectos se ejecutan en orden de declaración).
+  useEffect(() => { consultarRef.current = consultar }, [consultar])
+
+  useEffect(() => {
+    if (!ref) return
+    canceladoRef.current = false
+    consultarRef.current()
     return () => { canceladoRef.current = true }
-  }, [ref, navigate])
+  }, [ref])
+
+  const reintentar = () => {
+    intentosRef.current = 0
+    canceladoRef.current = false
+    setEstado('consultando')
+    setDetalle('')
+    consultar()
+  }
 
   return (
     <PublicLayout>
@@ -118,14 +171,20 @@ export default function PagoRetorno() {
               <h2 className="text-white font-bold text-xl">Tu pago está en proceso</h2>
               <p className="text-gray-400 text-sm">
                 Mercado Pago todavía no lo confirmó. Suele tardar unos minutos.
-                Tu entrada ya está generada — cuando se acredite queda
-                verificada automáticamente.
+                Tu entrada se genera apenas se acredite — no hace falta pagar de
+                nuevo. Podés volver a chequear desde acá.
               </p>
               <button
-                onClick={() => navigate('/mi-entrada')}
+                onClick={reintentar}
                 className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-95 text-sm"
               >
-                Ver mi entrada →
+                Volver a chequear
+              </button>
+              <button
+                onClick={() => navigate('/mi-entrada')}
+                className="w-full bg-white/10 hover:bg-white/20 text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-95 text-sm"
+              >
+                Ir a mis entradas
               </button>
             </>
           )}
@@ -135,8 +194,8 @@ export default function PagoRetorno() {
               <p className="text-4xl">😕</p>
               <h2 className="text-white font-bold text-xl">El pago fue rechazado</h2>
               <p className="text-gray-400 text-sm">
-                No se pudo procesar el pago. Podés intentar de nuevo con otro
-                medio, o escribirnos si el problema sigue.
+                No se generó ninguna entrada. Podés intentar de nuevo con otro
+                medio de pago, o escribirnos si el problema sigue.
               </p>
               <button
                 onClick={() => navigate('/registro')}
@@ -155,14 +214,20 @@ export default function PagoRetorno() {
                 {detalle || 'Intentá de nuevo en un momento.'}
               </p>
               <p className="text-gray-500 text-xs">
-                Si ya pagaste, no vuelvas a hacerlo: tu entrada existe y el
-                staff puede verificarla.
+                Si ya pagaste, no vuelvas a hacerlo: la entrada se acredita sola
+                cuando Mercado Pago confirma, y aparece en "Mis entradas".
               </p>
+              <button
+                onClick={reintentar}
+                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-95 text-sm"
+              >
+                Reintentar
+              </button>
               <button
                 onClick={() => navigate('/mi-entrada')}
                 className="w-full bg-white/10 hover:bg-white/20 text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-95 text-sm"
               >
-                Ver mi entrada →
+                Ir a mis entradas
               </button>
             </>
           )}

@@ -49,12 +49,14 @@ export default function EventoActivo() {
         setCbuPago(data.ticket_cbu_pago ?? '')
       })
 
+    // vendidas, no filas: las rechazadas con "Rechazar QR" y los pagos de
+    // Mercado Pago abandonados no cuentan (ver migración 020).
     supabase
-      .from('ticket_registrations')
-      .select('id', { count: 'exact', head: true })
+      .from('event_ticket_counts')
+      .select('vendidas')
       .eq('event_id', activeEvent.id)
-      .eq('is_banned', false)
-      .then(({ count }) => setRegistrationCount(count ?? 0))
+      .maybeSingle()
+      .then(({ data }) => setRegistrationCount(data?.vendidas ?? 0))
   }, [activeEvent])
 
   if (!activeEvent) return null

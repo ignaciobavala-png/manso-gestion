@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAppStore } from '../store/useAppStore'
 import { compressImage } from '../lib/compressImage'
@@ -25,45 +25,49 @@ export default function GestionEventos() {
   const openEvents = events.filter(e => !e.closed_at)
   const closedEvents = events.filter(e => !!e.closed_at)
 
-  useEffect(() => {
+  // Los conteos salen de event_ticket_counts (migración 020) y no de un
+  // count(*) sobre la tabla: contando filas crudas, una entrada rechazada con
+  // "Rechazar QR" y un pago de Mercado Pago abandonado seguían sumando acá.
+  const loadCounts = useCallback(async () => {
     if (events.length === 0) return
-    Promise.all(
-      events.map(e =>
-        supabase
-          .from('ticket_registrations')
-          .select('*', { count: 'exact', head: true })
-          .eq('event_id', e.id)
-          .then(({ count }) => ({ id: e.id, count: count ?? 0 }))
-      )
-    ).then(results => {
-      const counts: Record<string, number> = {}
-      results.forEach(({ id, count }) => { counts[id] = count })
-      setRegCounts(counts)
-    })
+    const ids = events.map(e => e.id)
+
+    const { data } = await supabase
+      .from('event_ticket_counts')
+      .select('event_id, vendidas')
+      .in('event_id', ids)
+
+    const counts: Record<string, number> = {}
+    ids.forEach(id => { counts[id] = 0 })
+    ;(data ?? []).forEach(row => { counts[row.event_id] = row.vendidas })
+    setRegCounts(counts)
   }, [events])
+
+  useEffect(() => { loadCounts() }, [loadCounts])
 
   useEffect(() => {
     if (events.length === 0) return
     const ids = new Set(events.map(e => e.id))
 
+    // Se recarga en vez de sumar 1: un INSERT de Mercado Pago todavía no es una
+    // venta, y lo que convierte una fila en vendida (o la saca) es un UPDATE
+    // —acreditación del pago, "Rechazar QR"—. Incrementar a mano volvía a meter
+    // la regla de negocio en el componente, que es de donde había que sacarla.
     const channel = supabase
       .channel('gestion-ticket-registrations')
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'ticket_registrations' },
-        (payload: { new: { event_id: string } }) => {
-          const eventId = payload.new.event_id
-          if (!ids.has(eventId)) return
-          setRegCounts(prev => ({
-            ...prev,
-            [eventId]: (prev[eventId] ?? 0) + 1,
-          }))
+        { event: '*', schema: 'public', table: 'ticket_registrations' },
+        (payload: { new?: { event_id?: string }; old?: { event_id?: string } }) => {
+          const eventId = payload.new?.event_id ?? payload.old?.event_id
+          if (!eventId || !ids.has(eventId)) return
+          loadCounts()
         }
       )
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
-  }, [events])
+  }, [events, loadCounts])
 
   const handleFlyerUpload = async (eventId: string, file: File) => {
     if (uploadingFor) return

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams, useParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import PublicLayout from '../../components/PublicLayout'
+import { guardarTickets, tieneTickets, LS_EMAIL } from '../../lib/entradasStorage'
 
 interface EventCard {
   id: string
@@ -37,8 +38,6 @@ interface VenueConfig {
   alias_pago: string | null
   cbu_pago: string | null
 }
-
-const LS_KEY = (eventId: string) => `manso_tickets_${eventId}`
 
 // ─── Cartelera (sin ?event=) ────────────────────────────────────────────────
 
@@ -234,7 +233,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
       // "Comprar otra entrada". Nada impide comprar de nuevo — el límite por
       // email es una opción por evento (one_ticket_per_email) y la valida el
       // servidor, no esta pantalla.
-      if (!permitirOtra && localStorage.getItem(LS_KEY(data.id))) {
+      if (!permitirOtra && tieneTickets(data.id)) {
         navigate('/mi-entrada')
         return
       }
@@ -322,38 +321,15 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
     })
   }
 
-  /**
-   * Guarda los tickets en localStorage con las mismas claves que usa MiEntrada.
-   *
-   * Acumula en vez de reemplazar: desde que se puede comprar una segunda vez
-   * para el mismo evento (?otra=1), pisar la clave borraría del dispositivo el
-   * QR de la compra anterior. Se deduplica por token porque el registro es
-   * idempotente y puede devolver entradas que ya estaban guardadas.
-   */
   const persistirTickets = (tickets: { name: string; token: string }[]) => {
     if (!activeEvent) return
-    const nuevos = tickets.map(t => ({
-      token: t.token,
-      name: t.name,
-      event_name: activeEvent.name,
-      event_id: activeEvent.id,
-    }))
-
-    let previos: typeof nuevos = []
-    try {
-      const raw = localStorage.getItem(LS_KEY(activeEvent.id))
-      const parsed = raw ? JSON.parse(raw) : null
-      if (Array.isArray(parsed)) previos = parsed
-    } catch { /* dato corrupto: se descarta y quedan los nuevos */ }
-
-    const porToken = new Map(previos.map(t => [t.token, t]))
-    nuevos.forEach(t => porToken.set(t.token, t))
-    const payload = [...porToken.values()]
-
-    localStorage.setItem(LS_KEY(activeEvent.id), JSON.stringify(payload))
-    localStorage.setItem(`manso_tickets_ts_${activeEvent.id}`, Date.now().toString())
-    if (activeEvent.end_date) localStorage.setItem(`manso_tickets_end_${activeEvent.id}`, activeEvent.end_date)
-    localStorage.setItem('manso_email', email.trim().toLowerCase())
+    guardarTickets({
+      eventId: activeEvent.id,
+      eventName: activeEvent.name,
+      endDate: activeEvent.end_date,
+      email,
+      tickets,
+    })
   }
 
   const handleMercadoPago = async () => {
@@ -390,9 +366,11 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
         return
       }
 
-      // Los tickets ya existen (pendientes de pago). Se guardan antes de irse
-      // a MP para que el usuario conserve su QR aunque abandone el checkout.
-      persistirTickets(data.tickets)
+      // Nada de QR todavía: el servidor ni siquiera devuelve los tokens. Si el
+      // pago no se acredita no hay entrada, que es el punto del cambio. Lo único
+      // que se guarda es el email, para que /mi-entrada pueda recuperar las
+      // entradas solo si el pago entra (aunque la persona vuelva más tarde).
+      localStorage.setItem(LS_EMAIL, email.trim().toLowerCase())
 
       window.location.href = data.init_point
     } catch {
@@ -709,9 +687,9 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
                     <div className="flex items-start gap-3 p-3 bg-white/5 border border-white/15 rounded-2xl">
                       <span className="text-xl leading-none">🔒</span>
                       <p className="text-gray-300 text-xs leading-relaxed">
-                        Te vamos a llevar a Mercado Pago para completar el pago.
-                        Tu entrada se genera igual y queda confirmada
-                        automáticamente cuando se acredite.
+                        Te vamos a llevar a Mercado Pago. Apenas se acredite el
+                        pago volvés acá y te aparece tu QR. Si no completás el
+                        pago no se genera la entrada.
                       </p>
                     </div>
                   )}

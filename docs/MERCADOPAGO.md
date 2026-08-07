@@ -23,20 +23,51 @@ Ana por evento desde el admin.
 
 ---
 
-## El QR se emite antes de cobrar
+## Primero se paga, después sale el QR
 
-**Decisión deliberada.** Las entradas se crean apenas el asistente inicia el pago,
-con `payment_verified = false`. No se espera a la aprobación.
+**Cambiado en la migración 020.** Antes el QR se emitía al iniciar el pago, igual
+que en transferencia. En producción eso dio exactamente el problema esperable, y
+Ana lo reportó: gente que abandonó el checkout se quedó con el QR igual, y esas
+entradas seguían contando como vendidas.
 
-- **A favor:** el asistente nunca queda sin entrada por un webhook perdido, y el
-  flujo es idéntico al de transferencia (que ya emitía el QR sin verificar).
-- **En contra:** quedan entradas sin pagar en la tabla.
-- **Mitigación:** al escanear un QR sin `payment_verified` en un evento pago, el
-  scanner muestra el aviso naranja "Pago no verificado", con el detalle según el
-  medio ("Mercado Pago todavía no acreditó este pago" o "El comprobante aún no fue
-  verificado por el staff"). **No bloquea el ingreso** — la decisión final es de
-  quien está en la puerta. La preference expira a los **30 minutos**
-  (`EXPIRA_EN_MINUTOS` en `api/mp/preferencia.ts`).
+Ahora:
+
+- La fila se sigue creando antes de ir a MP, pero como **reserva**, no como venta.
+  Sin fila no habría dónde reconciliar el pago cuando vuelve el webhook, ni forma
+  de sostener el cupo mientras dura el checkout.
+- `POST /api/mp/preferencia` **no devuelve los tokens**. `GET /api/mp/estado` los
+  devuelve sólo con el pago acreditado. El QR nace en `PagoRetorno.tsx`.
+- `get_my_tickets` (el "buscar por email" de `/mi-entrada`) filtra lo no pagado,
+  así que tampoco se puede recuperar el QR por ahí.
+- La reserva vence a los **30 minutos** (`EXPIRA_EN_MINUTOS` en
+  `api/mp/preferencia.ts`, se guarda en `ticket_registrations.mp_expires_at`).
+  Vencida, deja de ocupar cupo.
+
+Transferencia **no cambió**: sigue emitiendo el QR al registrarse, porque ahí el
+comprobante ya está subido y la verificación es a mano. Al escanear un QR sin
+`payment_verified` en un evento pago, el scanner sigue mostrando el aviso naranja
+"Pago no verificado" y **no bloquea el ingreso** — la decisión final es de quien
+está en la puerta.
+
+### Qué cuenta como vendida
+
+Definido una sola vez, en la DB (migración 020), y espejado en
+`src/lib/entradas.ts` para los contadores que se calculan sobre filas ya
+traídas a memoria:
+
+| | Cuenta como vendida | Ocupa cupo |
+|---|---|---|
+| Transferencia (verificada o no) | sí | sí |
+| MP acreditada | sí | sí |
+| MP en checkout, sin vencer | no | sí (reserva) |
+| MP abandonada / vencida | no | no |
+| "Rechazar QR" (`is_banned`) | no | no |
+
+Todo lo que cuenta pasa por `public.entrada_vendida()` /
+`public.entrada_reservada()`: el trigger de capacidad, `get_event_registration_count`,
+`get_my_tickets` y la vista `public.event_ticket_counts` (la fuente de los números
+del panel). La regla copiada a mano en cada pantalla es lo que hacía que
+"Rechazar QR" descontara en una vista y no en otra.
 
 ---
 
@@ -45,11 +76,11 @@ con `payment_verified = false`. No se espera a la aprobación.
 ```
 RegistroEntrada.tsx
   └─ POST /api/mp/preferencia
-       ├─ registrarTickets()  → tickets con payment_verified=false
-       │                        y mp_external_reference compartido
+       ├─ registrarTickets()  → filas reservadas (payment_verified=false,
+       │                        mp_expires_at = ahora + 30 min)
        ├─ precio = regular_ticket_price * (1 + surcharge/100)   ← server-side
        └─ MP POST /checkout/preferences → init_point
-  └─ window.location.href = init_point
+  └─ window.location.href = init_point        (sin tokens: todavía no hay QR)
                                         │
                             ┌───────────┴───────────┐
                             │                       │
@@ -61,6 +92,10 @@ RegistroEntrada.tsx
                                        ▼
                             RPC mp_apply_payment()
                             (única puerta de transición de estado)
+                                       │
+                                       ▼
+                       aprobado → /api/mp/estado devuelve los tokens
+                                  → PagoRetorno guarda el QR → /mi-entrada
 ```
 
 Los tres caminos —webhook, retorno del usuario y el botón "Revisar en MP" del

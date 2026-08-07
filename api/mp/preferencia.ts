@@ -29,9 +29,11 @@ export default async function handler(req: Request): Promise<Response> {
   const input = body as RegistroInput
   const externalReference = `manso-${crypto.randomUUID()}`
 
-  // Se crean los tickets primero: el QR se entrega igual que en el flujo de
-  // transferencia, con payment_verified en false. El escáner ya distingue
-  // "Pendiente" de "Verificado", así que un pago abandonado no pasa inadvertido.
+  // Las filas se crean antes de ir a MP, pero como RESERVA, no como venta: hasta
+  // que el pago se acredita no cuentan como vendidas (ver migración 020) y este
+  // endpoint no devuelve los tokens. Sin fila no habría dónde reconciliar el
+  // pago cuando vuelve el webhook, ni forma de sostener el cupo durante el
+  // checkout; con fila-pero-sin-token el QR sólo aparece si la plata entró.
   const result = await registrarTickets({
     ...input,
     payment_provider: 'mercadopago',
@@ -83,6 +85,9 @@ export default async function handler(req: Request): Promise<Response> {
     return json({ error: 'Estas entradas ya están pagadas', tickets }, 409)
   }
 
+  const baseUrl = resolverBaseUrl(req)
+  const expiresAt = new Date(Date.now() + EXPIRA_EN_MINUTOS * 60_000)
+
   const { error: updateError } = await admin
     .from('ticket_registrations')
     .update({
@@ -91,6 +96,11 @@ export default async function handler(req: Request): Promise<Response> {
       // price_per_ticket guarda el precio realmente cobrado (con recargo), para
       // que los reportes de ingresos cierren contra lo que pasó por MP.
       price_per_ticket: unitPrice,
+      // Mientras esta fecha esté en el futuro la entrada ocupa cupo; después
+      // deja de contar para cualquier cosa. Es el mismo plazo que la preference:
+      // vencida la preference nadie puede pagar esa orden, así que reservarle
+      // un lugar sería regalar capacidad.
+      mp_expires_at: expiresAt.toISOString(),
     })
     .in('token', pendientes.map(t => t.token))
 
@@ -116,9 +126,6 @@ export default async function handler(req: Request): Promise<Response> {
     return json({ error: 'Error de consistencia en el monto' }, 500)
   }
 
-  const baseUrl = resolverBaseUrl(req)
-  const expiresAt = new Date(Date.now() + EXPIRA_EN_MINUTOS * 60_000)
-
   let preference
   try {
     preference = await createPreference({
@@ -141,13 +148,17 @@ export default async function handler(req: Request): Promise<Response> {
     .update({ mp_preference_id: preference.id })
     .eq('mp_external_reference', externalReference)
 
+  // Deliberadamente NO se devuelven los tokens. Si el navegador los tuviera
+  // podría guardarse el QR y abandonar el checkout: es el caso que reportó Ana.
+  // Los tokens los entrega /api/mp/estado, y sólo con el pago acreditado.
   return json({
     init_point: preference.init_point,
     preference_id: preference.id,
     external_reference: externalReference,
     unit_price: unitPrice,
     total: totalPreference,
-    tickets,
+    cantidad: pendientes.length,
+    expires_at: expiresAt.toISOString(),
   }, 201)
 }
 

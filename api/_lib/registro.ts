@@ -134,14 +134,16 @@ export async function registrarTickets(input: RegistroInput): Promise<RegistroRe
   // Fast-fail: evita inserts obvios cuando ya está lleno, pero NO es la
   // garantía real de límite — esa la da el trigger enforce_event_capacity
   // en la DB, que usa SELECT ... FOR UPDATE para serializar concurrencia.
+  //
+  // Se usa el RPC en vez de contar acá para no tener dos definiciones de
+  // "ocupado": el RPC y el trigger cuentan lo mismo (vendidas + reservas de
+  // MP vivas, ver migración 020). Cuando divergían, la pantalla decía que
+  // quedaban lugares y el insert fallaba por capacidad.
   if (event.max_capacity !== null) {
-    const { count, error: countError } = await adminSupabase
-      .from('ticket_registrations')
-      .select('id', { count: 'exact', head: true })
-      .eq('event_id', event_id)
-      .eq('is_banned', false)
+    const { data: ocupados, error: countError } = await adminSupabase
+      .rpc('get_event_registration_count', { p_event_id: event_id })
 
-    if (!countError && count !== null && count + names.length > event.max_capacity) {
+    if (!countError && typeof ocupados === 'number' && ocupados + names.length > event.max_capacity) {
       return { ok: false, status: 409, error: 'No hay suficiente capacidad disponible' }
     }
   }
@@ -153,12 +155,30 @@ export async function registrarTickets(input: RegistroInput): Promise<RegistroRe
   // (también se usa para validar one_ticket_per_email)
   const { data: existing } = await adminSupabase
     .from('ticket_registrations')
-    .select('name, token')
+    .select('name, token, is_banned, payment_provider, payment_verified, mp_expires_at')
     .eq('event_id', event_id)
     .eq('email', normalizedEmail)
 
+  const ahora = Date.now()
+
+  /** Reserva de MP todavía viva: hay un checkout abierto para esta fila. */
+  const esReserva = (r: { payment_provider: string | null; payment_verified: boolean; mp_expires_at: string | null }) =>
+    r.payment_provider === 'mercadopago' &&
+    !r.payment_verified &&
+    !!r.mp_expires_at &&
+    new Date(r.mp_expires_at).getTime() > ahora
+
+  /** Cuenta como entrada de esta persona (espejo de public.entrada_vendida). */
+  const esVendida = (r: { is_banned: boolean; payment_provider: string | null; payment_verified: boolean }) =>
+    !r.is_banned && (r.payment_provider !== 'mercadopago' || r.payment_verified)
+
+  // Las rechazadas quedan afuera de la idempotencia a propósito: si Ana
+  // rechazó ese QR y la persona vuelve a registrarse, tiene que salir una
+  // entrada nueva, no el token baneado que no la deja entrar.
   const existingMap = new Map(
-    (existing ?? []).map(r => [r.name.toLowerCase().trim(), r.token])
+    (existing ?? [])
+      .filter(r => !r.is_banned)
+      .map(r => [r.name.toLowerCase().trim(), r.token])
   )
 
   const newNames = names.filter(n => !existingMap.has(n.toLowerCase()))
@@ -174,13 +194,23 @@ export async function registrarTickets(input: RegistroInput): Promise<RegistroRe
     return { ok: false, status: 400, error: 'El teléfono es obligatorio para este evento' }
   }
 
-  if (event.one_ticket_per_email && (existing ?? []).length > 0) {
-    return { ok: false, status: 409, error: 'Este email ya tiene una entrada registrada para este evento' }
-  }
-
-  // Todos los nombres ya estaban registrados → respuesta idempotente
+  // Todos los nombres ya estaban registrados → respuesta idempotente.
+  //
+  // Va antes del límite por email a propósito: reintentar el mismo pago (volver
+  // atrás en MP, doble click, la preference que venció) no es pedir una segunda
+  // entrada, y con el chequeo primero quedaba rebotado con 409 para siempre.
   if (newNames.length === 0) {
     return { ok: true, status: 200, tickets, event }
+  }
+
+  // El límite de una entrada por email mira sólo las que cuentan: si alguien
+  // abandonó el checkout de MP, esa fila quedó sin pagar y no puede bloquearlo
+  // para siempre. Las reservas vivas sí bloquean — es su propio checkout abierto.
+  if (event.one_ticket_per_email) {
+    const bloqueantes = (existing ?? []).filter(r => esVendida(r) || esReserva(r))
+    if (bloqueantes.length > 0) {
+      return { ok: false, status: 409, error: 'Este email ya tiene una entrada registrada para este evento' }
+    }
   }
 
   // El precio sale de la DB, nunca del body: si viniera del cliente,

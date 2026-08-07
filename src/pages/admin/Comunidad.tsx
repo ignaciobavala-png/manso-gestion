@@ -60,10 +60,14 @@ export default function Comunidad() {
 
   useEffect(() => {
     async function load() {
+      // Sólo entradas que cuentan: la comunidad no incluye a quien nunca
+      // terminó de pagar por Mercado Pago ni a quien tiene el QR rechazado.
       const data = await fetchAllRows<Registration>((from, to) =>
         supabase
           .from('ticket_registrations')
-          .select('id, name, email, event_id, registered_at, used_at')
+          .select('id, name, email, event_id, registered_at, used_at, is_banned, payment_provider, payment_verified')
+          .eq('is_banned', false)
+          .or('payment_provider.is.null,payment_provider.neq.mercadopago,payment_verified.is.true')
           .order('registered_at', { ascending: false })
           .range(from, to)
       )

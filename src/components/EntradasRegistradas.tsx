@@ -3,6 +3,7 @@ import QRCode from 'qrcode'
 import { supabase } from '../lib/supabase'
 import { useAppStore } from '../store/useAppStore'
 import Toast from './Toast'
+import { esVendida, esReservada, esMpAbandonada, etiquetaEstado } from '../lib/entradas'
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
 
 interface Registration {
@@ -21,6 +22,7 @@ interface Registration {
   payment_provider: 'transferencia' | 'mercadopago' | null
   mp_status: string | null
   mp_external_reference: string | null
+  mp_expires_at: string | null
 }
 
 interface EnrichedRegistration extends Registration {
@@ -68,7 +70,7 @@ export default function EntradasRegistradas() {
     setLoading(true)
     const { data, error } = await supabase
       .from('ticket_registrations')
-      .select('id, name, email, event_id, token, registered_at, used_at, receipt_url, payment_verified, is_banned, instagram, phone, payment_provider, mp_status, mp_external_reference')
+      .select('id, name, email, event_id, token, registered_at, used_at, receipt_url, payment_verified, is_banned, instagram, phone, payment_provider, mp_status, mp_external_reference, mp_expires_at')
       .eq('event_id', activeEvent.id)
       .order('registered_at', { ascending: false })
 
@@ -293,14 +295,21 @@ export default function EntradasRegistradas() {
     : 0
   )
 
-  const ingresados = rows.filter(r => r.used_at).length
-  const pendientes = rows.filter(r => !r.used_at).length
-  // Cuenta también las de Mercado Pago sin acreditar: no tienen comprobante,
-  // así que con el filtro viejo quedaban invisibles para el staff.
+  // Todos los totales se calculan sobre las entradas que cuentan como vendidas
+  // (ver src/lib/entradas.ts y la migración 020). Antes "Total" era rows.length
+  // crudo: rechazar un QR no bajaba el número, que es lo que reportó Ana.
+  const vendidas = rows.filter(esVendida)
+  const ingresados = vendidas.filter(r => r.used_at).length
+  const pendientes = vendidas.filter(r => !r.used_at).length
+  // Sólo las que están esperando una decisión del staff: comprobante de
+  // transferencia sin verificar, o un pago de MP que MP todavía no resolvió.
   const porVerificar = rows.filter(r =>
-    (r.receipt_url || r.mp_external_reference) && !r.payment_verified && !r.used_at
+    !r.is_banned && !r.used_at && !r.payment_verified &&
+    (r.receipt_url || esReservada(r))
   ).length
-  const conComprobante = rows.filter(r => r.receipt_url).length
+  const conComprobante = vendidas.filter(r => r.receipt_url).length
+  const rechazadas = rows.filter(r => r.is_banned).length
+  const sinPagar = rows.filter(esMpAbandonada).length
 
   if (!activeEvent) return null
 
@@ -377,8 +386,8 @@ export default function EntradasRegistradas() {
 
               <div className="flex gap-3 mb-4 flex-wrap">
                 <div className="bg-neutral-900 border border-white/10 rounded-xl px-3 py-1.5">
-                  <span className="text-gray-400 text-xs">Total: </span>
-                  <span className="text-white text-xs font-semibold">{rows.length}</span>
+                  <span className="text-gray-400 text-xs">Vendidas: </span>
+                  <span className="text-white text-xs font-semibold">{vendidas.length}</span>
                 </div>
                 <div className="bg-neutral-900 border border-white/10 rounded-xl px-3 py-1.5">
                   <span className="text-gray-400 text-xs">Ingresaron: </span>
@@ -400,6 +409,20 @@ export default function EntradasRegistradas() {
                     <span className="text-white text-xs font-semibold">{conComprobante}</span>
                   </div>
                 )}
+                {/* Las dos que NO cuentan como vendidas, visibles igual para que
+                    el staff sepa por qué el total no coincide con la lista. */}
+                {sinPagar > 0 && (
+                  <div className="bg-neutral-900 border border-red-500/30 rounded-xl px-3 py-1.5">
+                    <span className="text-gray-400 text-xs">Sin pagar (MP): </span>
+                    <span className="text-red-400 text-xs font-semibold">{sinPagar}</span>
+                  </div>
+                )}
+                {rechazadas > 0 && (
+                  <div className="bg-neutral-900 border border-red-500/30 rounded-xl px-3 py-1.5">
+                    <span className="text-gray-400 text-xs">Rechazadas: </span>
+                    <span className="text-red-400 text-xs font-semibold">{rechazadas}</span>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2 max-h-96 overflow-y-auto">
@@ -408,6 +431,13 @@ export default function EntradasRegistradas() {
                 )}
                 {displayRows.map(r => {
                   const isPending = !r.used_at && !r.payment_verified
+                  const estado = etiquetaEstado(r)
+                  const estadoClass =
+                    estado === 'Rechazado' || estado === 'Sin pagar'
+                      ? 'bg-red-900/50 text-red-400'
+                      : estado === 'Ingresó' || estado === 'Verificado'
+                        ? 'bg-emerald-900/50 text-emerald-400'
+                        : 'bg-white/10 text-gray-400'
 
                   return (
                     <div
@@ -460,17 +490,9 @@ export default function EntradasRegistradas() {
                         </div>
 
                         <span
-                          className={`sm:hidden text-xs px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 ${
-                            r.is_banned
-                              ? 'bg-red-900/50 text-red-400'
-                              : r.used_at
-                                ? 'bg-emerald-900/50 text-emerald-400'
-                                : r.payment_verified
-                                  ? 'bg-emerald-900/50 text-emerald-400'
-                                  : 'bg-white/10 text-gray-400'
-                          }`}
+                          className={`sm:hidden text-xs px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 ${estadoClass}`}
                         >
-                          {r.is_banned ? 'Rechazado' : r.used_at ? 'Ingresó' : r.payment_verified ? 'Verificado' : 'Pendiente'}
+                          {estado}
                         </span>
                       </div>
 
@@ -530,17 +552,9 @@ export default function EntradasRegistradas() {
                         )}
 
                         <span
-                          className={`hidden sm:inline text-xs px-2 py-0.5 rounded-full whitespace-nowrap ${
-                            r.is_banned
-                              ? 'bg-red-900/50 text-red-400'
-                              : r.used_at
-                                ? 'bg-emerald-900/50 text-emerald-400'
-                                : r.payment_verified
-                                  ? 'bg-emerald-900/50 text-emerald-400'
-                                  : 'bg-white/10 text-gray-400'
-                          }`}
+                          className={`hidden sm:inline text-xs px-2 py-0.5 rounded-full whitespace-nowrap ${estadoClass}`}
                         >
-                          {r.is_banned ? 'Rechazado' : r.used_at ? 'Ingresó' : r.payment_verified ? 'Verificado' : 'Pendiente'}
+                          {estado}
                         </span>
                       </div>
                     </div>

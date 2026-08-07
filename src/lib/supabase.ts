@@ -249,7 +249,9 @@ export interface Database {
           mp_status?: string | null
           mp_fee_amount?: number | null
           mp_net_amount?: number | null
+          mp_expires_at?: string | null
           paid_at?: string | null
+          is_banned?: boolean
         }
         Insert: {
           id?: string
@@ -270,7 +272,9 @@ export interface Database {
           mp_status?: string | null
           mp_fee_amount?: number | null
           mp_net_amount?: number | null
+          mp_expires_at?: string | null
           paid_at?: string | null
+          is_banned?: boolean
         }
         Update: {
           id?: string
@@ -291,7 +295,9 @@ export interface Database {
           mp_status?: string | null
           mp_fee_amount?: number | null
           mp_net_amount?: number | null
+          mp_expires_at?: string | null
           paid_at?: string | null
+          is_banned?: boolean
         }
       }
       wildcard_qr_redemptions: {
@@ -395,6 +401,19 @@ export interface Database {
       }
     }
     Views: {
+      // Contadores por evento con la definición canónica de "vendida"
+      // (migración 020). Es la fuente de los números del panel: contar filas
+      // crudas hacía que una entrada rechazada siguiera sumando.
+      event_ticket_counts: {
+        Row: {
+          event_id: string
+          vendidas: number
+          reservadas: number
+          rechazadas: number
+          mp_sin_pagar: number
+          total: number
+        }
+      }
       active_event: {
         Row: {
           id: string

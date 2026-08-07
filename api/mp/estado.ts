@@ -27,7 +27,7 @@ export default async function handler(req: Request): Promise<Response> {
 
   const { data: registros, error } = await supabase
     .from('ticket_registrations')
-    .select('token, name, payment_verified, mp_status, event_id')
+    .select('token, name, payment_verified, mp_status, event_id, is_banned')
     .eq('mp_external_reference', ref)
 
   if (error) {
@@ -38,12 +38,24 @@ export default async function handler(req: Request): Promise<Response> {
     return json({ error: 'Orden no encontrada' }, 404)
   }
 
+  /**
+   * Los tokens son el QR. Sólo salen de acá con el pago acreditado y la
+   * entrada no rechazada: es lo que hace que "no pagás, no hay QR" sea real
+   * y no sólo una pantalla que el usuario puede saltear. Mientras el pago no
+   * esté, la respuesta lleva la cantidad para que la UI muestre algo, nada más.
+   */
+  const ticketsAcreditados = () =>
+    registros
+      .filter(r => r.payment_verified && !r.is_banned)
+      .map(r => ({ token: r.token, name: r.name }))
+
   // Atajo: si ya está verificada, no hace falta molestar a MP.
   if (registros.every(r => r.payment_verified)) {
     return json({
       status: 'approved',
       verified: true,
-      tickets: registros.map(r => ({ token: r.token, name: r.name })),
+      event_id: registros[0].event_id,
+      tickets: ticketsAcreditados(),
     }, 200)
   }
 
@@ -51,7 +63,9 @@ export default async function handler(req: Request): Promise<Response> {
     return json({
       status: registros[0].mp_status ?? 'pending',
       verified: false,
-      tickets: registros.map(r => ({ token: r.token, name: r.name })),
+      event_id: registros[0].event_id,
+      cantidad: registros.length,
+      tickets: ticketsAcreditados(),
     }, 200)
   }
 
@@ -63,18 +77,38 @@ export default async function handler(req: Request): Promise<Response> {
       return json({
         status: 'pending',
         verified: false,
-        tickets: registros.map(r => ({ token: r.token, name: r.name })),
+        event_id: registros[0].event_id,
+        cantidad: registros.length,
+        tickets: [],
       }, 200)
     }
 
     await applyPayment(supabase, pago)
 
+    const aprobado = pago.status === 'approved'
+
+    // applyPayment acaba de tocar las filas: `registros` quedó viejo. Hay que
+    // releer para saber qué está realmente acreditado antes de soltar tokens.
+    let tickets: { token: string; name: string }[] = []
+    if (aprobado) {
+      const { data: frescos } = await supabase
+        .from('ticket_registrations')
+        .select('token, name, payment_verified, is_banned')
+        .eq('mp_external_reference', ref)
+
+      tickets = (frescos ?? [])
+        .filter(r => r.payment_verified && !r.is_banned)
+        .map(r => ({ token: r.token, name: r.name }))
+    }
+
     return json({
       status: pago.status,
       status_detail: pago.status_detail ?? null,
-      verified: pago.status === 'approved',
+      verified: aprobado,
       payment_id: String(pago.id),
-      tickets: registros.map(r => ({ token: r.token, name: r.name })),
+      event_id: registros[0].event_id,
+      cantidad: registros.length,
+      tickets,
     }, 200)
   } catch (err) {
     // La orden existe; lo que falló fue la consulta a MP. Se devuelve el
@@ -84,7 +118,9 @@ export default async function handler(req: Request): Promise<Response> {
       verified: false,
       error: 'No se pudo consultar Mercado Pago',
       detail: err instanceof Error ? err.message : String(err),
-      tickets: registros.map(r => ({ token: r.token, name: r.name })),
+      event_id: registros[0].event_id,
+      cantidad: registros.length,
+      tickets: ticketsAcreditados(),
     }, 200)
   }
 }

@@ -39,7 +39,7 @@ export default async function handler(req: Request): Promise<Response> {
       .order('start_date', { ascending: false }),
     supabase
       .from('ticket_registrations')
-      .select('event_id'),
+      .select('event_id, is_banned, payment_provider, payment_verified'),
     supabase
       .from('ticket_sales')
       .select('event_id'),
@@ -49,8 +49,14 @@ export default async function handler(req: Request): Promise<Response> {
     return json({ error: eventsResult.error.message }, 500)
   }
 
+  // registrations_count son entradas vendidas, no filas: una rechazada con
+  // "Rechazar QR" o un pago de Mercado Pago que nunca se acreditó no es una
+  // venta y el CRM no puede reportarla como tal (ver migración 020).
   const regCounts = new Map<string, number>()
   for (const row of regIdsResult.data ?? []) {
+    const vendida = !row.is_banned &&
+      (row.payment_provider !== 'mercadopago' || row.payment_verified)
+    if (!vendida) continue
     regCounts.set(row.event_id, (regCounts.get(row.event_id) ?? 0) + 1)
   }
 
