@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
 
@@ -21,6 +21,41 @@ export default function Configuracion() {
   const [showConfirm, setShowConfirm] = useState(false)
   const [loading, setLoading] = useState(false)
   const [formError, setFormError] = useState('')
+
+  // perilla del Cineclub (venue_config.cineclub_activo)
+  const [cineclubActivo, setCineclubActivo] = useState<boolean | null>(null)
+  const [cineclubSaving, setCineclubSaving] = useState(false)
+  const [cineclubError, setCineclubError] = useState('')
+
+  useEffect(() => {
+    let cancelado = false
+    supabase
+      .from('venue_config')
+      .select('cineclub_activo')
+      .eq('id', 1)
+      .single()
+      .then(({ data }) => {
+        if (!cancelado) setCineclubActivo(data?.cineclub_activo ?? false)
+      })
+    return () => { cancelado = true }
+  }, [])
+
+  const toggleCineclub = async () => {
+    if (cineclubActivo === null || cineclubSaving) return
+    const nuevo = !cineclubActivo
+    setCineclubSaving(true)
+    setCineclubError('')
+    const { error } = await supabase
+      .from('venue_config')
+      .update({ cineclub_activo: nuevo })
+      .eq('id', 1)
+    if (error) {
+      setCineclubError('No se pudo guardar. Intentá de nuevo.')
+    } else {
+      setCineclubActivo(nuevo)
+    }
+    setCineclubSaving(false)
+  }
 
   // username flow
   const [usernameTarget, setUsernameTarget] = useState<Target | null>(null)
@@ -310,6 +345,39 @@ export default function Configuracion() {
           </div>
           <span className="text-gray-400 text-lg">›</span>
         </button>
+      </div>
+
+      <div className="border-t border-white/10" />
+
+      <div className="space-y-3">
+        <p className="text-gray-500 text-sm uppercase tracking-widest">Secciones públicas</p>
+        <button
+          onClick={toggleCineclub}
+          disabled={cineclubActivo === null || cineclubSaving}
+          className="w-full flex items-center justify-between bg-white/10 hover:bg-white/20 disabled:opacity-60 rounded-xl px-4 py-3.5 transition-colors"
+        >
+          <div className="text-left">
+            <p className="text-white text-sm font-medium">Cineclub</p>
+            <p className="text-gray-500 text-sm">
+              {cineclubActivo === null
+                ? 'Cargando...'
+                : cineclubActivo
+                  ? 'Visible en la web pública'
+                  : 'Oculto — nadie ve la sección'}
+            </p>
+          </div>
+          <span
+            className={`w-11 h-6 rounded-full flex-shrink-0 flex items-center px-0.5 transition-colors ${
+              cineclubActivo ? 'bg-emerald-600 justify-end' : 'bg-white/20 justify-start'
+            }`}
+          >
+            <span className="w-5 h-5 rounded-full bg-white block" />
+          </span>
+        </button>
+        {cineclubError && <p className="text-red-400 text-sm">{cineclubError}</p>}
+        <p className="text-gray-600 text-xs">
+          Apagarlo no borra nada: las votaciones y los datos quedan guardados y vuelven al encenderlo.
+        </p>
       </div>
 
       <div className="border-t border-white/10" />

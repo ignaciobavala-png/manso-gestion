@@ -390,12 +390,14 @@ export interface Database {
           alias_pago: string | null
           cbu_pago: string | null
           carta_activa: boolean | null
+          cineclub_activo: boolean | null
           current_event_id: string | null
         }
         Update: {
           alias_pago?: string | null
           cbu_pago?: string | null
           carta_activa?: boolean | null
+          cineclub_activo?: boolean | null
           current_event_id?: string | null
         }
       }

@@ -26,6 +26,7 @@ Sistema de gestión para eventos en vivo: barra, entradas y control financiero e
 | `/registro` | Formulario para registrarse y obtener entrada QR digital. Acepta `?event=<id>` para un evento específico |
 | `/mi-entrada` | Muestra el QR guardado en el dispositivo |
 | `/carta` | Carta digital: menú de productos con precios (solo lectura) |
+| `/cineclub` | Votación pública de películas. **Condicionada** a `venue_config.cineclub_activo`: si está apagado, no se lista en `/` y entrar a mano redirige a `/` |
 
 ### Privadas (`/admin/*`)
 
@@ -94,6 +95,7 @@ Tiene dos pestañas:
 
 **Configuración:**
 - Alias y CBU/CVU del local (se muestra en `/carta`)
+- **Secciones públicas**: perilla para mostrar/ocultar el Cineclub (ver más abajo)
 - Cambio de PIN de Control (triple confirmación)
 - Cambio de PIN de Empleados (triple confirmación)
 
@@ -113,6 +115,19 @@ Tiene dos pestañas:
 - Solo Control
 - Tres tarjetas con links a `/registro`, `/mi-entrada` y `/carta`
 - Se abren en pestaña nueva para no perder el contexto del panel
+
+### Cineclub (`/cineclub`)
+
+Votación pública de la próxima película. Se puede **apagar sin borrar nada** desde
+Control → Configuración → Secciones públicas: la perilla escribe
+`venue_config.cineclub_activo` y con eso la sección desaparece del frente
+(landing `/`, ruta `/cineclub` y el listado de `/admin/publico`). Las tablas
+`cineclub_polls`, `cineclub_movies`, `cineclub_votes` y `cineclub_voter_emails`
+quedan intactas y vuelven a aparecer al encenderla.
+
+El admin (`/admin/cineclub`) y la vista Cineclub de Comunidad siguen accesibles
+aunque esté apagada, para poder preparar una votación antes de publicarla.
+El hook `src/hooks/useCineclubActivo.ts` es el único lugar que lee la perilla.
 
 ### Registro de entrada (`/registro`)
 - Si llega con `?event=<id>`: registra para ese evento específico (vía QR del evento)
@@ -172,7 +187,7 @@ Los archivos de migración están en:
 | `guests` | id, name, type, event_id |
 | `ticket_registrations` | id, event_id, name, email, token (UUID), receipt_url, used_at |
 | `drink_orders` | id, event_id, items (jsonb), total, status, comprobante_token |
-| `venue_config` | id, alias_pago, cbu_pago, carta_activa, current_event_id |
+| `venue_config` | id, alias_pago, cbu_pago, carta_activa, cineclub_activo, current_event_id |
 | `user_profiles` | id (→ auth.users), role (control / empleado) |
 | `active_event` | Vista: JOIN events + venue_config WHERE venue_config.current_event_id = events.id |
 
@@ -188,7 +203,7 @@ Las políticas reemplazan las antiguas `FOR ALL USING (true)` por reglas granula
 | `ticket_sales` | ALL solo para staff |
 | `events` | SELECT público + ALL para staff |
 | `ticket_registrations` | INSERT público + SELECT público + ALL para staff |
-| `venue_config` | SELECT público + ALL solo para control@ |
+| `venue_config` | SELECT público + ALL para control@ y owner@ (migración 021) |
 | `drink_orders` | INSERT público + SELECT/UPDATE autenticado (heredadas de v2.0) |
 | `storage.buckets.comprobantes` | INSERT público + SELECT/DELETE solo para staff |
 
@@ -260,3 +275,4 @@ Ver `DEBUGGING.md` para el detalle completo.
 | v2.2 | RLS policies granulares por email, migración de seguridad, flyers de eventos |
 | v2.3 | Eventos pagos con subida de comprobante, bucket `comprobantes`, verificación de pagos en panel Control y Comunidad |
 | v2.4 | Alias de pago por evento (ticket_alias_pago, ticket_cbu_pago), botón "Copiar link" en cards de evento, página Comunidad responsive |
+| v2.5 | Perilla `cineclub_activo`: el Cineclub se oculta del público desde Configuración sin borrar datos |

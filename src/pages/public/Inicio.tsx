@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import PublicLayout from '../../components/PublicLayout'
+import { useCineclubActivo } from '../../hooks/useCineclubActivo'
 
 const PAGES = [
   {
@@ -30,11 +31,15 @@ const PAGES = [
 
 export default function Inicio() {
   const navigate = useNavigate()
+  const { activo: cineclubActivo } = useCineclubActivo()
+
+  // El Cineclub solo aparece si está encendido en Configuración.
+  const pages = PAGES.filter(p => p.path !== '/cineclub' || cineclubActivo)
 
   return (
     <PublicLayout showHeader>
       <div className="px-5 pt-2 pb-12 flex flex-col gap-3 max-w-sm mx-auto w-full">
-        {PAGES.map((page) => (
+        {pages.map((page) => (
           <button
             key={page.path}
             onClick={() => navigate(page.path)}

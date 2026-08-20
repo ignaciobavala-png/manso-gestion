@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Navigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import PublicLayout from '../../components/PublicLayout'
+import { useCineclubActivo } from '../../hooks/useCineclubActivo'
 
 const FINGERPRINT_KEY = 'cineclub_voter_fp'
 
@@ -35,6 +36,7 @@ interface Movie {
 
 export default function Cineclub() {
   const navigate = useNavigate()
+  const { activo: cineclubActivo, loading: cineclubLoading } = useCineclubActivo()
   const [poll, setPoll] = useState<Poll | null>(null)
   const [movies, setMovies] = useState<Movie[]>([])
   const [loading, setLoading] = useState(true)
@@ -197,7 +199,12 @@ export default function Cineclub() {
     </div>
   )
 
-  if (loading) {
+  // Sección apagada desde Configuración: para el público no existe.
+  if (!cineclubLoading && !cineclubActivo) {
+    return <Navigate to="/" replace />
+  }
+
+  if (loading || cineclubLoading) {
     return (
       <PublicLayout>
         <div className="flex-1 flex items-center justify-center">

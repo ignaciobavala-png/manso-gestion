@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import Background from '../../components/Background'
+import { useCineclubActivo } from '../../hooks/useCineclubActivo'
 
 const PAGES = [
   {
@@ -30,6 +31,10 @@ const PAGES = [
 
 export default function VistasPublicas() {
   const navigate = useNavigate()
+  const { activo: cineclubActivo } = useCineclubActivo()
+
+  // Si el Cineclub está apagado no es una vista pública: no se lista.
+  const pages = PAGES.filter(p => p.path !== '/cineclub' || cineclubActivo)
 
   const open = (path: string) => {
     window.open(path, '_blank', 'noopener,noreferrer')
@@ -52,7 +57,7 @@ export default function VistasPublicas() {
         </div>
 
         <div className="space-y-3">
-          {PAGES.map((page) => (
+          {pages.map((page) => (
             <button
               key={page.path}
               onClick={() => open(page.path)}
