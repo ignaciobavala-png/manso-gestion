@@ -296,6 +296,15 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
     : basePrice
   const totalAmount = attendeeCount * ticketPrice
 
+  // Cuando el recargo viaja adentro del precio, Ana quiere que se vea
+  // desglosado: el valor de la entrada por un lado y la comisión de MP por
+  // el otro, para que el número redondo que ella cargó siga a la vista.
+  const recargoAplicado = ticketPrice > basePrice
+  const comisionUnitaria = Math.round((ticketPrice - basePrice) * 100) / 100
+  const money = (n: number) =>
+    n.toLocaleString('es-AR', { maximumFractionDigits: 2 })
+  const surchargePct = surcharge.toLocaleString('es-AR', { maximumFractionDigits: 2 })
+
   const aceptaMp = activeEvent?.payment_mode === 'mercadopago' || activeEvent?.payment_mode === 'ambos'
   const aceptaTransferencia = activeEvent?.payment_mode === 'transferencia' || activeEvent?.payment_mode === 'ambos'
   const pagandoConMp = activeEvent?.is_paid === true && metodoPago === 'mercadopago' && aceptaMp
@@ -492,7 +501,9 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
           {activeEvent.is_paid && activeEvent.regular_ticket_price > 0 && (
             <div className="mt-2 space-y-1">
               <p className="text-emerald-400 text-sm font-medium">
-                Entrada general · ${ticketPrice.toLocaleString('es-AR')}
+                {recargoAplicado
+                  ? <>Entrada general · ${money(basePrice)} (+ comisión MP {surchargePct}%) = ${money(ticketPrice)}</>
+                  : <>Entrada general · ${money(ticketPrice)}</>}
               </p>
               {!pagandoConMp && (
                 <div className="inline-block bg-white/5 border border-white/10 rounded-xl px-5 py-2.5">
@@ -644,11 +655,17 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
                     <div className="bg-emerald-950/40 border border-emerald-800/40 rounded-2xl p-4 space-y-2">
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-300">Entradas</span>
-                        <span className="text-white font-medium">{attendeeCount} × ${ticketPrice.toLocaleString('es-AR')}</span>
+                        <span className="text-white font-medium">{attendeeCount} × ${money(recargoAplicado ? basePrice : ticketPrice)}</span>
                       </div>
+                      {recargoAplicado && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-300">Comisión Mercado Pago ({surchargePct}%)</span>
+                          <span className="text-white font-medium">{attendeeCount} × ${money(comisionUnitaria)}</span>
+                        </div>
+                      )}
                       <div className="border-t border-emerald-800/30 pt-2 flex justify-between">
                         <span className="text-white font-semibold">Total a pagar</span>
-                        <span className="text-emerald-300 font-bold text-lg">${totalAmount.toLocaleString('es-AR')}</span>
+                        <span className="text-emerald-300 font-bold text-lg">${money(totalAmount)}</span>
                       </div>
 
                       {!pagandoConMp && (activeEvent.ticket_alias_pago || venueConfig?.alias_pago || activeEvent.ticket_cbu_pago || venueConfig?.cbu_pago) && (
@@ -766,7 +783,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
                   {submitting
                     ? (pagandoConMp ? 'Redirigiendo a Mercado Pago...' : 'Generando entradas...')
                     : pagandoConMp
-                      ? `Pagar $${totalAmount.toLocaleString('es-AR')} con Mercado Pago →`
+                      ? `Pagar $${money(totalAmount)} con Mercado Pago →`
                       : attendeeCount > 1
                         ? `Reservar ${attendeeCount} entradas →`
                         : 'Quiero mi entrada →'}
