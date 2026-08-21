@@ -257,9 +257,9 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
         mp_surcharge_pct: Number(data.mp_surcharge_pct ?? 0),
       })
 
-      // Con 'ambos' se arranca en Mercado Pago: es el camino que se verifica
-      // solo. La transferencia queda a un toque de distancia.
-      if (data.payment_mode === 'mercadopago' || data.payment_mode === 'ambos') {
+      // Con 'ambos' se arranca en transferencia, que es la primera opcion del
+      // selector. Mercado Pago queda a un toque de distancia.
+      if (data.payment_mode === 'mercadopago') {
         setMetodoPago('mercadopago')
       }
 
@@ -616,17 +616,6 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
                       <div className="grid grid-cols-2 gap-2">
                         <button
                           type="button"
-                          onClick={() => setMetodoPago('mercadopago')}
-                          className={`rounded-2xl py-3 px-3 text-sm font-semibold transition-all active:scale-95 border ${
-                            metodoPago === 'mercadopago'
-                              ? 'bg-emerald-600 border-emerald-500 text-white'
-                              : 'bg-white/5 border-white/15 text-gray-300 hover:bg-white/10'
-                          }`}
-                        >
-                          Mercado Pago
-                        </button>
-                        <button
-                          type="button"
                           onClick={() => setMetodoPago('transferencia')}
                           className={`rounded-2xl py-3 px-3 text-sm font-semibold transition-all active:scale-95 border ${
                             metodoPago === 'transferencia'
@@ -635,6 +624,17 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
                           }`}
                         >
                           Transferencia
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setMetodoPago('mercadopago')}
+                          className={`rounded-2xl py-3 px-3 text-sm font-semibold transition-all active:scale-95 border ${
+                            metodoPago === 'mercadopago'
+                              ? 'bg-emerald-600 border-emerald-500 text-white'
+                              : 'bg-white/5 border-white/15 text-gray-300 hover:bg-white/10'
+                          }`}
+                        >
+                          Mercado Pago
                         </button>
                       </div>
                     </div>
