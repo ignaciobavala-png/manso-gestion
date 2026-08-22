@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, Navigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import PublicLayout from '../../components/PublicLayout'
-import { useCoworkActivo } from '../../hooks/useSeccionPublica'
+import { useCoworkActivo, useCoworkLanding } from '../../hooks/useSeccionPublica'
 
 /**
  * Landing del Manso Cowork Day.
@@ -23,16 +23,12 @@ interface CoworkDate {
   max_capacity: number | null
 }
 
-const INCLUYE = [
-  { icon: '🪑', label: 'Escritorio por el día', detail: 'De 9 a 18, sin reserva de lugar fijo' },
-  { icon: '📶', label: 'Wi-Fi y enchufes', detail: 'Fibra, y un enchufe por puesto' },
-  { icon: '☕', label: 'Café de bienvenida', detail: 'El primero va con el pase' },
-  { icon: '🤫', label: 'Sala en silencio', detail: 'Las llamadas se atienden en el patio' },
-]
-
 export default function Cowork() {
   const navigate = useNavigate()
   const { activo, soloStaff, loading: perillaLoading } = useCoworkActivo()
+  // Título, leyenda, tarjetas, nota y portada salen de Control → Cowork Day →
+  // Presentación. Acá no queda texto clavado.
+  const landing = useCoworkLanding()
   const [fechas, setFechas] = useState<CoworkDate[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -101,27 +97,38 @@ export default function Cowork() {
           </div>
         )}
 
-        <div className="w-full max-w-lg text-center mt-2 mb-8">
+        {landing.portadaUrl && (
+          <div className="w-full max-w-lg mt-4">
+            <img
+              src={landing.portadaUrl}
+              alt=""
+              className="w-full rounded-2xl border border-white/15 object-cover max-h-56"
+            />
+          </div>
+        )}
+
+        <div className="w-full max-w-lg text-center mt-4 mb-8">
           <p className="text-emerald-400 text-xs font-semibold uppercase tracking-widest">Manso</p>
-          <h1 className="text-white font-bold text-4xl mt-1">Cowork Day</h1>
+          <h1 className="text-white font-bold text-4xl mt-1">{landing.titulo}</h1>
           <p className="text-gray-300 text-sm mt-3 leading-relaxed max-w-sm mx-auto">
-            Un día de trabajo compartido con nuestra comunidad. Espacio ideal
-            para creativos, freelancers, entusiastas o personas con ideas.
+            {landing.leyenda}
           </p>
         </div>
 
-        <div className="w-full max-w-lg grid grid-cols-2 gap-3 mb-8">
-          {INCLUYE.map(item => (
-            <div
-              key={item.label}
-              className="bg-black/50 backdrop-blur-md border border-white/15 rounded-2xl p-4"
-            >
-              <span className="text-2xl">{item.icon}</span>
-              <p className="text-white font-semibold text-sm mt-2">{item.label}</p>
-              <p className="text-gray-400 text-xs mt-0.5 leading-snug">{item.detail}</p>
-            </div>
-          ))}
-        </div>
+        {landing.incluye.length > 0 && (
+          <div className="w-full max-w-lg grid grid-cols-2 gap-3 mb-8">
+            {landing.incluye.map(item => (
+              <div
+                key={item.id}
+                className="bg-black/50 backdrop-blur-md border border-white/15 rounded-2xl p-4"
+              >
+                <span className="text-2xl">{item.icono}</span>
+                <p className="text-white font-semibold text-sm mt-2">{item.titulo}</p>
+                <p className="text-gray-400 text-xs mt-0.5 leading-snug">{item.detalle}</p>
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="w-full max-w-lg">
           <h2 className="text-white font-bold text-lg mb-3">Próximas fechas</h2>
@@ -178,8 +185,7 @@ export default function Cowork() {
         )}
 
         <p className="text-gray-500 text-xs text-center max-w-sm mt-6 leading-relaxed">
-          Para reservar te pedimos nombre, teléfono e Instagram. Es un espacio
-          chico y compartido: nos gusta saber quién viene.
+          {landing.notaDatos}
         </p>
       </div>
     </PublicLayout>

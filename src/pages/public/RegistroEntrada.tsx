@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams, useParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import PublicLayout from '../../components/PublicLayout'
 import { guardarTickets, tieneTickets, LS_EMAIL } from '../../lib/entradasStorage'
+import { useCoworkLanding } from '../../hooks/useSeccionPublica'
 
 interface EventCard {
   id: string
@@ -190,6 +191,8 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
   const [error, setError] = useState('')
   const [metodoPago, setMetodoPago] = useState<MetodoPago>('transferencia')
   const submittingRef = useRef(false)
+  // Misma nota que la landing del cowork: se edita en un solo lugar.
+  const coworkLanding = useCoworkLanding()
 
   const handleReceiptUpload = async (file: File) => {
     if (!activeEvent) return
@@ -588,8 +591,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
                 <div className="flex items-start gap-3 p-3 bg-white/5 border border-white/15 rounded-2xl">
                   <span className="text-xl leading-none">👋</span>
                   <p className="text-gray-300 text-xs leading-relaxed">
-                    El cowork es un espacio chico y compartido, así que nos gusta
-                    saber quién viene. Estos datos los vemos sólo nosotros.
+                    {coworkLanding.notaDatos}
                   </p>
                 </div>
               )}

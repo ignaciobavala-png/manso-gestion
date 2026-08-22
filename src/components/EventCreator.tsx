@@ -6,6 +6,11 @@ import AlertModal from '../components/AlertModal'
 
 interface Props {
   onCreated?: () => void
+  /**
+   * Arranca con "Cowork Day" elegido y sin el selector de tipo: cuando se crea
+   * desde la pantalla de Cowork, el tipo ya está decidido.
+   */
+  coworkPorDefecto?: boolean
 }
 
 type PaymentMode = 'transferencia' | 'mercadopago' | 'ambos'
@@ -18,7 +23,7 @@ const slugify = (text: string) =>
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
 
-export default function EventCreator({ onCreated }: Props) {
+export default function EventCreator({ onCreated, coworkPorDefecto = false }: Props) {
   const { addEvent } = useAppStore()
 
   const [form, setForm] = useState({ name: '', slug: '', description: '', ticketPrice: '', startDate: '', aliasPago: '', cbuPago: '', mpSurcharge: '0' })
@@ -27,7 +32,7 @@ export default function EventCreator({ onCreated }: Props) {
   const [paymentMode, setPaymentMode] = useState<PaymentMode>('transferencia')
   const [isPrivate, setIsPrivate] = useState(false)
   const [oneTicketPerEmail, setOneTicketPerEmail] = useState(false)
-  const [coworkDay, setCoworkDay] = useState(false)
+  const [coworkDay, setCoworkDay] = useState(coworkPorDefecto)
   const [qrCodeUrl, setQrCodeUrl] = useState('')
   const [createdEventName, setCreatedEventName] = useState('')
   const [saving, setSaving] = useState(false)
@@ -109,7 +114,7 @@ export default function EventCreator({ onCreated }: Props) {
       setCreatedEventName(form.name.trim())
       setForm({ name: '', slug: '', description: '', ticketPrice: '', startDate: '', aliasPago: '', cbuPago: '', mpSurcharge: '0' })
       setSlugEdited(false)
-      setCoworkDay(false)
+      setCoworkDay(coworkPorDefecto)
     } catch (error) {
       setAlertModal({
         isOpen: true,
@@ -196,6 +201,7 @@ export default function EventCreator({ onCreated }: Props) {
         </div>
         <p className="text-xs text-gray-600 mt-1">Se genera automáticamente desde el nombre. Podés editarlo.</p>
       </div>
+      {!coworkPorDefecto && (
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-3">Tipo de fecha</label>
         <div className="flex rounded-xl overflow-hidden border border-white/20 bg-neutral-900/80">
@@ -228,6 +234,7 @@ export default function EventCreator({ onCreated }: Props) {
           </p>
         )}
       </div>
+      )}
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-3">Visibilidad</label>
         <div className="flex rounded-xl overflow-hidden border border-white/20 bg-neutral-900/80">
