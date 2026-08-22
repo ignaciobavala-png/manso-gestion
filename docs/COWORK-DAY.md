@@ -77,8 +77,12 @@ hasta recargar y parecía que el toggle no hacía nada.
 ## Para poner en producción
 
 1. Las migraciones 022, 023 y 024 ya están aplicadas.
-2. Borrar el evento **"Cowork Day — fecha de prueba"** desde Control.
-3. Control → Secciones → prender **Cowork Day**.
-4. Crear la fecha real con "Tipo de fecha: Cowork Day", precio, cupo y medio
-   de pago.
-5. Imprimir el cartel desde `/admin/cartel`.
+2. Control → Secciones → prender **Cowork Day**.
+3. Crear la fecha con "Tipo de fecha: Cowork Day", precio, cupo y medio de
+   pago.
+4. Imprimir el cartel desde `/admin/cartel`.
+
+**Ojo con crear fechas antes de mergear.** La cartelera de `/registro` filtra
+los cowork day, pero ese filtro vive en esta rama: mientras producción siga en
+`master`, cualquier fecha de cowork pública aparece ahí como si fuera un show.
+Hasta el merge, las fechas de prueba van privadas.
