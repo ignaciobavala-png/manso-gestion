@@ -86,7 +86,15 @@ export default function Comunidad() {
   useEffect(() => {
     async function loadCineclub() {
       type VoterEmailRow = { email: string; poll_id: string; voter_fingerprint: string; created_at: string }
-      type VoteRow = { poll_id: string; voter_fingerprint: string; movie_id: string; cineclub_movies: unknown }
+      // PostgREST devuelve la relación embebida como objeto, pero según la
+      // versión y la cardinalidad que infiere puede venir como array de uno.
+      type PeliculaEmbebida = { title: string | null }
+      type VoteRow = {
+        poll_id: string
+        voter_fingerprint: string
+        movie_id: string
+        cineclub_movies: PeliculaEmbebida | PeliculaEmbebida[] | null
+      }
 
       const [emails, votesRes] = await Promise.all([
         fetchAllRows<VoterEmailRow>((from, to) =>
@@ -107,7 +115,10 @@ export default function Comunidad() {
       const voteMap = new Map<string, string>()
       for (const v of votesRes) {
         const key = `${v.poll_id}:${v.voter_fingerprint}`
-        voteMap.set(key, (v.cineclub_movies as any)?.title ?? '—')
+        const pelicula = Array.isArray(v.cineclub_movies)
+          ? v.cineclub_movies[0]
+          : v.cineclub_movies
+        voteMap.set(key, pelicula?.title ?? '—')
       }
 
       const voters: CineclubVoter[] = emails.map(r => ({

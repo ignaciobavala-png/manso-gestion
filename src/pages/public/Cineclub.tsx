@@ -34,6 +34,32 @@ interface Movie {
   vote_count: number
 }
 
+// ── Header con flecha ────────────────────────────────────────────────────────
+// A nivel de módulo a propósito: definido dentro de Cineclub, cada render creaba
+// un componente distinto y React desmontaba y volvía a montar todo el header.
+function PageHeader({ subtitle }: { subtitle?: string }) {
+  const navigate = useNavigate()
+
+  return (
+    <div className="flex-1 flex flex-col items-center px-5 pb-10">
+      <div className="w-full max-w-lg mb-6 mt-4">
+        <div className="flex items-center">
+          <button
+            onClick={() => navigate('/')}
+            className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all text-lg"
+          >
+            ←
+          </button>
+        </div>
+        <h1 className="text-white font-bold text-2xl text-center -mt-10">Cineclub</h1>
+        {subtitle && (
+          <p className="text-gray-400 text-sm text-center mt-2">{subtitle}</p>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function Cineclub() {
   const navigate = useNavigate()
   const { activo: cineclubActivo, loading: cineclubLoading } = useCineclubActivo()
@@ -178,26 +204,6 @@ export default function Cineclub() {
     }
     setVoting(false)
   }
-
-  // ── Header con flecha ──────────────────────────────────────────────────────
-  const PageHeader = ({ subtitle }: { subtitle?: string }) => (
-    <div className="flex-1 flex flex-col items-center px-5 pb-10">
-      <div className="w-full max-w-lg mb-6 mt-4">
-        <div className="flex items-center">
-          <button
-            onClick={() => navigate('/')}
-            className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all text-lg"
-          >
-            ←
-          </button>
-        </div>
-        <h1 className="text-white font-bold text-2xl text-center -mt-10">Cineclub</h1>
-        {subtitle && (
-          <p className="text-gray-400 text-sm text-center mt-2">{subtitle}</p>
-        )}
-      </div>
-    </div>
-  )
 
   // Sección apagada desde Configuración: para el público no existe.
   if (!cineclubLoading && !cineclubActivo) {

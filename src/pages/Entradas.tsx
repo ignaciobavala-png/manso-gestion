@@ -6,7 +6,6 @@ import qrWorkerSource from 'qr-scanner/qr-scanner-worker.min.js?raw'
 // en producción (Vercel) sin depender de rutas relativas ni CDN
 const workerBlob = new Blob([qrWorkerSource], { type: 'application/javascript' })
 const workerBlobUrl = URL.createObjectURL(workerBlob)
-// @ts-ignore
 QrScanner.WORKER_PATH = workerBlobUrl
 import { useAppStore } from '../store/useAppStore'
 import { supabase } from '../lib/supabase'

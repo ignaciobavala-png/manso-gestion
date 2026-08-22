@@ -87,11 +87,16 @@ export default function Stats() {
   })
 
   // — Balance acumulado —
-  let acum = 0
-  const balanceAcum = porMes.map(m => {
-    acum += m.balance
-    return { mes: m.mes, acumulado: acum }
-  })
+  const balanceAcum = porMes.reduce<{ mes: string; acumulado: number }[]>((acc, m) => {
+    const previo = acc.length > 0 ? acc[acc.length - 1].acumulado : 0
+    acc.push({ mes: m.mes, acumulado: previo + m.balance })
+    return acc
+  }, [])
+
+  // Signo del balance al cierre del último mes: pinta la línea del gráfico.
+  const balanceFinal = balanceAcum.length > 0
+    ? balanceAcum[balanceAcum.length - 1].acumulado
+    : 0
 
   // — Breakdown ingresos por categoría —
   const porCategoria: Record<string, number> = {}
@@ -184,7 +189,7 @@ export default function Stats() {
             <Tooltip contentStyle={tooltipStyle} formatter={(v) => typeof v === 'number' ? fmt(v) : ''} />
             <Line
               type="monotone" dataKey="acumulado" name="Balance acum."
-              stroke={acum >= 0 ? '#34d399' : '#f87171'}
+              stroke={balanceFinal >= 0 ? '#34d399' : '#f87171'}
               strokeWidth={2} dot={{ fill: '#34d399', r: 3 }} activeDot={{ r: 5 }}
             />
           </LineChart>

@@ -46,7 +46,13 @@ export default async function handler(req: Request): Promise<Response> {
 
   // Cliente con anon key para validar el token del caller
   const anonClient = createClient(supabaseUrl, process.env.VITE_SUPABASE_ANON_KEY!)
-  // @ts-ignore — getUser(jwt) existe en runtime; Vercel type-chequea edge functions sin el tsconfig del proyecto
+  // Tiene que ser @ts-ignore y no @ts-expect-error: local no hay error y
+  // tsc rechaza el directive como no usado, pero Vercel type-chequea cada
+  // edge function con su propio tsconfig, pierde los tipos de Supabase y sin
+  // esto el deploy falla (ver 58f8c72). Los dos entornos no se pueden conformar
+  // con el mismo directive, así que gana el que rompe el deploy.
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore — getUser(jwt) existe en runtime
   const { data: { user: caller }, error: callerError } = await anonClient.auth.getUser(accessToken)
 
   if (callerError || !caller) {
@@ -69,7 +75,8 @@ export default async function handler(req: Request): Promise<Response> {
 
   // Buscar el usuario target por email
   const targetEmail = role === 'control' ? CONTROL_EMAIL : EMPLEADO_EMAIL
-  // @ts-ignore — auth.admin existe en runtime; Vercel type-chequea edge functions sin el tsconfig del proyecto
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore — auth.admin existe en runtime (mismo motivo que arriba)
   const { data: listData, error: listError } = await adminClient.auth.admin.listUsers({ perPage: 1000 })
 
   if (listError || !listData) {
@@ -81,7 +88,8 @@ export default async function handler(req: Request): Promise<Response> {
     return json({ error: 'Usuario no encontrado' }, 404)
   }
 
-  // @ts-ignore — auth.admin existe en runtime; Vercel type-chequea edge functions sin el tsconfig del proyecto
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore — auth.admin existe en runtime (mismo motivo que arriba)
   const { error: updateError } = await adminClient.auth.admin.updateUserById(target.id, {
     password: newPin
   })
