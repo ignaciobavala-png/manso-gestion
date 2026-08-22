@@ -18,6 +18,7 @@ import CineclubAdmin from './pages/admin/Cineclub'
 import Cineclub from './pages/public/Cineclub'
 import Cowork from './pages/public/Cowork'
 import Cartel from './pages/admin/Cartel'
+import CoworkAdmin from './pages/admin/Cowork'
 
 function App() {
   return (
@@ -77,6 +78,14 @@ function App() {
               element={
                 <ProtectedRoute requiredRole="control">
                   <VistasPublicas />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="cowork"
+              element={
+                <ProtectedRoute requiredRole="control">
+                  <CoworkAdmin />
                 </ProtectedRoute>
               }
             />

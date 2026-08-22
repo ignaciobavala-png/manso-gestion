@@ -395,6 +395,8 @@ export interface Database {
           carta_activa: boolean | null
           cineclub_activo: boolean | null
           cowork_activo: boolean | null
+          barra_activa: boolean | null
+          background_url: string | null
           current_event_id: string | null
         }
         Update: {
@@ -403,6 +405,8 @@ export interface Database {
           carta_activa?: boolean | null
           cineclub_activo?: boolean | null
           cowork_activo?: boolean | null
+          barra_activa?: boolean | null
+          background_url?: string | null
           current_event_id?: string | null
         }
       }

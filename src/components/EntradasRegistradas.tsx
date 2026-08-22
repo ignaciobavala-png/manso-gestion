@@ -51,9 +51,21 @@ function extractStoragePath(publicUrl: string): string | null {
   return publicUrl.slice(idx + marker.length)
 }
 
-export default function EntradasRegistradas() {
+interface Props {
+  /**
+   * Evento a listar. Por defecto es el que está en operación, que es lo que
+   * necesita el panel de Control; /admin/cowork le pasa la fecha de cowork
+   * elegida, que no tiene por qué ser la que está en vivo.
+   */
+  event?: { id: string; name: string }
+  /** Arranca abierto en las pantallas donde la lista ES el contenido. */
+  defaultExpanded?: boolean
+}
+
+export default function EntradasRegistradas({ event, defaultExpanded = false }: Props = {}) {
   const { activeEvent } = useAppStore()
-  const [isExpanded, setIsExpanded] = useState(false)
+  const evento = event ?? activeEvent
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded)
   const [rows, setRows] = useState<EnrichedRegistration[]>([])
   const [loading, setLoading] = useState(false)
   const [loaded, setLoaded] = useState(false)
@@ -66,12 +78,12 @@ export default function EntradasRegistradas() {
   const [sortAlpha, setSortAlpha] = useState(false)
 
   const loadRegistrations = useCallback(async () => {
-    if (!activeEvent) return
+    if (!evento) return
     setLoading(true)
     const { data, error } = await supabase
       .from('ticket_registrations')
       .select('id, name, email, event_id, token, registered_at, used_at, receipt_url, payment_verified, is_banned, instagram, phone, payment_provider, mp_status, mp_external_reference, mp_expires_at')
-      .eq('event_id', activeEvent.id)
+      .eq('event_id', evento.id)
       .order('registered_at', { ascending: false })
 
     if (error || !data) {
@@ -100,15 +112,16 @@ export default function EntradasRegistradas() {
     setRows(enriched)
     setLoading(false)
     setLoaded(true)
-  }, [activeEvent])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [evento?.id])
 
   useEffect(() => {
-    if (!activeEvent) return
+    if (!evento) return
 
     const channel = supabase
       .channel('registrations')
       .on('postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'ticket_registrations', filter: `event_id=eq.${activeEvent.id}` },
+        { event: 'INSERT', schema: 'public', table: 'ticket_registrations', filter: `event_id=eq.${evento.id}` },
         (payload: RealtimePostgresChangesPayload<{ receipt_url: string | null; name: string }>) => {
           const row = payload.new as { receipt_url: string | null; name: string }
           if (!row.receipt_url) return
@@ -136,7 +149,8 @@ export default function EntradasRegistradas() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [activeEvent, loadRegistrations])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [evento?.id, loadRegistrations])
 
   const handleToggle = () => {
     const next = !isExpanded
@@ -311,7 +325,7 @@ export default function EntradasRegistradas() {
   const rechazadas = rows.filter(r => r.is_banned).length
   const sinPagar = rows.filter(esMpAbandonada).length
 
-  if (!activeEvent) return null
+  if (!evento) return null
 
   return (
     <>
@@ -330,7 +344,7 @@ export default function EntradasRegistradas() {
         <div>
           <h2 className="text-xl font-semibold text-white">Entradas registradas</h2>
           <p className="text-sm text-gray-400 mt-1">
-            {activeEvent.name}
+            {evento.name}
           </p>
         </div>
         <svg

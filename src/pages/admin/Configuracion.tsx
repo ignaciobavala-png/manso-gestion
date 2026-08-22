@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
+import { compressImage } from '../../lib/compressImage'
+import { useVenueConfig, sincronizarVenueConfig } from '../../store/useVenueConfig'
 
 type Target = 'control' | 'empleado'
 type Step = 'idle' | 'form' | 'success' | 'error'
@@ -22,46 +24,69 @@ export default function Configuracion() {
   const [loading, setLoading] = useState(false)
   const [formError, setFormError] = useState('')
 
-  // perillas de secciones públicas (venue_config.cineclub_activo / cowork_activo)
-  const [cineclubActivo, setCineclubActivo] = useState<boolean | null>(null)
-  const [coworkActivo, setCoworkActivo] = useState<boolean | null>(null)
-  const [seccionSaving, setSeccionSaving] = useState<string | null>(null)
-  const [seccionError, setSeccionError] = useState('')
+  // fondo de la app (venue_config.background_url)
+  useEffect(() => { sincronizarVenueConfig() }, [])
+  const fondoUrl = useVenueConfig(s => s.fondoUrl)
+  const [fondoSubiendo, setFondoSubiendo] = useState(false)
+  const [fondoError, setFondoError] = useState('')
+  const inputFondo = useRef<HTMLInputElement>(null)
 
-  useEffect(() => {
-    let cancelado = false
-    supabase
+  const guardarFondo = async (url: string | null) => {
+    const { data, error } = await supabase
       .from('venue_config')
-      .select('cineclub_activo, cowork_activo')
+      .update({ background_url: url })
       .eq('id', 1)
-      .single()
-      .then(({ data }) => {
-        if (cancelado) return
-        setCineclubActivo(data?.cineclub_activo ?? false)
-        setCoworkActivo(data?.cowork_activo ?? false)
-      })
-    return () => { cancelado = true }
-  }, [])
+      .select('id')
 
-  const toggleSeccion = async (
-    campo: 'cineclub_activo' | 'cowork_activo',
-    valorActual: boolean | null,
-    setValor: (v: boolean) => void,
-  ) => {
-    if (valorActual === null || seccionSaving) return
-    const nuevo = !valorActual
-    setSeccionSaving(campo)
-    setSeccionError('')
-    const { error } = await supabase
-      .from('venue_config')
-      .update({ [campo]: nuevo })
-      .eq('id', 1)
-    if (error) {
-      setSeccionError('No se pudo guardar. Intentá de nuevo.')
-    } else {
-      setValor(nuevo)
+    if (error) throw error
+    if (!data || data.length === 0) {
+      throw new Error('Tu usuario no tiene permiso para cambiar el fondo.')
     }
-    setSeccionSaving(null)
+    await useVenueConfig.getState().cargar()
+  }
+
+  const subirFondo = async (file: File) => {
+    if (fondoSubiendo) return
+    setFondoSubiendo(true)
+    setFondoError('')
+    try {
+      const comprimida = await compressImage(file)
+
+      // Va al bucket que ya existe para imágenes públicas del local. Se
+      // sobreescribe siempre el mismo archivo: no tiene sentido acumular
+      // fondos viejos que nadie va a volver a elegir.
+      const path = 'app/fondo.jpg'
+      const { error: storageError } = await supabase.storage
+        .from('event-flyers')
+        .upload(path, comprimida, { upsert: true, contentType: 'image/jpeg' })
+
+      if (storageError) throw storageError
+
+      const { data: urlData } = supabase.storage
+        .from('event-flyers')
+        .getPublicUrl(path)
+
+      // El ?t= rompe la caché: sin eso, subir un fondo nuevo sobre el mismo
+      // archivo seguía mostrando el anterior.
+      await guardarFondo(`${urlData.publicUrl}?t=${Date.now()}`)
+    } catch (err) {
+      setFondoError(err instanceof Error ? err.message : 'No se pudo subir el fondo. Intentá de nuevo.')
+    } finally {
+      setFondoSubiendo(false)
+    }
+  }
+
+  const restaurarFondo = async () => {
+    if (fondoSubiendo) return
+    setFondoSubiendo(true)
+    setFondoError('')
+    try {
+      await guardarFondo(null)
+    } catch (err) {
+      setFondoError(err instanceof Error ? err.message : 'No se pudo restaurar el fondo.')
+    } finally {
+      setFondoSubiendo(false)
+    }
   }
 
   // username flow
@@ -331,6 +356,64 @@ export default function Configuracion() {
       <div className="border-t border-white/10" />
 
       <div className="space-y-3">
+        <p className="text-gray-500 text-sm uppercase tracking-widest">Fondo de la app</p>
+
+        <div className="flex gap-4 items-start">
+          <div
+            className="w-24 h-40 rounded-xl border border-white/15 flex-shrink-0 bg-neutral-900"
+            style={{
+              backgroundImage: `url(${fondoUrl ?? '/fondo.png'})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}
+          />
+          <div className="flex-1 min-w-0 space-y-2">
+            <p className="text-gray-400 text-sm leading-relaxed">
+              {fondoUrl
+                ? 'Fondo propio. Se ve en todas las pantallas, salvo en los eventos que tengan el suyo.'
+                : 'La foto que vino con la app. Subí otra cuando quieras renovarla.'}
+            </p>
+            <button
+              onClick={() => inputFondo.current?.click()}
+              disabled={fondoSubiendo}
+              className="w-full bg-white/10 hover:bg-white/20 disabled:opacity-60 text-white text-sm font-medium rounded-xl px-4 py-2.5 transition-colors"
+            >
+              {fondoSubiendo ? 'Subiendo...' : fondoUrl ? 'Cambiar la foto' : 'Subir una foto'}
+            </button>
+            {fondoUrl && (
+              <button
+                onClick={restaurarFondo}
+                disabled={fondoSubiendo}
+                className="w-full text-gray-500 hover:text-gray-300 disabled:opacity-60 text-sm underline underline-offset-2 transition-colors"
+              >
+                Volver a la foto original
+              </button>
+            )}
+          </div>
+        </div>
+
+        <input
+          ref={inputFondo}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={ev => {
+            const file = ev.target.files?.[0]
+            if (file) subirFondo(file)
+            ev.target.value = ''
+          }}
+        />
+
+        {fondoError && <p className="text-red-400 text-sm">{fondoError}</p>}
+        <p className="text-gray-600 text-xs">
+          Conviene una foto vertical: se recorta al centro y se le aplica una
+          capa oscura para que el texto se lea.
+        </p>
+      </div>
+
+      <div className="border-t border-white/10" />
+
+      <div className="space-y-3">
         <p className="text-gray-500 text-sm uppercase tracking-widest">Usuarios de acceso</p>
         <button
           onClick={() => { setUsernameTarget('control'); setNewUsername(''); setUsernameError(''); setUsernameSuccess(false) }}
@@ -352,64 +435,6 @@ export default function Configuracion() {
           </div>
           <span className="text-gray-400 text-lg">›</span>
         </button>
-      </div>
-
-      <div className="border-t border-white/10" />
-
-      <div className="space-y-3">
-        <p className="text-gray-500 text-sm uppercase tracking-widest">Secciones públicas</p>
-        <button
-          onClick={() => toggleSeccion('cineclub_activo', cineclubActivo, setCineclubActivo)}
-          disabled={cineclubActivo === null || seccionSaving !== null}
-          className="w-full flex items-center justify-between bg-white/10 hover:bg-white/20 disabled:opacity-60 rounded-xl px-4 py-3.5 transition-colors"
-        >
-          <div className="text-left">
-            <p className="text-white text-sm font-medium">Cineclub</p>
-            <p className="text-gray-500 text-sm">
-              {cineclubActivo === null
-                ? 'Cargando...'
-                : cineclubActivo
-                  ? 'Visible en la web pública'
-                  : 'Oculto — nadie ve la sección'}
-            </p>
-          </div>
-          <span
-            className={`w-11 h-6 rounded-full flex-shrink-0 flex items-center px-0.5 transition-colors ${
-              cineclubActivo ? 'bg-emerald-600 justify-end' : 'bg-white/20 justify-start'
-            }`}
-          >
-            <span className="w-5 h-5 rounded-full bg-white block" />
-          </span>
-        </button>
-        <button
-          onClick={() => toggleSeccion('cowork_activo', coworkActivo, setCoworkActivo)}
-          disabled={coworkActivo === null || seccionSaving !== null}
-          className="w-full flex items-center justify-between bg-white/10 hover:bg-white/20 disabled:opacity-60 rounded-xl px-4 py-3.5 transition-colors"
-        >
-          <div className="text-left">
-            <p className="text-white text-sm font-medium">Cowork Day</p>
-            <p className="text-gray-500 text-sm">
-              {coworkActivo === null
-                ? 'Cargando...'
-                : coworkActivo
-                  ? 'Visible en la web pública'
-                  : 'Oculto — nadie ve la sección'}
-            </p>
-          </div>
-          <span
-            className={`w-11 h-6 rounded-full flex-shrink-0 flex items-center px-0.5 transition-colors ${
-              coworkActivo ? 'bg-emerald-600 justify-end' : 'bg-white/20 justify-start'
-            }`}
-          >
-            <span className="w-5 h-5 rounded-full bg-white block" />
-          </span>
-        </button>
-        {seccionError && <p className="text-red-400 text-sm">{seccionError}</p>}
-        <p className="text-gray-600 text-xs">
-          Apagarlas no borra nada: los datos quedan guardados y vuelven al encenderlas.
-          El Cowork Day apagado tampoco esconde las fechas ya vendidas — quien compró
-          sigue viendo su QR en Mi entrada.
-        </p>
       </div>
 
       <div className="border-t border-white/10" />

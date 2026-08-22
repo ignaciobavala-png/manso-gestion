@@ -8,8 +8,9 @@ import EntradasRegistradas from '../components/EntradasRegistradas'
 import AlertModal from '../components/AlertModal'
 import Background from '../components/Background'
 import Configuracion from './admin/Configuracion'
+import Secciones from './admin/Secciones'
 
-type Tab = 'operacion' | 'config'
+type Tab = 'operacion' | 'config' | 'secciones'
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>('operacion')
@@ -232,6 +233,16 @@ export default function Home() {
             >
               Configuración
             </button>
+            <button
+              onClick={() => setActiveTab('secciones')}
+              className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
+                activeTab === 'secciones'
+                  ? 'text-white border-b-2 border-emerald-500'
+                  : 'text-gray-500 hover:text-gray-300'
+              }`}
+            >
+              Secciones
+            </button>
           </div>
         </div>
       </header>
@@ -241,6 +252,11 @@ export default function Home() {
           {activeTab === 'config' && (
             <div className="p-6 sm:p-8">
               <Configuracion />
+            </div>
+          )}
+          {activeTab === 'secciones' && (
+            <div className="p-6 sm:p-8">
+              <Secciones />
             </div>
           )}
           {activeTab === 'operacion' && (

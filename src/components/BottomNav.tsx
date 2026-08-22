@@ -1,10 +1,14 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useSecciones } from '../hooks/useSeccionPublica'
 
 export default function BottomNav() {
   const navigate = useNavigate()
   const location = useLocation()
   const { role, signOut } = useAuth()
+  // Las secciones apagadas desde /admin/home → Secciones no se listan acá.
+  // La ruta sigue viva: esto saca el tab, no cierra la puerta.
+  const { secciones } = useSecciones()
 
   const tabs = [
     ...(role === 'control' || role === 'owner'
@@ -13,14 +17,19 @@ export default function BottomNav() {
           { path: '/admin/publico', label: 'Público', icon: '🌐' },
         ]
       : []),
+    ...(secciones.cowork && (role === 'control' || role === 'owner')
+      ? [{ path: '/admin/cowork', label: 'Cowork', icon: '💻' }]
+      : []),
     ...(role === 'owner'
       ? [
           { path: '/admin/comunidad', label: 'Comunidad', icon: '👥' },
           { path: '/admin/stats', label: 'Stats', icon: '📈' },
-          { path: '/admin/cineclub', label: 'Cineclub', icon: '🎬' },
         ]
       : []),
-    { path: '/admin/barra', label: 'Barra', icon: '🍺' },
+    ...(secciones.cineclub && role === 'owner'
+      ? [{ path: '/admin/cineclub', label: 'Cineclub', icon: '🎬' }]
+      : []),
+    ...(secciones.barra ? [{ path: '/admin/barra', label: 'Barra', icon: '🍺' }] : []),
     { path: '/admin/entradas', label: 'Entradas', icon: '🎫' },
   ]
 

@@ -1,37 +1,53 @@
-import { useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase'
+import { useEffect } from 'react'
+import { useVenueConfig, sincronizarVenueConfig } from '../store/useVenueConfig'
 
 /**
- * Perillas de secciones públicas en venue_config (cineclub_activo,
- * cowork_activo). Mientras el valor está en null todavía no sabemos si la
- * sección se muestra: quien la use debe esperar (loading) antes de renderizar
- * o redirigir, si no la sección parpadea al entrar.
+ * Perillas de secciones. Prenden y apagan tanto secciones públicas (Cineclub,
+ * Cowork Day) como del panel (Barra), y se manejan desde /admin/home →
+ * Secciones. El estado vive en useVenueConfig, que se mantiene al día solo.
+ *
+ * Mientras `loading` es true todavía no sabemos qué se muestra: quien las use
+ * debe esperar antes de renderizar o redirigir, si no la sección parpadea.
  */
-function useSeccionPublica(campo: 'cineclub_activo' | 'cowork_activo') {
-  const [activo, setActivo] = useState<boolean | null>(null)
+export interface Secciones {
+  barra: boolean
+  cineclub: boolean
+  cowork: boolean
+}
 
-  useEffect(() => {
-    let cancelado = false
-    supabase
-      .from('venue_config')
-      .select(campo)
-      .eq('id', 1)
-      .single()
-      .then(({ data }) => {
-        if (!cancelado) {
-          setActivo((data as Record<string, boolean> | null)?.[campo] ?? false)
-        }
-      })
-    return () => { cancelado = true }
-  }, [campo])
+export function useSecciones() {
+  useEffect(() => { sincronizarVenueConfig() }, [])
 
-  return { activo: activo === true, loading: activo === null }
+  const cargado = useVenueConfig(s => s.cargado)
+  const barra = useVenueConfig(s => s.barraActiva)
+  const cineclub = useVenueConfig(s => s.cineclubActivo)
+  const cowork = useVenueConfig(s => s.coworkActivo)
+
+  return {
+    secciones: {
+      barra,
+      cineclub,
+      // En desarrollo el Cowork Day se ve siempre, con la perilla apagada o
+      // no: es la sección que se está construyendo y hay que poder probarla
+      // sin exponerla al público, que comparte esta misma base de datos.
+      cowork: cowork || import.meta.env.DEV,
+    } satisfies Secciones,
+    loading: !cargado,
+  }
 }
 
 export function useCineclubActivo() {
-  return useSeccionPublica('cineclub_activo')
+  const { secciones, loading } = useSecciones()
+  return { activo: secciones.cineclub, loading }
 }
 
 export function useCoworkActivo() {
-  return useSeccionPublica('cowork_activo')
+  const { secciones, loading } = useSecciones()
+  return { activo: secciones.cowork, loading }
+}
+
+/** Fondo de la app. null mientras carga o si nunca se cambió. */
+export function useFondo() {
+  useEffect(() => { sincronizarVenueConfig() }, [])
+  return useVenueConfig(s => s.fondoUrl)
 }

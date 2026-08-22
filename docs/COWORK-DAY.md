@@ -1,6 +1,6 @@
 # Manso Cowork Day
 
-> Estado: **implementado, migración sin aplicar.** Rama `cowork-day`.
+> Estado: **implementado, migraciones aplicadas.** Rama `cowork-day`.
 
 ## Qué es
 
@@ -46,7 +46,9 @@ opción correcta pasa a ser aprobación previa al pago.
 | `/` (Inicio) | Tarjeta destacada arriba de todo, sujeta a la perilla |
 | `/registro` | La cartelera esconde los Cowork Day; el formulario explica por qué pide los datos |
 | `/admin/cartel` | Cartel imprimible con el QR de `app.mansoclub.com.ar` |
-| Configuración | Perilla Cowork Day junto a la del Cineclub |
+| `/admin/cowork` | Panel del pase: fechas, reservas, y qué pide el formulario |
+| Control → Secciones | Perillas de Barra, Cowork Day y Cineclub |
+| Configuración | Cambiar el fondo de la app |
 | Crear/editar evento | "Tipo de fecha: Evento / Cowork Day" |
 
 ## Difusión del dominio nuevo
@@ -61,11 +63,26 @@ celular, "Imprimir" también guarda un PDF para mandarle a la imprenta.
 Hoy, cuando alguien pega el link en WhatsApp o en la bio de Instagram, sale un
 rectángulo gris sin título ni imagen. Con OG tags sale el logo y el nombre.
 
+## Secciones que se prenden y se apagan
+
+Control → **Secciones** junta todas las perillas: Barra (panel), Cowork Day
+(panel y web) y Cineclub (web). Apagar saca la sección de la navegación; no
+borra datos ni cierra la ruta.
+
+El estado vive en `useVenueConfig`, un store compartido con realtime sobre
+`venue_config`. Antes cada componente consultaba por su cuenta y se quedaba con
+esa foto: prender una perilla guardaba bien, pero la navegación no se enteraba
+hasta recargar y parecía que el toggle no hacía nada.
+
+En **desarrollo el Cowork Day se ve siempre**, con la perilla apagada o no. La
+base de datos es la misma en local y en producción, así que era la única forma
+de probar la sección sin exponerla al público.
+
 ## Para poner en producción
 
-1. Aplicar `supabase/migrations/022_cowork_day.sql`. **Sin esto la app no
-   levanta**: varias pantallas piden `cowork_day` y `cowork_activo`.
-2. Configuración → prender la perilla **Cowork Day**.
-3. Crear la primera fecha con "Tipo de fecha: Cowork Day", precio, cupo y
-   Mercado Pago.
-4. Imprimir el cartel desde `/admin/cartel`.
+1. Las migraciones 022, 023 y 024 ya están aplicadas.
+2. Borrar el evento **"Cowork Day — fecha de prueba"** desde Control.
+3. Control → Secciones → prender **Cowork Day**.
+4. Crear la fecha real con "Tipo de fecha: Cowork Day", precio, cupo y medio
+   de pago.
+5. Imprimir el cartel desde `/admin/cartel`.
