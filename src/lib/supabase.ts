@@ -164,6 +164,7 @@ export interface Database {
           require_instagram: boolean
           require_phone: boolean
           accepts_wildcard_qr: boolean
+          cowork_day: boolean
           payment_mode: 'transferencia' | 'mercadopago' | 'ambos'
           mp_surcharge_pct: number
           closed_at?: string
@@ -193,6 +194,7 @@ export interface Database {
           require_instagram?: boolean
           require_phone?: boolean
           accepts_wildcard_qr?: boolean
+          cowork_day?: boolean
           payment_mode?: 'transferencia' | 'mercadopago' | 'ambos'
           mp_surcharge_pct?: number
           closed_at?: string
@@ -222,6 +224,7 @@ export interface Database {
           require_instagram?: boolean
           require_phone?: boolean
           accepts_wildcard_qr?: boolean
+          cowork_day?: boolean
           payment_mode?: 'transferencia' | 'mercadopago' | 'ambos'
           mp_surcharge_pct?: number
           closed_at?: string
@@ -391,6 +394,7 @@ export interface Database {
           cbu_pago: string | null
           carta_activa: boolean | null
           cineclub_activo: boolean | null
+          cowork_activo: boolean | null
           current_event_id: string | null
         }
         Update: {
@@ -398,6 +402,7 @@ export interface Database {
           cbu_pago?: string | null
           carta_activa?: boolean | null
           cineclub_activo?: boolean | null
+          cowork_activo?: boolean | null
           current_event_id?: string | null
         }
       }

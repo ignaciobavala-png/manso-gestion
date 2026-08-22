@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, Navigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import PublicLayout from '../../components/PublicLayout'
-import { useCineclubActivo } from '../../hooks/useCineclubActivo'
+import { useCineclubActivo } from '../../hooks/useSeccionPublica'
 
 const FINGERPRINT_KEY = 'cineclub_voter_fp'
 

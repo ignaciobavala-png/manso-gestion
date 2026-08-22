@@ -27,6 +27,7 @@ export default function EventCreator({ onCreated }: Props) {
   const [paymentMode, setPaymentMode] = useState<PaymentMode>('transferencia')
   const [isPrivate, setIsPrivate] = useState(false)
   const [oneTicketPerEmail, setOneTicketPerEmail] = useState(false)
+  const [coworkDay, setCoworkDay] = useState(false)
   const [qrCodeUrl, setQrCodeUrl] = useState('')
   const [createdEventName, setCreatedEventName] = useState('')
   const [saving, setSaving] = useState(false)
@@ -74,9 +75,12 @@ export default function EventCreator({ onCreated }: Props) {
         is_paid: isPaid,
         is_private: isPrivate,
         one_ticket_per_email: oneTicketPerEmail,
-        require_instagram: false,
-        require_phone: false,
+        // El Cowork Day siempre pide teléfono e Instagram: es el filtro que
+        // pidió Ana para saber quién se sienta a trabajar en el salón.
+        require_instagram: coworkDay,
+        require_phone: coworkDay,
         accepts_wildcard_qr: false,
+        cowork_day: coworkDay,
         // Un evento gratuito no tiene medio de pago que elegir.
         payment_mode: isPaid ? paymentMode : 'transferencia',
         mp_surcharge_pct: isPaid && paymentMode !== 'transferencia' ? surcharge : 0,
@@ -105,6 +109,7 @@ export default function EventCreator({ onCreated }: Props) {
       setCreatedEventName(form.name.trim())
       setForm({ name: '', slug: '', description: '', ticketPrice: '', startDate: '', aliasPago: '', cbuPago: '', mpSurcharge: '0' })
       setSlugEdited(false)
+      setCoworkDay(false)
     } catch (error) {
       setAlertModal({
         isOpen: true,
@@ -190,6 +195,38 @@ export default function EventCreator({ onCreated }: Props) {
           />
         </div>
         <p className="text-xs text-gray-600 mt-1">Se genera automáticamente desde el nombre. Podés editarlo.</p>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-3">Tipo de fecha</label>
+        <div className="flex rounded-xl overflow-hidden border border-white/20 bg-neutral-900/80">
+          <button
+            type="button"
+            onClick={() => setCoworkDay(false)}
+            className={`flex-1 py-3 text-sm font-medium transition-colors ${
+              !coworkDay
+                ? 'bg-emerald-600 text-white'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            Evento
+          </button>
+          <button
+            type="button"
+            onClick={() => setCoworkDay(true)}
+            className={`flex-1 py-3 text-sm font-medium transition-colors ${
+              coworkDay
+                ? 'bg-emerald-600 text-white'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            Cowork Day
+          </button>
+        </div>
+        {coworkDay && (
+          <p className="text-xs text-gray-500 mt-1">
+            Sale en /cowork en vez de la cartelera, y pide teléfono e Instagram al reservar.
+          </p>
+        )}
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-3">Visibilidad</label>

@@ -29,6 +29,7 @@ interface ActiveEvent {
   background_url: string | null
   payment_mode: PaymentMode
   mp_surcharge_pct: number
+  cowork_day: boolean
 }
 
 type PaymentMode = 'transferencia' | 'mercadopago' | 'ambos'
@@ -64,6 +65,9 @@ function Cartelera() {
       .select('id, name, start_date, flyer_url, slug')
       .eq('registrations_open', true)
       .eq('is_private', false)
+      // Los pases de cowork tienen su propia sección: un martes a las 9 de la
+      // mañana no es "la próxima fecha" que viene a buscar acá.
+      .eq('cowork_day', false)
       .is('closed_at', null)
       .order('start_date', { ascending: true })
       .then(({ data }) => {
@@ -216,7 +220,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
       setLoadingEvent(true)
       const { data, error } = await supabase
         .from('events')
-        .select('id, name, registrations_open, max_capacity, is_paid, regular_ticket_price, start_date, end_date, ticket_alias_pago, ticket_cbu_pago, is_private, private_token, one_ticket_per_email, require_instagram, require_phone, background_url, payment_mode, mp_surcharge_pct')
+        .select('id, name, registrations_open, max_capacity, is_paid, regular_ticket_price, start_date, end_date, ticket_alias_pago, ticket_cbu_pago, is_private, private_token, one_ticket_per_email, require_instagram, require_phone, background_url, payment_mode, mp_surcharge_pct, cowork_day')
         .eq(isSlug ? 'slug' : 'id', eventParam)
         .is('closed_at', null)
         .single()
@@ -255,6 +259,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
         background_url: data.background_url ?? null,
         payment_mode: (data.payment_mode ?? 'transferencia') as PaymentMode,
         mp_surcharge_pct: Number(data.mp_surcharge_pct ?? 0),
+        cowork_day: data.cowork_day === true,
       })
 
       // Con 'ambos' se arranca en transferencia, que es la primera opcion del
@@ -476,7 +481,12 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
     <PublicLayout backgroundImage={backgroundImage}>
       <div className="flex-1 flex flex-col items-center px-5 pb-10">
         <div className="w-full max-w-sm mb-4 pt-2">
-          <button onClick={() => navigate('/registro')} className="text-white/50 hover:text-white/80 transition-colors text-2xl leading-none">←</button>
+          <button
+            onClick={() => navigate(activeEvent.cowork_day ? '/cowork' : '/registro')}
+            className="text-white/50 hover:text-white/80 transition-colors text-2xl leading-none"
+          >
+            ←
+          </button>
         </div>
 
         <div className="text-center mb-7">
@@ -572,6 +582,16 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
                 >
                   <span className="text-lg">+</span> Agregar otra entrada
                 </button>
+              )}
+
+              {activeEvent.cowork_day && (activeEvent.require_instagram || activeEvent.require_phone) && (
+                <div className="flex items-start gap-3 p-3 bg-white/5 border border-white/15 rounded-2xl">
+                  <span className="text-xl leading-none">👋</span>
+                  <p className="text-gray-300 text-xs leading-relaxed">
+                    El cowork es un espacio chico y compartido, así que nos gusta
+                    saber quién viene. Estos datos los vemos sólo nosotros.
+                  </p>
+                </div>
               )}
 
               {activeEvent.require_instagram && (

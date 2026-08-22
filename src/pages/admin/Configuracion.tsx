@@ -22,39 +22,46 @@ export default function Configuracion() {
   const [loading, setLoading] = useState(false)
   const [formError, setFormError] = useState('')
 
-  // perilla del Cineclub (venue_config.cineclub_activo)
+  // perillas de secciones públicas (venue_config.cineclub_activo / cowork_activo)
   const [cineclubActivo, setCineclubActivo] = useState<boolean | null>(null)
-  const [cineclubSaving, setCineclubSaving] = useState(false)
-  const [cineclubError, setCineclubError] = useState('')
+  const [coworkActivo, setCoworkActivo] = useState<boolean | null>(null)
+  const [seccionSaving, setSeccionSaving] = useState<string | null>(null)
+  const [seccionError, setSeccionError] = useState('')
 
   useEffect(() => {
     let cancelado = false
     supabase
       .from('venue_config')
-      .select('cineclub_activo')
+      .select('cineclub_activo, cowork_activo')
       .eq('id', 1)
       .single()
       .then(({ data }) => {
-        if (!cancelado) setCineclubActivo(data?.cineclub_activo ?? false)
+        if (cancelado) return
+        setCineclubActivo(data?.cineclub_activo ?? false)
+        setCoworkActivo(data?.cowork_activo ?? false)
       })
     return () => { cancelado = true }
   }, [])
 
-  const toggleCineclub = async () => {
-    if (cineclubActivo === null || cineclubSaving) return
-    const nuevo = !cineclubActivo
-    setCineclubSaving(true)
-    setCineclubError('')
+  const toggleSeccion = async (
+    campo: 'cineclub_activo' | 'cowork_activo',
+    valorActual: boolean | null,
+    setValor: (v: boolean) => void,
+  ) => {
+    if (valorActual === null || seccionSaving) return
+    const nuevo = !valorActual
+    setSeccionSaving(campo)
+    setSeccionError('')
     const { error } = await supabase
       .from('venue_config')
-      .update({ cineclub_activo: nuevo })
+      .update({ [campo]: nuevo })
       .eq('id', 1)
     if (error) {
-      setCineclubError('No se pudo guardar. Intentá de nuevo.')
+      setSeccionError('No se pudo guardar. Intentá de nuevo.')
     } else {
-      setCineclubActivo(nuevo)
+      setValor(nuevo)
     }
-    setCineclubSaving(false)
+    setSeccionSaving(null)
   }
 
   // username flow
@@ -352,8 +359,8 @@ export default function Configuracion() {
       <div className="space-y-3">
         <p className="text-gray-500 text-sm uppercase tracking-widest">Secciones públicas</p>
         <button
-          onClick={toggleCineclub}
-          disabled={cineclubActivo === null || cineclubSaving}
+          onClick={() => toggleSeccion('cineclub_activo', cineclubActivo, setCineclubActivo)}
+          disabled={cineclubActivo === null || seccionSaving !== null}
           className="w-full flex items-center justify-between bg-white/10 hover:bg-white/20 disabled:opacity-60 rounded-xl px-4 py-3.5 transition-colors"
         >
           <div className="text-left">
@@ -374,9 +381,34 @@ export default function Configuracion() {
             <span className="w-5 h-5 rounded-full bg-white block" />
           </span>
         </button>
-        {cineclubError && <p className="text-red-400 text-sm">{cineclubError}</p>}
+        <button
+          onClick={() => toggleSeccion('cowork_activo', coworkActivo, setCoworkActivo)}
+          disabled={coworkActivo === null || seccionSaving !== null}
+          className="w-full flex items-center justify-between bg-white/10 hover:bg-white/20 disabled:opacity-60 rounded-xl px-4 py-3.5 transition-colors"
+        >
+          <div className="text-left">
+            <p className="text-white text-sm font-medium">Cowork Day</p>
+            <p className="text-gray-500 text-sm">
+              {coworkActivo === null
+                ? 'Cargando...'
+                : coworkActivo
+                  ? 'Visible en la web pública'
+                  : 'Oculto — nadie ve la sección'}
+            </p>
+          </div>
+          <span
+            className={`w-11 h-6 rounded-full flex-shrink-0 flex items-center px-0.5 transition-colors ${
+              coworkActivo ? 'bg-emerald-600 justify-end' : 'bg-white/20 justify-start'
+            }`}
+          >
+            <span className="w-5 h-5 rounded-full bg-white block" />
+          </span>
+        </button>
+        {seccionError && <p className="text-red-400 text-sm">{seccionError}</p>}
         <p className="text-gray-600 text-xs">
-          Apagarlo no borra nada: las votaciones y los datos quedan guardados y vuelven al encenderlo.
+          Apagarlas no borra nada: los datos quedan guardados y vuelven al encenderlas.
+          El Cowork Day apagado tampoco esconde las fechas ya vendidas — quien compró
+          sigue viendo su QR en Mi entrada.
         </p>
       </div>
 

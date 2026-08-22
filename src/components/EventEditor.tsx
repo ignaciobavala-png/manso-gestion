@@ -19,6 +19,7 @@ interface Event {
   require_instagram: boolean
   require_phone: boolean
   accepts_wildcard_qr: boolean
+  cowork_day?: boolean
   payment_mode?: PaymentMode
   mp_surcharge_pct?: number
 }
@@ -65,6 +66,7 @@ export default function EventEditor({ event, onDone }: Props) {
   const [requireInstagram, setRequireInstagram] = useState(event.require_instagram)
   const [requirePhone, setRequirePhone] = useState(event.require_phone)
   const [acceptsWildcardQr, setAcceptsWildcardQr] = useState(event.accepts_wildcard_qr)
+  const [coworkDay, setCoworkDay] = useState(event.cowork_day ?? false)
   const [slugEdited, setSlugEdited] = useState(!!event.slug)
   const [saving, setSaving] = useState(false)
   const [alertModal, setAlertModal] = useState({
@@ -125,6 +127,7 @@ export default function EventEditor({ event, onDone }: Props) {
         require_instagram: requireInstagram,
         require_phone: requirePhone,
         accepts_wildcard_qr: acceptsWildcardQr,
+        cowork_day: coworkDay,
         payment_mode: modoPago,
         mp_surcharge_pct: surcharge,
       })
@@ -203,6 +206,36 @@ export default function EventEditor({ event, onDone }: Props) {
           </button>
         </div>
         {oneTicketPerEmail && <p className="text-xs text-gray-500 mt-1">Cada email solo puede registrar una entrada.</p>}
+      </div>
+
+      {/* Cowork Day */}
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-3">Tipo de fecha</label>
+        <div className="flex items-center justify-between bg-neutral-900/80 border border-white/20 rounded-xl px-4 py-3">
+          <span className="text-sm text-gray-300">Es un Cowork Day</span>
+          <button
+            type="button"
+            onClick={() => {
+              const nuevo = !coworkDay
+              setCoworkDay(nuevo)
+              // Al marcarlo como Cowork Day se prenden los datos que pidió Ana
+              // para saber quién viene. Se pueden apagar a mano después.
+              if (nuevo) {
+                setRequireInstagram(true)
+                setRequirePhone(true)
+              }
+            }}
+            className={`relative w-10 h-5 rounded-full transition-colors ${coworkDay ? 'bg-emerald-600' : 'bg-white/20'}`}
+          >
+            <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${coworkDay ? 'translate-x-5' : ''}`} />
+          </button>
+        </div>
+        {coworkDay && (
+          <p className="text-xs text-gray-500 mt-1">
+            Sale en /cowork en vez de la cartelera de eventos, y pide teléfono e
+            Instagram al reservar.
+          </p>
+        )}
       </div>
 
       {/* Datos extra en el formulario */}

@@ -16,6 +16,8 @@ import VistasPublicas from './pages/admin/VistasPublicas'
 import Stats from './pages/admin/Stats'
 import CineclubAdmin from './pages/admin/Cineclub'
 import Cineclub from './pages/public/Cineclub'
+import Cowork from './pages/public/Cowork'
+import Cartel from './pages/admin/Cartel'
 
 function App() {
   return (
@@ -34,6 +36,7 @@ function App() {
           <Route path="/pago" element={<PagoRetorno />} />
           <Route path="/carta" element={<Carta />} />
           <Route path="/cineclub" element={<Cineclub />} />
+          <Route path="/cowork" element={<Cowork />} />
 
           <Route
             path="/admin"
@@ -74,6 +77,14 @@ function App() {
               element={
                 <ProtectedRoute requiredRole="control">
                   <VistasPublicas />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="cartel"
+              element={
+                <ProtectedRoute requiredRole="control">
+                  <Cartel />
                 </ProtectedRoute>
               }
             />

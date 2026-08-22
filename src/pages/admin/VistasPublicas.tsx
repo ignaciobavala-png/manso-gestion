@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import Background from '../../components/Background'
-import { useCineclubActivo } from '../../hooks/useCineclubActivo'
+import { useCineclubActivo, useCoworkActivo } from '../../hooks/useSeccionPublica'
 
 const PAGES = [
   {
@@ -27,14 +27,25 @@ const PAGES = [
     path: '/cineclub',
     icon: '🎬',
   },
+  {
+    label: 'Cowork Day',
+    description: 'Landing del pase por día, con las fechas abiertas',
+    path: '/cowork',
+    icon: '💻',
+  },
 ]
 
 export default function VistasPublicas() {
   const navigate = useNavigate()
   const { activo: cineclubActivo } = useCineclubActivo()
+  const { activo: coworkActivo } = useCoworkActivo()
 
-  // Si el Cineclub está apagado no es una vista pública: no se lista.
-  const pages = PAGES.filter(p => p.path !== '/cineclub' || cineclubActivo)
+  // Si la sección está apagada no es una vista pública: no se lista.
+  const pages = PAGES.filter(p => {
+    if (p.path === '/cineclub') return cineclubActivo
+    if (p.path === '/cowork') return coworkActivo
+    return true
+  })
 
   const open = (path: string) => {
     window.open(path, '_blank', 'noopener,noreferrer')
@@ -72,6 +83,24 @@ export default function VistasPublicas() {
               <span className="text-gray-500 text-lg flex-shrink-0">↗</span>
             </button>
           ))}
+        </div>
+
+        <div className="mt-8 space-y-3">
+          <p className="text-gray-500 text-sm uppercase tracking-widest">Para el local</p>
+          <button
+            onClick={() => navigate('/admin/cartel')}
+            className="w-full bg-black/50 hover:bg-white/10 border border-white/10 hover:border-emerald-600 rounded-2xl px-5 py-4 flex items-center gap-4 transition-colors text-left"
+          >
+            <span className="text-3xl">🖨️</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-white font-semibold text-sm">Cartel para imprimir</p>
+              <p className="text-gray-400 text-sm mt-0.5">
+                QR de la app para pegar en las mesas, la barra y la puerta
+              </p>
+              <p className="text-emerald-600 text-sm mt-1 font-mono">/admin/cartel</p>
+            </div>
+            <span className="text-gray-500 text-lg flex-shrink-0">›</span>
+          </button>
         </div>
       </div>
     </Background>
