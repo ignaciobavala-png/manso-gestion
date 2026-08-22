@@ -95,8 +95,8 @@ export default function Cowork() {
           <p className="text-emerald-400 text-xs font-semibold uppercase tracking-widest">Manso</p>
           <h1 className="text-white font-bold text-4xl mt-1">Cowork Day</h1>
           <p className="text-gray-300 text-sm mt-3 leading-relaxed max-w-sm mx-auto">
-            Un día de trabajo en el salón de Manso: escritorio, café y silencio.
-            Sin membresía, sin compromiso — pagás el día que venís.
+            Un día de trabajo compartido con nuestra comunidad. Espacio ideal
+            para creativos, freelancers, entusiastas o personas con ideas.
           </p>
         </div>
 

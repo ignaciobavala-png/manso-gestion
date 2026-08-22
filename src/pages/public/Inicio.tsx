@@ -52,7 +52,7 @@ export default function Inicio() {
               <p className="text-emerald-950 text-[10px] font-bold uppercase tracking-widest">Nuevo</p>
               <p className="text-white font-bold text-lg leading-tight">Cowork Day</p>
               <p className="text-white/90 text-sm mt-0.5">
-                trabajá un día en Manso — escritorio, café y wifi
+                un día de trabajo compartido con nuestra comunidad
               </p>
             </div>
             <span className="text-white/70 text-xl flex-shrink-0">›</span>
