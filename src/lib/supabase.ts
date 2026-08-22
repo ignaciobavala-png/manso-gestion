@@ -397,6 +397,10 @@ export interface Database {
           cowork_activo: boolean | null
           barra_activa: boolean | null
           background_url: string | null
+          barra_visibilidad: string | null
+          cineclub_visibilidad: string | null
+          cowork_visibilidad: string | null
+          cowork_landing: unknown
           current_event_id: string | null
         }
         Update: {
@@ -407,6 +411,10 @@ export interface Database {
           cowork_activo?: boolean | null
           barra_activa?: boolean | null
           background_url?: string | null
+          barra_visibilidad?: string | null
+          cineclub_visibilidad?: string | null
+          cowork_visibilidad?: string | null
+          cowork_landing?: unknown
           current_event_id?: string | null
         }
       }

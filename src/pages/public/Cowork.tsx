@@ -32,7 +32,7 @@ const INCLUYE = [
 
 export default function Cowork() {
   const navigate = useNavigate()
-  const { activo, loading: perillaLoading } = useCoworkActivo()
+  const { activo, soloStaff, loading: perillaLoading } = useCoworkActivo()
   const [fechas, setFechas] = useState<CoworkDate[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -90,6 +90,16 @@ export default function Cowork() {
             ←
           </button>
         </div>
+
+        {soloStaff && (
+          <div className="w-full max-w-lg mt-2 bg-amber-950/40 border border-amber-800/40 rounded-2xl px-4 py-3">
+            <p className="text-amber-300 text-sm font-medium">Esta página todavía no es pública</p>
+            <p className="text-gray-400 text-xs mt-1">
+              La ves porque tenés sesión iniciada. Para abrirla al público,
+              Control → Secciones → Cowork Day → Público.
+            </p>
+          </div>
+        )}
 
         <div className="w-full max-w-lg text-center mt-2 mb-8">
           <p className="text-emerald-400 text-xs font-semibold uppercase tracking-widest">Manso</p>

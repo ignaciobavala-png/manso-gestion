@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { useSecciones } from '../hooks/useSeccionPublica'
+import { useSecciones, enPanel } from '../hooks/useSeccionPublica'
 
 export default function BottomNav() {
   const navigate = useNavigate()
@@ -17,7 +17,7 @@ export default function BottomNav() {
           { path: '/admin/publico', label: 'Público', icon: '🌐' },
         ]
       : []),
-    ...(secciones.cowork && (role === 'control' || role === 'owner')
+    ...(enPanel(secciones.cowork) && (role === 'control' || role === 'owner')
       ? [{ path: '/admin/cowork', label: 'Cowork', icon: '💻' }]
       : []),
     ...(role === 'owner'
@@ -26,10 +26,10 @@ export default function BottomNav() {
           { path: '/admin/stats', label: 'Stats', icon: '📈' },
         ]
       : []),
-    ...(secciones.cineclub && role === 'owner'
+    ...(enPanel(secciones.cineclub) && role === 'owner'
       ? [{ path: '/admin/cineclub', label: 'Cineclub', icon: '🎬' }]
       : []),
-    ...(secciones.barra ? [{ path: '/admin/barra', label: 'Barra', icon: '🍺' }] : []),
+    ...(enPanel(secciones.barra) ? [{ path: '/admin/barra', label: 'Barra', icon: '🍺' }] : []),
     { path: '/admin/entradas', label: 'Entradas', icon: '🎫' },
   ]
 

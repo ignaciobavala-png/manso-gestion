@@ -1,75 +1,111 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
-import { useVenueConfig, sincronizarVenueConfig } from '../../store/useVenueConfig'
+import { useVenueConfig, sincronizarVenueConfig, type Visibilidad } from '../../store/useVenueConfig'
 
 /**
- * Secciones del panel y de la web pública, prendidas y apagadas a mano.
+ * Cuánto se ve cada sección, en el panel y afuera.
  *
- * Apagar nunca borra nada ni cierra la ruta: la sección desaparece de la
- * navegación y listo. Es para sacar del medio lo que todavía no se usa sin
- * tener que decidir si se elimina.
+ * Tres estados en escalera en vez de dos perillas sueltas: así no existe el
+ * estado inválido "público pero sin panel". El del medio, "Solo panel", es el
+ * que permite armar una sección con tranquilidad — se ve adentro y, para
+ * previsualizarla, su página pública responde a quien tenga sesión de staff.
+ *
+ * Apagar nunca borra nada ni cierra la ruta.
  */
 
-type Campo = 'barra_activa' | 'cineclub_activo' | 'cowork_activo'
+type Seccion = 'barra' | 'cineclub' | 'cowork'
 
-interface Perilla {
-  campo: Campo
+interface Config {
+  seccion: Seccion
   nombre: string
-  donde: string
-  prendida: string
-  apagada: string
+  /** Columna nueva y booleano viejo, que se siguen escribiendo juntos. */
+  columna: string
+  columnaLegacy: string
+  /** Barra no tiene página pública. */
+  tienePublico: boolean
+  descripciones: Record<Visibilidad, string>
 }
 
-const PERILLAS: Perilla[] = [
+const SECCIONES: Config[] = [
   {
-    campo: 'barra_activa',
-    nombre: 'Barra',
-    donde: 'Panel',
-    prendida: 'Visible en la navegación del panel',
-    apagada: 'Oculta — las ventas y el stock siguen guardados',
-  },
-  {
-    campo: 'cowork_activo',
+    seccion: 'cowork',
     nombre: 'Cowork Day',
-    donde: 'Panel y web pública',
-    prendida: 'Visible: se puede reservar el pase por día',
-    apagada: 'Oculto — nadie ve la sección ni las fechas',
+    columna: 'cowork_visibilidad',
+    columnaLegacy: 'cowork_activo',
+    tienePublico: true,
+    descripciones: {
+      oculto: 'No se ve en ningún lado',
+      interno: 'Se ve en el panel. Afuera, sólo para quien tenga sesión',
+      publico: 'Cualquiera puede ver las fechas y reservar',
+    },
   },
   {
-    campo: 'cineclub_activo',
+    seccion: 'cineclub',
     nombre: 'Cineclub',
-    donde: 'Web pública',
-    prendida: 'Visible: se puede votar la próxima película',
-    apagada: 'Oculto — las votaciones quedan guardadas',
+    columna: 'cineclub_visibilidad',
+    columnaLegacy: 'cineclub_activo',
+    tienePublico: true,
+    descripciones: {
+      oculto: 'No se ve en ningún lado',
+      interno: 'Se ve en el panel. Afuera, sólo para quien tenga sesión',
+      publico: 'Cualquiera puede votar la próxima película',
+    },
+  },
+  {
+    seccion: 'barra',
+    nombre: 'Barra',
+    columna: 'barra_visibilidad',
+    columnaLegacy: 'barra_activa',
+    tienePublico: false,
+    descripciones: {
+      oculto: 'Fuera de la navegación. Las ventas y el stock quedan guardados',
+      interno: 'Visible en el panel',
+      publico: '',
+    },
   },
 ]
 
+const ETIQUETAS: Record<Visibilidad, string> = {
+  oculto: 'Oculto',
+  interno: 'Solo panel',
+  publico: 'Público',
+}
+
 export default function Secciones() {
-  const [guardando, setGuardando] = useState<Campo | null>(null)
+  const [guardando, setGuardando] = useState<Seccion | null>(null)
   const [error, setError] = useState('')
 
   // El estado sale del store compartido, que escucha venue_config en vivo:
   // así el tab de la nav aparece o desaparece en el momento, sin recargar.
   useEffect(() => { sincronizarVenueConfig() }, [])
   const cargado = useVenueConfig(s => s.cargado)
-  const estado: Record<Campo, boolean> = {
-    barra_activa: useVenueConfig(s => s.barraActiva),
-    cineclub_activo: useVenueConfig(s => s.cineclubActivo),
-    cowork_activo: useVenueConfig(s => s.coworkActivo),
+  const estado: Record<Seccion, Visibilidad> = {
+    barra: useVenueConfig(s => s.barra),
+    cineclub: useVenueConfig(s => s.cineclub),
+    cowork: useVenueConfig(s => s.cowork),
   }
 
-  const alternar = async (campo: Campo) => {
+  const cambiar = async (config: Config, valor: Visibilidad) => {
     if (!cargado || guardando) return
-    const nuevo = !estado[campo]
-    setGuardando(campo)
+    if (estado[config.seccion] === valor) return
+
+    setGuardando(config.seccion)
     setError('')
 
+    // Se escribe también el booleano viejo mientras producción pueda estar
+    // corriendo el deploy anterior, que es lo único que esa versión sabe
+    // leer. Sin esto, cambiar el estado desde acá no se vería allá.
+    const cambios: Record<string, unknown> = {
+      [config.columna]: valor,
+      [config.columnaLegacy]: config.tienePublico ? valor === 'publico' : valor !== 'oculto',
+    }
+
     // Con .select() se sabe si la fila se tocó de verdad. Sin esto, un UPDATE
-    // que RLS deja en cero filas vuelve sin error: la perilla se dibujaba
-    // prendida y al recargar estaba apagada otra vez.
+    // que RLS deja en cero filas vuelve sin error: la pantalla se dibujaba
+    // como si hubiera guardado y al recargar estaba todo como antes.
     const { data, error: err } = await supabase
       .from('venue_config')
-      .update({ [campo]: nuevo })
+      .update(cambios)
       .eq('id', 1)
       .select('id')
 
@@ -88,40 +124,54 @@ export default function Secciones() {
       <div>
         <h3 className="text-white font-semibold text-lg">Secciones</h3>
         <p className="text-gray-500 text-sm mt-1">
-          Qué se ve y qué no, en el panel y en la web pública. Apagar una
-          sección no borra nada: los datos quedan y vuelven al encenderla.
+          Qué se ve y qué no. <span className="text-gray-400">Solo panel</span> te
+          deja trabajar en una sección sin que el público la vea: aparece acá
+          adentro y su página se abre sólo si tenés la sesión iniciada.
         </p>
       </div>
 
       <div className="space-y-3">
-        {PERILLAS.map(p => {
-          const prendida = estado[p.campo] === true
+        {SECCIONES.map(config => {
+          const actual = estado[config.seccion]
+          const opciones: Visibilidad[] = config.tienePublico
+            ? ['oculto', 'interno', 'publico']
+            : ['oculto', 'interno']
+
           return (
-            <button
-              key={p.campo}
-              onClick={() => alternar(p.campo)}
-              disabled={!cargado || guardando !== null}
-              className="w-full flex items-center justify-between bg-white/10 hover:bg-white/20 disabled:opacity-60 rounded-xl px-4 py-3.5 transition-colors text-left"
+            <div
+              key={config.seccion}
+              className="bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 space-y-3"
             >
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="text-white text-sm font-medium">{p.nombre}</p>
-                  <span className="text-[10px] uppercase tracking-widest text-gray-500 border border-white/15 rounded-full px-2 py-0.5">
-                    {p.donde}
+              <div className="flex items-baseline justify-between gap-3">
+                <p className="text-white text-sm font-medium">{config.nombre}</p>
+                {!config.tienePublico && (
+                  <span className="text-[10px] uppercase tracking-widest text-gray-500">
+                    sin página pública
                   </span>
-                </div>
-                <p className="text-gray-500 text-sm mt-0.5">
-                  {!cargado ? 'Cargando...' : prendida ? p.prendida : p.apagada}
-                </p>
+                )}
               </div>
-              <span
-                className={`w-11 h-6 rounded-full flex-shrink-0 flex items-center px-0.5 transition-colors ${
-                  prendida ? 'bg-emerald-600 justify-end' : 'bg-white/20 justify-start'
-                }`}
-              >
-                <span className="w-5 h-5 rounded-full bg-white block" />
-              </span>
-            </button>
+
+              <div className="flex rounded-xl overflow-hidden border border-white/20 bg-neutral-900/80">
+                {opciones.map(opcion => (
+                  <button
+                    key={opcion}
+                    onClick={() => cambiar(config, opcion)}
+                    disabled={!cargado || guardando !== null}
+                    className={`flex-1 py-2.5 text-sm font-medium transition-colors disabled:opacity-60 ${
+                      actual === opcion
+                        ? 'bg-emerald-600 text-white'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    {ETIQUETAS[opcion]}
+                  </button>
+                ))}
+              </div>
+
+              <p className="text-gray-500 text-sm">
+                {!cargado ? 'Cargando...' : config.descripciones[actual]}
+              </p>
+            </div>
           )
         })}
       </div>
@@ -129,9 +179,9 @@ export default function Secciones() {
       {error && <p className="text-red-400 text-sm">{error}</p>}
 
       <p className="text-gray-600 text-xs leading-relaxed">
-        Los cambios se aplican al instante, también en el celular de quien
-        tenga el panel abierto. Apagar una sección no cierra su dirección:
-        quien tenga el link guardado sigue entrando.
+        Los cambios se aplican al instante, también en el celular de quien tenga
+        el panel abierto. Nada de esto borra datos, y ocultar una sección no
+        cierra su dirección: quien tenga el link guardado sigue entrando.
       </p>
     </div>
   )

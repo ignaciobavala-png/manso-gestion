@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import Background from '../../components/Background'
-import { useCineclubActivo, useCoworkActivo } from '../../hooks/useSeccionPublica'
+import { useSecciones, enPanel } from '../../hooks/useSeccionPublica'
 
 const PAGES = [
   {
@@ -37,14 +37,19 @@ const PAGES = [
 
 export default function VistasPublicas() {
   const navigate = useNavigate()
-  const { activo: cineclubActivo } = useCineclubActivo()
-  const { activo: coworkActivo } = useCoworkActivo()
+  const { secciones } = useSecciones()
 
-  // Si la sección está apagada no es una vista pública: no se lista.
+  // Se listan las que no estén ocultas. En "Solo panel" la página se abre
+  // igual —hay sesión de staff— y por eso vale mostrarla acá: es justamente
+  // la pantalla desde donde se la va a ir a mirar mientras se arma.
+  const visibilidadDe = (path: string) =>
+    path === '/cineclub' ? secciones.cineclub
+    : path === '/cowork' ? secciones.cowork
+    : null
+
   const pages = PAGES.filter(p => {
-    if (p.path === '/cineclub') return cineclubActivo
-    if (p.path === '/cowork') return coworkActivo
-    return true
+    const v = visibilidadDe(p.path)
+    return v === null || enPanel(v)
   })
 
   const open = (path: string) => {
@@ -76,7 +81,14 @@ export default function VistasPublicas() {
             >
               <span className="text-3xl">{page.icon}</span>
               <div className="flex-1 min-w-0">
-                <p className="text-white font-semibold text-sm">{page.label}</p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-white font-semibold text-sm">{page.label}</p>
+                  {visibilidadDe(page.path) === 'interno' && (
+                    <span className="text-[10px] uppercase tracking-widest text-amber-400/90 border border-amber-700/50 bg-amber-950/40 rounded-full px-2 py-0.5">
+                      solo vos
+                    </span>
+                  )}
+                </div>
                 <p className="text-gray-400 text-sm mt-0.5">{page.description}</p>
                 <p className="text-emerald-600 text-sm mt-1 font-mono">{page.path}</p>
               </div>

@@ -32,7 +32,7 @@ const PAGES = [
 export default function Inicio() {
   const navigate = useNavigate()
   const { activo: cineclubActivo } = useCineclubActivo()
-  const { activo: coworkActivo } = useCoworkActivo()
+  const { activo: coworkActivo, soloStaff: coworkSoloStaff } = useCoworkActivo()
 
   // El Cineclub solo aparece si está encendido en Configuración.
   const pages = PAGES.filter(p => p.path !== '/cineclub' || cineclubActivo)
@@ -49,7 +49,9 @@ export default function Inicio() {
           >
             <span className="text-3xl">💻</span>
             <div className="flex-1 min-w-0">
-              <p className="text-emerald-950 text-[10px] font-bold uppercase tracking-widest">Nuevo</p>
+              <p className="text-emerald-950 text-[10px] font-bold uppercase tracking-widest">
+                {coworkSoloStaff ? 'Solo vos lo ves' : 'Nuevo'}
+              </p>
               <p className="text-white font-bold text-lg leading-tight">Cowork Day</p>
               <p className="text-white/90 text-sm mt-0.5">
                 un día de trabajo compartido con nuestra comunidad
