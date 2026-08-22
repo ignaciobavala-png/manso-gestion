@@ -133,12 +133,12 @@ export default function CoworkPresentacion() {
     )
   }
 
-  const campo = 'w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-emerald-500 transition-colors'
+  const campo = 'w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-400 focus:outline-none focus:border-emerald-500 transition-colors'
 
   return (
     <div className="space-y-6 max-w-2xl">
       <div>
-        <p className="text-gray-500 text-sm leading-relaxed">
+        <p className="text-gray-400 text-sm leading-relaxed">
           Lo que ve la gente al entrar a <span className="font-mono text-gray-400">/cowork</span>.
           Se guarda al instante, sin deploy.
         </p>
@@ -163,7 +163,7 @@ export default function CoworkPresentacion() {
             rows={3}
             className={`${campo} resize-y`}
           />
-          <p className="text-gray-600 text-xs mt-1">
+          <p className="text-gray-400 text-xs mt-1">
             Va debajo del título. Dos o tres líneas se leen mejor que un párrafo.
           </p>
         </div>
@@ -178,7 +178,7 @@ export default function CoworkPresentacion() {
             rows={2}
             className={`${campo} resize-y`}
           />
-          <p className="text-gray-600 text-xs mt-1">
+          <p className="text-gray-400 text-xs mt-1">
             Aparece dos veces: al pie de la landing y arriba de los campos de
             teléfono e Instagram al reservar.
           </p>
@@ -190,14 +190,14 @@ export default function CoworkPresentacion() {
         <label className="block text-sm font-medium text-gray-300">Portada</label>
         <div className="flex gap-4 items-start">
           <div
-            className="w-32 h-20 rounded-xl border border-white/15 flex-shrink-0 bg-neutral-900 flex items-center justify-center"
+            className="w-32 h-20 rounded-xl border border-white/25 flex-shrink-0 bg-neutral-900 flex items-center justify-center"
             style={borrador.portadaUrl ? {
               backgroundImage: `url(${borrador.portadaUrl})`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
             } : undefined}
           >
-            {!borrador.portadaUrl && <span className="text-gray-600 text-xs">sin portada</span>}
+            {!borrador.portadaUrl && <span className="text-gray-400 text-xs">sin portada</span>}
           </div>
           <div className="flex-1 space-y-2">
             <button
@@ -211,7 +211,7 @@ export default function CoworkPresentacion() {
               <button
                 onClick={() => guardar({ ...borrador, portadaUrl: null })}
                 disabled={subiendo || guardando}
-                className="w-full text-gray-500 hover:text-gray-300 disabled:opacity-60 text-sm underline underline-offset-2 transition-colors"
+                className="w-full text-gray-400 hover:text-gray-300 disabled:opacity-60 text-sm underline underline-offset-2 transition-colors"
               >
                 Quitar la portada
               </button>
@@ -235,14 +235,14 @@ export default function CoworkPresentacion() {
       <div className="space-y-3">
         <div>
           <label className="block text-sm font-medium text-gray-300">Qué incluye el pase</label>
-          <p className="text-gray-600 text-xs mt-1">
+          <p className="text-gray-400 text-xs mt-1">
             Las tarjetas de la landing. Si no cargás ninguna, la sección no
             aparece — mejor eso que poner algo que no es cierto.
           </p>
         </div>
 
         {borrador.incluye.map((tarjeta, i) => (
-          <div key={tarjeta.id} className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
+          <div key={tarjeta.id} className="bg-white/5 border border-white/20 rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2">
               <input
                 type="text"
@@ -317,7 +317,7 @@ export default function CoworkPresentacion() {
         <button
           onClick={() => guardar()}
           disabled={!tocado || guardando || subiendo}
-          className="flex-1 bg-emerald-600 hover:bg-emerald-500 disabled:bg-white/10 disabled:text-gray-600 text-white font-semibold py-3 rounded-xl transition-colors text-sm"
+          className="flex-1 bg-emerald-600 hover:bg-emerald-500 disabled:bg-white/10 disabled:text-gray-400 text-white font-semibold py-3 rounded-xl transition-colors text-sm"
         >
           {guardando ? 'Guardando...' : tocado ? 'Guardar cambios' : ok ? 'Guardado ✓' : 'Sin cambios'}
         </button>

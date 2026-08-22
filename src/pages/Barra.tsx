@@ -228,22 +228,22 @@ export default function Barra() {
         <div className="flex flex-col flex-grow bg-black">
           {/* Quick Stats */}
           <div className="grid grid-cols-4 gap-2 px-4 py-3 bg-gradient-to-b from-zinc-900/50 to-black border-b border-zinc-800">
-            <div className="bg-neutral-900 border border-white/10 rounded-xl px-3 py-2">
-              <p className="text-[10px] text-gray-500 uppercase tracking-wider">Productos</p>
+            <div className="bg-neutral-900 border border-white/20 rounded-xl px-3 py-2">
+              <p className="text-[10px] text-gray-400 uppercase tracking-wider">Productos</p>
               <p className="text-lg font-bold mt-0.5 text-white">{barraProducts.length}</p>
             </div>
-            <div className="bg-neutral-900 border border-white/10 rounded-xl px-3 py-2">
-              <p className="text-[10px] text-gray-500 uppercase tracking-wider">Stock</p>
+            <div className="bg-neutral-900 border border-white/20 rounded-xl px-3 py-2">
+              <p className="text-[10px] text-gray-400 uppercase tracking-wider">Stock</p>
               <p className="text-lg font-bold mt-0.5 text-white">
                 {barraProducts.reduce((sum, p) => sum + getDisplayStock(p), 0)}
               </p>
             </div>
-            <div className="bg-neutral-900 border border-white/10 rounded-xl px-3 py-2">
-              <p className="text-[10px] text-gray-500 uppercase tracking-wider">Ventas</p>
+            <div className="bg-neutral-900 border border-white/20 rounded-xl px-3 py-2">
+              <p className="text-[10px] text-gray-400 uppercase tracking-wider">Ventas</p>
               <p className="text-lg font-bold mt-0.5 text-white">{activeSales.length}</p>
             </div>
-            <div className="bg-neutral-900 border border-white/10 rounded-xl px-3 py-2">
-              <p className="text-[10px] text-gray-500 uppercase tracking-wider">Ingresos</p>
+            <div className="bg-neutral-900 border border-white/20 rounded-xl px-3 py-2">
+              <p className="text-[10px] text-gray-400 uppercase tracking-wider">Ingresos</p>
               <p className="text-lg font-bold mt-0.5 text-emerald-400">{formatCurrency(activeSales.reduce((sum, s) => sum + s.total, 0))}</p>
             </div>
           </div>
@@ -267,7 +267,7 @@ export default function Barra() {
                 ))}
               </div>
               <div className="relative flex-1 max-w-xs">
-                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
                 <input
@@ -275,7 +275,7 @@ export default function Barra() {
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   placeholder="Buscar..."
-                  className="w-full pl-9 pr-3 py-1.5 bg-neutral-900/80 border border-white/10 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-emerald-500"
+                  className="w-full pl-9 pr-3 py-1.5 bg-neutral-900/80 border border-white/20 rounded-lg text-white text-sm placeholder-gray-400 focus:outline-none focus:border-emerald-500"
                 />
               </div>
             </div>
@@ -284,7 +284,7 @@ export default function Barra() {
           {/* Product Grid */}
           <div className="px-4 py-4">
             {filteredProducts.length === 0 ? (
-              <p className="text-center text-gray-500 py-12 text-sm">
+              <p className="text-center text-gray-400 py-12 text-sm">
                 {searchQuery ? 'Sin resultados para esa búsqueda' : 'No hay productos en esta categoría'}
               </p>
             ) : (
@@ -300,7 +300,7 @@ export default function Barra() {
                     return (
                       <div
                         key={product.id}
-                        className="bg-neutral-900 border border-white/10 rounded-xl p-3"
+                        className="bg-neutral-900 border border-white/20 rounded-xl p-3"
                       >
                         <div className="flex items-start justify-between mb-2">
                           <div className="min-w-0 flex-1">
@@ -316,7 +316,7 @@ export default function Barra() {
                             <div className="flex items-center gap-1">
                               <button
                                 onClick={() => moveProduct(product.id, 'up')}
-                                className="w-5 h-4 flex items-center justify-center text-gray-600 hover:text-white transition-colors"
+                                className="w-5 h-4 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
                                 aria-label="Arriba"
                               >
                                 <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -325,7 +325,7 @@ export default function Barra() {
                               </button>
                               <button
                                 onClick={() => moveProduct(product.id, 'down')}
-                                className="w-5 h-4 flex items-center justify-center text-gray-600 hover:text-white transition-colors"
+                                className="w-5 h-4 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
                                 aria-label="Abajo"
                               >
                                 <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -343,7 +343,7 @@ export default function Barra() {
                                   productName: product.name
                                 })
                               }}
-                              className="w-5 h-5 flex items-center justify-center text-gray-600 hover:text-red-400 transition-colors"
+                              className="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-red-400 transition-colors"
                               aria-label="Eliminar"
                             >
                               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -359,7 +359,7 @@ export default function Barra() {
                           >
                             −
                           </button>
-                          <span className={`text-base font-bold w-7 text-center ${cart[product.id] ? 'text-emerald-400' : 'text-gray-600'}`}>
+                          <span className={`text-base font-bold w-7 text-center ${cart[product.id] ? 'text-emerald-400' : 'text-gray-400'}`}>
                             {cart[product.id] || 0}
                           </span>
                           <button
@@ -382,11 +382,11 @@ export default function Barra() {
             <h2 className="text-lg font-semibold text-white">Pedido</h2>
             {cartItems.map(({ product, qty }) => (
               <div key={product.id} className="flex items-center justify-between text-sm">
-                <span className="text-gray-300">{product.name} <span className="text-gray-500">×{qty}</span></span>
+                <span className="text-gray-300">{product.name} <span className="text-gray-400">×{qty}</span></span>
                 <span className="text-emerald-400 font-medium">{formatCurrency(product.price * qty)}</span>
               </div>
             ))}
-            <div className="flex items-center justify-between pt-2 border-t border-white/10">
+            <div className="flex items-center justify-between pt-2 border-t border-white/20">
               <span className="font-semibold text-white">Total</span>
               <span className="text-xl font-bold text-emerald-400">{formatCurrency(cartTotal)}</span>
             </div>
@@ -402,7 +402,7 @@ export default function Barra() {
               className={`p-4 rounded-xl border-2 transition-all ${
                 paymentMethod === 'efectivo'
                   ? 'bg-emerald-600/20 border-emerald-500 text-emerald-400'
-                  : 'bg-neutral-900/60 border-white/10 text-gray-300 hover:border-white/30'
+                  : 'bg-neutral-900/60 border-white/20 text-gray-300 hover:border-white/30'
               }`}
             >
               <div className="flex flex-col items-center gap-1">
@@ -415,7 +415,7 @@ export default function Barra() {
               className={`p-4 rounded-xl border-2 transition-all ${
                 paymentMethod === 'tarjeta'
                   ? 'bg-blue-600/20 border-blue-500 text-blue-400'
-                  : 'bg-neutral-900/60 border-white/10 text-gray-300 hover:border-white/30'
+                  : 'bg-neutral-900/60 border-white/20 text-gray-300 hover:border-white/30'
               }`}
             >
               <div className="flex flex-col items-center gap-1">
@@ -428,7 +428,7 @@ export default function Barra() {
               className={`p-4 rounded-xl border-2 transition-all ${
                 paymentMethod === 'transferencia'
                   ? 'bg-purple-600/20 border-purple-500 text-purple-400'
-                  : 'bg-neutral-900/60 border-white/10 text-gray-300 hover:border-white/30'
+                  : 'bg-neutral-900/60 border-white/20 text-gray-300 hover:border-white/30'
               }`}
             >
               <div className="flex flex-col items-center gap-1">
@@ -450,7 +450,7 @@ export default function Barra() {
             <button
               onClick={handleConfirmPurchase}
               disabled={cartItems.length === 0 || confirming}
-              className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:bg-white/10 disabled:text-gray-600 disabled:cursor-not-allowed text-white font-bold text-lg rounded-xl transition-colors"
+              className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:bg-white/10 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-bold text-lg rounded-xl transition-colors"
             >
               {confirming
                 ? 'Confirmando...'
@@ -466,12 +466,12 @@ export default function Barra() {
             <h2 className="text-xl font-semibold mb-6 text-white">Ventas Recientes</h2>
             <div className="space-y-3">
               {activeSales.length === 0 ? (
-                <p className="text-center text-gray-500 py-4">Sin ventas registradas</p>
+                <p className="text-center text-gray-400 py-4">Sin ventas registradas</p>
               ) : (
                 activeSales.slice(0, 10).map((sale) => {
                   const isConfirming = confirmingSaleDelete === sale.id
                   return (
-                    <div key={sale.id} className="bg-neutral-900 rounded-2xl border border-white/10 overflow-hidden">
+                    <div key={sale.id} className="bg-neutral-900 rounded-2xl border border-white/20 overflow-hidden">
                       <div className="flex items-center justify-between p-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 flex items-center justify-center bg-emerald-900 bg-opacity-30 text-emerald-400 rounded-full">
@@ -486,7 +486,7 @@ export default function Barra() {
                           <span className="text-lg font-bold text-emerald-400">{formatCurrency(sale.total)}</span>
                           <button
                             onClick={() => { setConfirmingSaleDelete(sale.id); }}
-                            className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-colors"
+                            className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-colors"
                             aria-label="Eliminar venta"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

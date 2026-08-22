@@ -141,7 +141,7 @@ export default function PagoRetorno() {
   return (
     <PublicLayout>
       <div className="flex-1 flex flex-col items-center justify-center px-5 pb-10">
-        <div className="max-w-sm w-full bg-black/50 backdrop-blur-md border border-white/15 rounded-3xl p-7 text-center space-y-4 shadow-2xl">
+        <div className="max-w-sm w-full bg-black/60 backdrop-blur-md border border-white/25 rounded-3xl p-7 text-center space-y-4 shadow-2xl">
 
           {estado === 'consultando' && (
             <>
@@ -213,7 +213,7 @@ export default function PagoRetorno() {
               <p className="text-gray-400 text-sm">
                 {detalle || 'Intentá de nuevo en un momento.'}
               </p>
-              <p className="text-gray-500 text-xs">
+              <p className="text-gray-400 text-xs">
                 Si ya pagaste, no vuelvas a hacerlo: la entrada se acredita sola
                 cuando Mercado Pago confirma, y aparece en "Mis entradas".
               </p>

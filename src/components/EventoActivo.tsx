@@ -157,13 +157,13 @@ export default function EventoActivo() {
       )}
 
       {/* Registros emitidos */}
-      <div className="bg-neutral-900 border border-white/10 rounded-2xl p-4 flex items-center justify-between">
+      <div className="bg-neutral-900 border border-white/20 rounded-2xl p-4 flex items-center justify-between">
         <div>
           <p className="text-gray-400 text-sm uppercase tracking-wider">QRs emitidos</p>
           <p className="text-white font-bold text-2xl mt-0.5">
             {registrationCount ?? '—'}
             {maxCap !== null && (
-              <span className="text-gray-500 font-normal text-base"> / {maxCap}</span>
+              <span className="text-gray-400 font-normal text-base"> / {maxCap}</span>
             )}
           </p>
         </div>
@@ -177,7 +177,7 @@ export default function EventoActivo() {
       {/* Capacidad máxima */}
       <div className="space-y-2">
         <label className="text-sm text-gray-400 uppercase tracking-wider block">
-          Capacidad máxima <span className="text-gray-600 normal-case">(dejá vacío para ilimitado)</span>
+          Capacidad máxima <span className="text-gray-400 normal-case">(dejá vacío para ilimitado)</span>
         </label>
         <div className="flex gap-2">
           <input
@@ -201,9 +201,9 @@ export default function EventoActivo() {
       {/* Alias / CBU del evento para entradas */}
       <div className="space-y-3 border-t border-zinc-800 pt-4">
         <h3 className="text-sm text-gray-400 uppercase tracking-wider">Alias de pago (entradas)</h3>
-        <p className="text-xs text-gray-600">Si no se especifica, se usará el alias general del venue.</p>
+        <p className="text-xs text-gray-400">Si no se especifica, se usará el alias general del venue.</p>
         <div>
-          <label className="text-xs text-gray-500 mb-1 block">Alias</label>
+          <label className="text-xs text-gray-400 mb-1 block">Alias</label>
           <input
             type="text"
             value={aliasPago}
@@ -213,7 +213,7 @@ export default function EventoActivo() {
           />
         </div>
         <div>
-          <label className="text-xs text-gray-500 mb-1 block">CBU</label>
+          <label className="text-xs text-gray-400 mb-1 block">CBU</label>
           <input
             type="text"
             value={cbuPago}

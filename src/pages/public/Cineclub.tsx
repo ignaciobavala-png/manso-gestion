@@ -276,7 +276,7 @@ export default function Cineclub() {
               <div
                 key={movie.id}
                 className={`flex flex-col rounded-2xl overflow-hidden border bg-black/40 backdrop-blur-sm transition-all ${
-                  isVoted ? 'border-emerald-500/50' : 'border-white/10'
+                  isVoted ? 'border-emerald-500/50' : 'border-white/20'
                 }`}
               >
                 {/* Flyer 3:4 */}
@@ -347,7 +347,7 @@ export default function Cineclub() {
 
                   <button
                     onClick={() => handleShare(movie.title, movie.id)}
-                    className="w-full py-2 rounded-xl text-xs font-semibold border border-white/15 text-white/70 hover:border-white/30 hover:text-white transition-all active:scale-95"
+                    className="w-full py-2 rounded-xl text-xs font-semibold border border-white/25 text-white/70 hover:border-white/30 hover:text-white transition-all active:scale-95"
                   >
                     {sharedId === movie.id ? '✓ Link copiado' : '↗ Compartir'}
                   </button>
@@ -367,7 +367,7 @@ export default function Cineclub() {
       {/* Modal email */}
       {pendingMovieId && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm px-4 pb-6 sm:pb-0">
-          <div className="w-full max-w-sm bg-neutral-900 border border-white/10 rounded-2xl p-6 space-y-4">
+          <div className="w-full max-w-sm bg-neutral-900 border border-white/20 rounded-2xl p-6 space-y-4">
             <div>
               <p className="text-white font-bold text-lg">Confirmá tu voto</p>
               <p className="text-gray-400 text-sm mt-1">
@@ -382,14 +382,14 @@ export default function Cineclub() {
                 onChange={e => { setEmailInput(e.target.value); setEmailError('') }}
                 onKeyDown={e => e.key === 'Enter' && confirmVote()}
                 autoFocus
-                className="w-full bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-emerald-500"
+                className="w-full bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-400 focus:outline-none focus:border-emerald-500"
               />
               {emailError && <p className="text-red-400 text-xs px-1">{emailError}</p>}
             </div>
             <div className="flex gap-3">
               <button
                 onClick={() => setPendingMovieId(null)}
-                className="flex-1 py-3 rounded-xl text-sm font-semibold border border-white/15 text-white/60 hover:text-white hover:border-white/30 transition-all"
+                className="flex-1 py-3 rounded-xl text-sm font-semibold border border-white/25 text-white/60 hover:text-white hover:border-white/30 transition-all"
               >
                 Cancelar
               </button>

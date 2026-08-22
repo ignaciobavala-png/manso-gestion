@@ -102,7 +102,7 @@ export default function Cowork() {
             <img
               src={landing.portadaUrl}
               alt=""
-              className="w-full rounded-2xl border border-white/15 object-cover max-h-56"
+              className="w-full rounded-2xl border border-white/25 object-cover max-h-56"
             />
           </div>
         )}
@@ -120,7 +120,7 @@ export default function Cowork() {
             {landing.incluye.map(item => (
               <div
                 key={item.id}
-                className="bg-black/50 backdrop-blur-md border border-white/15 rounded-2xl p-4"
+                className="bg-black/60 backdrop-blur-md border border-white/25 rounded-2xl p-4"
               >
                 <span className="text-2xl">{item.icono}</span>
                 <p className="text-white font-semibold text-sm mt-2">{item.titulo}</p>
@@ -134,7 +134,7 @@ export default function Cowork() {
           <h2 className="text-white font-bold text-lg mb-3">Próximas fechas</h2>
 
           {fechas.length === 0 ? (
-            <div className="bg-black/50 backdrop-blur-md border border-white/15 rounded-3xl p-6 text-center">
+            <div className="bg-black/60 backdrop-blur-md border border-white/25 rounded-3xl p-6 text-center">
               <p className="text-3xl">🗓️</p>
               <p className="text-white font-semibold text-sm mt-3">
                 No hay fechas abiertas por ahora
@@ -149,7 +149,7 @@ export default function Cowork() {
                 <button
                   key={f.id}
                   onClick={() => navigate(registroUrl(f))}
-                  className="w-full bg-black/50 hover:bg-black/60 backdrop-blur-md border border-white/15 hover:border-emerald-500/50 rounded-2xl px-5 py-4 flex items-center gap-4 transition-colors text-left"
+                  className="w-full bg-black/60 hover:bg-black/60 backdrop-blur-md border border-white/25 hover:border-emerald-500/50 rounded-2xl px-5 py-4 flex items-center gap-4 transition-colors text-left"
                 >
                   <div className="flex-1 min-w-0">
                     <p className="text-white font-semibold text-sm capitalize">
@@ -167,7 +167,7 @@ export default function Cowork() {
                     ) : (
                       <p className="text-emerald-400 font-bold text-sm">Gratis</p>
                     )}
-                    <p className="text-gray-500 text-xs mt-0.5">Reservar →</p>
+                    <p className="text-gray-400 text-xs mt-0.5">Reservar →</p>
                   </div>
                 </button>
               ))}
@@ -184,7 +184,7 @@ export default function Cowork() {
           </button>
         )}
 
-        <p className="text-gray-500 text-xs text-center max-w-sm mt-6 leading-relaxed">
+        <p className="text-gray-400 text-xs text-center max-w-sm mt-6 leading-relaxed">
           {landing.notaDatos}
         </p>
       </div>

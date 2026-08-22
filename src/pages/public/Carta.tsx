@@ -56,7 +56,7 @@ function AccordionGroup({ group }: { group: Group }) {
   }
 
   return (
-    <div ref={ref} className={`relative rounded-2xl ${!open ? 'p-[1.5px] overflow-hidden' : 'border border-white/10'}`}>
+    <div ref={ref} className={`relative rounded-2xl ${!open ? 'p-[1.5px] overflow-hidden' : 'border border-white/20'}`}>
       {!open && (
         <div
           className="absolute animate-spin pointer-events-none"
@@ -86,7 +86,7 @@ function AccordionGroup({ group }: { group: Group }) {
             {group.label}
           </span>
           <div className="absolute right-5 flex items-center gap-2">
-            <span className={`text-gray-500 text-sm transition-transform duration-200 inline-block ${open ? 'rotate-180' : ''}`}>
+            <span className={`text-gray-400 text-sm transition-transform duration-200 inline-block ${open ? 'rotate-180' : ''}`}>
               ▾
             </span>
           </div>
@@ -193,7 +193,7 @@ export default function Carta() {
         <div className="mb-8 px-6 w-full max-w-md mx-auto">
           <button
             onClick={copyAlias}
-            className="w-full bg-white/5 border border-white/10 hover:border-emerald-500/50 rounded-2xl px-4 py-4 text-center transition-all active:scale-95"
+            className="w-full bg-white/5 border border-white/20 hover:border-emerald-500/50 rounded-2xl px-4 py-4 text-center transition-all active:scale-95"
           >
             <p className="text-white/40 text-xs uppercase tracking-widest mb-1">Alias de pago</p>
             <p
@@ -210,7 +210,7 @@ export default function Carta() {
           <div className="space-y-3">
             {groups.length === 0 ? (
               <div className="text-center py-16">
-                <p className="text-gray-600 text-sm">No hay productos disponibles</p>
+                <p className="text-gray-400 text-sm">No hay productos disponibles</p>
               </div>
             ) : (
               groups.map(group => <AccordionGroup key={group.key} group={group} />)

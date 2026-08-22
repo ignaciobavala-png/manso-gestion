@@ -218,7 +218,7 @@ export default function Home() {
               className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
                 activeTab === 'operacion'
                   ? 'text-white border-b-2 border-emerald-500'
-                  : 'text-gray-500 hover:text-gray-300'
+                  : 'text-gray-400 hover:text-gray-300'
               }`}
             >
               Operación
@@ -228,7 +228,7 @@ export default function Home() {
               className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
                 activeTab === 'config'
                   ? 'text-white border-b-2 border-emerald-500'
-                  : 'text-gray-500 hover:text-gray-300'
+                  : 'text-gray-400 hover:text-gray-300'
               }`}
             >
               Configuración
@@ -238,7 +238,7 @@ export default function Home() {
               className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
                 activeTab === 'secciones'
                   ? 'text-white border-b-2 border-emerald-500'
-                  : 'text-gray-500 hover:text-gray-300'
+                  : 'text-gray-400 hover:text-gray-300'
               }`}
             >
               Secciones
@@ -270,7 +270,7 @@ export default function Home() {
                       {formatCurrency(balance)}
                     </p>
                   </div>
-                  <div className="text-sm text-gray-500">
+                  <div className="text-sm text-gray-400">
                     Actualizado en tiempo real
                   </div>
                 </div>
@@ -322,7 +322,7 @@ export default function Home() {
                         return (
                         <div
                           key={product.id}
-                          className="p-4 bg-neutral-900 rounded-2xl border border-white/10"
+                          className="p-4 bg-neutral-900 rounded-2xl border border-white/20"
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex-1">
@@ -390,7 +390,7 @@ export default function Home() {
                                   Precio: {formatCurrency(product.price)}
                                   <button
                                     onClick={() => startEditPrice(product.id, product.price)}
-                                    className="ml-1.5 inline-flex items-center text-gray-500 hover:text-emerald-400 transition-colors align-middle"
+                                    className="ml-1.5 inline-flex items-center text-gray-400 hover:text-emerald-400 transition-colors align-middle"
                                     aria-label="Editar precio"
                                   >
                                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -401,11 +401,11 @@ export default function Home() {
                               )}
                               {product.category === 'bebida' && (
                                 <div className="flex items-center gap-1.5 mt-1.5">
-                                  <span className="text-xs text-gray-600">Carta:</span>
+                                  <span className="text-xs text-gray-400">Carta:</span>
                                   <select
                                     value={product.subcategory || ''}
                                     onChange={e => updateProduct(product.id, { subcategory: e.target.value || null })}
-                                    className="text-xs bg-neutral-800 border border-white/10 rounded-lg px-2 py-0.5 text-gray-300 focus:outline-none focus:border-emerald-500 cursor-pointer"
+                                    className="text-xs bg-neutral-800 border border-white/20 rounded-lg px-2 py-0.5 text-gray-300 focus:outline-none focus:border-emerald-500 cursor-pointer"
                                   >
                                     <option value="">Vino</option>
                                     <option value="trago">Trago</option>
@@ -443,7 +443,7 @@ export default function Home() {
                             <div className="mt-2 ml-4 p-3 bg-indigo-950/20 border border-indigo-800/30 rounded-xl space-y-3">
                               <p className="text-xs text-indigo-300 font-medium">Porciones que rinde este producto</p>
                               {portions.length === 0 && (
-                                <p className="text-xs text-gray-500">Sin porciones configuradas.</p>
+                                <p className="text-xs text-gray-400">Sin porciones configuradas.</p>
                               )}
                               {portions.map(portion => (
                                 <div key={portion.id} className="flex items-center justify-between bg-black/30 rounded-lg px-3 py-2 border border-white/5">
@@ -454,7 +454,7 @@ export default function Home() {
                                   </div>
                                   <button
                                     onClick={() => handleDeletePortion(portion.id)}
-                                    className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-red-400 hover:bg-red-900/20 rounded transition-colors"
+                                    className="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-red-400 hover:bg-red-900/20 rounded transition-colors"
                                   >
                                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -507,7 +507,7 @@ export default function Home() {
                       )})}
                     </div>
 
-                    <div className="mt-6 border-t border-white/10 pt-4">
+                    <div className="mt-6 border-t border-white/20 pt-4">
                       <button
                         onClick={() => setShowNewProduct(!showNewProduct)}
                         className="flex items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 transition-colors font-medium"
@@ -585,19 +585,19 @@ export default function Home() {
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-                    <div className="bg-neutral-900 border border-white/10 rounded-2xl p-3 text-center">
+                    <div className="bg-neutral-900 border border-white/20 rounded-2xl p-3 text-center">
                       <p className="text-sm text-gray-400">Balance</p>
                       <p className="text-lg font-bold text-emerald-400">{formatCurrency(balance)}</p>
                     </div>
-                    <div className="bg-neutral-900 border border-white/10 rounded-2xl p-3 text-center">
+                    <div className="bg-neutral-900 border border-white/20 rounded-2xl p-3 text-center">
                       <p className="text-sm text-gray-400">Ventas barra</p>
                       <p className="text-lg font-bold text-white">{eventSales.length}</p>
                     </div>
-                    <div className="bg-neutral-900 border border-white/10 rounded-2xl p-3 text-center">
+                    <div className="bg-neutral-900 border border-white/20 rounded-2xl p-3 text-center">
                       <p className="text-sm text-gray-400">Entradas</p>
                       <p className="text-lg font-bold text-white">{eventTicketSales.length}</p>
                     </div>
-                    <div className="bg-neutral-900 border border-white/10 rounded-2xl p-3 text-center">
+                    <div className="bg-neutral-900 border border-white/20 rounded-2xl p-3 text-center">
                       <p className="text-sm text-gray-400">Recaudado</p>
                       <p className="text-lg font-bold text-emerald-400">
                         {formatCurrency(
@@ -643,17 +643,17 @@ export default function Home() {
 
               {/* Quick Stats */}
               <div className="border-t-2 border-zinc-800 grid grid-cols-1 sm:grid-cols-3 gap-4 p-6 sm:p-8 bg-neutral-950/50">
-                <div className="bg-neutral-900 border border-white/10 rounded-2xl p-4">
+                <div className="bg-neutral-900 border border-white/20 rounded-2xl p-4">
                   <p className="text-sm text-gray-400">Productos</p>
                   <p className="text-2xl font-bold mt-1 text-white">{products.length}</p>
                 </div>
-                <div className="bg-neutral-900 border border-white/10 rounded-2xl p-4">
+                <div className="bg-neutral-900 border border-white/20 rounded-2xl p-4">
                   <p className="text-sm text-gray-400">Stock Total</p>
                   <p className="text-2xl font-bold mt-1 text-white">
                     {products.reduce((sum, product) => sum + stockValues[product.id], 0)}
                   </p>
                 </div>
-                <div className="bg-neutral-900 border border-white/10 rounded-2xl p-4">
+                <div className="bg-neutral-900 border border-white/20 rounded-2xl p-4">
                   <p className="text-sm text-gray-400">Valor Stock</p>
                   <p className="text-2xl font-bold mt-1 text-emerald-400">
                     {formatCurrency(products.reduce((sum, product) => sum + (stockValues[product.id] * product.price), 0))}

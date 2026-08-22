@@ -139,7 +139,7 @@ export default function Cowork() {
           </button>
           <div>
             <h2 className="text-xl font-bold text-white">Cowork Day</h2>
-            <p className="text-gray-500 text-sm">Las fechas del pase y cómo se presenta</p>
+            <p className="text-gray-400 text-sm">Las fechas del pase y cómo se presenta</p>
           </div>
         </div>
 
@@ -158,7 +158,7 @@ export default function Cowork() {
           </div>
         )}
 
-        <div className="flex gap-1 mb-6 border-b border-white/10">
+        <div className="flex gap-1 mb-6 border-b border-white/20">
           {(['fechas', 'presentacion'] as Pestana[]).map(p => (
             <button
               key={p}
@@ -166,7 +166,7 @@ export default function Cowork() {
               className={`px-4 py-2 text-sm font-medium transition-colors ${
                 pestana === p
                   ? 'text-white border-b-2 border-emerald-500'
-                  : 'text-gray-500 hover:text-gray-300'
+                  : 'text-gray-400 hover:text-gray-300'
               }`}
             >
               {p === 'fechas' ? 'Fechas' : 'Presentación'}
@@ -184,12 +184,12 @@ export default function Cowork() {
             >
               ← Volver a las fechas
             </button>
-            <div className="bg-neutral-900 border border-white/10 rounded-2xl p-5">
+            <div className="bg-neutral-900 border border-white/20 rounded-2xl p-5">
               <EventCreator coworkPorDefecto onCreated={() => setCreando(false)} />
             </div>
           </div>
         ) : fechas.length === 0 ? (
-          <div className="bg-neutral-900 border border-white/10 rounded-2xl p-6 text-center">
+          <div className="bg-neutral-900 border border-white/20 rounded-2xl p-6 text-center">
             <p className="text-3xl">🗓️</p>
             <p className="text-white font-semibold text-sm mt-3">Todavía no hay ninguna fecha</p>
             <p className="text-gray-400 text-xs mt-1.5 max-w-sm mx-auto leading-relaxed">
@@ -213,7 +213,7 @@ export default function Cowork() {
                   className={`flex-shrink-0 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors border ${
                     f.id === elegidaId
                       ? 'bg-emerald-600 border-emerald-500 text-white'
-                      : 'bg-white/5 border-white/15 text-gray-300 hover:bg-white/10'
+                      : 'bg-white/5 border-white/25 text-gray-300 hover:bg-white/10'
                   }`}
                 >
                   {f.start_date
@@ -231,7 +231,7 @@ export default function Cowork() {
 
             {elegida && (
               <>
-                <div className="bg-neutral-900 border border-white/10 rounded-2xl p-5">
+                <div className="bg-neutral-900 border border-white/20 rounded-2xl p-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-white font-semibold">{elegida.name}</p>
@@ -249,38 +249,38 @@ export default function Cowork() {
 
                   <div className="grid grid-cols-3 gap-3 mt-4">
                     <div>
-                      <p className="text-gray-500 text-xs">Reservados</p>
+                      <p className="text-gray-400 text-xs">Reservados</p>
                       <p className="text-white font-bold text-xl">
                         {conteo?.vendidas ?? 0}
                         {elegida.max_capacity !== null && (
-                          <span className="text-gray-500 text-sm font-normal"> / {elegida.max_capacity}</span>
+                          <span className="text-gray-400 text-sm font-normal"> / {elegida.max_capacity}</span>
                         )}
                       </p>
                     </div>
                     <div>
-                      <p className="text-gray-500 text-xs">Pagando</p>
+                      <p className="text-gray-400 text-xs">Pagando</p>
                       <p className="text-white font-bold text-xl">{conteo?.reservadas ?? 0}</p>
                     </div>
                     <div>
-                      <p className="text-gray-500 text-xs">Rechazados</p>
+                      <p className="text-gray-400 text-xs">Rechazados</p>
                       <p className="text-white font-bold text-xl">{conteo?.rechazadas ?? 0}</p>
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-white/10">
+                  <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-white/20">
                     <span className={`text-xs px-2.5 py-1 rounded-full border ${
                       elegida.registrations_open
                         ? 'text-emerald-400 border-emerald-700/50 bg-emerald-950/40'
-                        : 'text-gray-400 border-white/15 bg-white/5'
+                        : 'text-gray-400 border-white/25 bg-white/5'
                     }`}>
                       {elegida.registrations_open ? 'Reservas abiertas' : 'Reservas cerradas'}
                     </span>
                     {elegida.is_paid && (
-                      <span className="text-xs px-2.5 py-1 rounded-full border text-gray-300 border-white/15 bg-white/5">
+                      <span className="text-xs px-2.5 py-1 rounded-full border text-gray-300 border-white/25 bg-white/5">
                         ${Number(elegida.regular_ticket_price).toLocaleString('es-AR')}
                       </span>
                     )}
-                    <span className="text-xs px-2.5 py-1 rounded-full border text-gray-300 border-white/15 bg-white/5">
+                    <span className="text-xs px-2.5 py-1 rounded-full border text-gray-300 border-white/25 bg-white/5">
                       {elegida.payment_mode === 'ambos'
                         ? 'Transferencia y Mercado Pago'
                         : elegida.payment_mode === 'mercadopago'
@@ -334,19 +334,19 @@ export default function Cowork() {
                   )}
                 </div>
 
-                <div className="bg-neutral-900 border border-white/10 rounded-2xl p-5">
+                <div className="bg-neutral-900 border border-white/20 rounded-2xl p-5">
                   <p className="text-white font-semibold text-sm">El formulario</p>
-                  <p className="text-gray-500 text-xs mt-1 leading-relaxed">
+                  <p className="text-gray-400 text-xs mt-1 leading-relaxed">
                     Lo que se le pide a quien reserva, antes de pagar. Se cambia
                     con "Editar".
                   </p>
                   <ul className="mt-3 space-y-1.5 text-sm">
-                    <li className="text-gray-300">· Email <span className="text-gray-600">— siempre</span></li>
-                    <li className="text-gray-300">· Nombre <span className="text-gray-600">— siempre</span></li>
-                    <li className={elegida.require_phone ? 'text-gray-300' : 'text-gray-600 line-through'}>
+                    <li className="text-gray-300">· Email <span className="text-gray-400">— siempre</span></li>
+                    <li className="text-gray-300">· Nombre <span className="text-gray-400">— siempre</span></li>
+                    <li className={elegida.require_phone ? 'text-gray-300' : 'text-gray-400 line-through'}>
                       · Teléfono
                     </li>
-                    <li className={elegida.require_instagram ? 'text-gray-300' : 'text-gray-600 line-through'}>
+                    <li className={elegida.require_instagram ? 'text-gray-300' : 'text-gray-400 line-through'}>
                       · Instagram
                     </li>
                   </ul>

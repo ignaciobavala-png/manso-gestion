@@ -155,7 +155,7 @@ export default function Stats() {
           { label: 'Egresos totales', value: totalEgresos, color: 'text-red-400' },
           { label: 'Inversión socios', value: totalInvARS, color: 'text-blue-400' },
         ].map(k => (
-          <div key={k.label} className="bg-white/5 rounded-2xl p-4 border border-white/10">
+          <div key={k.label} className="bg-white/5 rounded-2xl p-4 border border-white/20">
             <p className="text-gray-400 text-xs mb-1">{k.label}</p>
             <p className={`font-bold text-lg ${k.color}`}>{fmt(k.value)}</p>
           </div>
@@ -163,7 +163,7 @@ export default function Stats() {
       </div>
 
       {/* Ingresos vs Egresos */}
-      <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
+      <div className="bg-white/5 rounded-2xl p-4 border border-white/20">
         <h2 className="text-white font-semibold mb-4 text-sm">Ingresos vs Egresos por mes</h2>
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={porMes} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
@@ -179,7 +179,7 @@ export default function Stats() {
       </div>
 
       {/* Balance acumulado */}
-      <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
+      <div className="bg-white/5 rounded-2xl p-4 border border-white/20">
         <h2 className="text-white font-semibold mb-4 text-sm">Balance neto acumulado</h2>
         <ResponsiveContainer width="100%" height={180}>
           <LineChart data={balanceAcum} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
@@ -199,7 +199,7 @@ export default function Stats() {
       {/* Pie + Socios lado a lado en desktop, stacked en mobile */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Breakdown ingresos */}
-        <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
+        <div className="bg-white/5 rounded-2xl p-4 border border-white/20">
           <h2 className="text-white font-semibold mb-4 text-sm">Ingresos por categoría</h2>
           <ResponsiveContainer width="100%" height={200}>
             <PieChart>
@@ -215,7 +215,7 @@ export default function Stats() {
         </div>
 
         {/* Inversión por socio */}
-        <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
+        <div className="bg-white/5 rounded-2xl p-4 border border-white/20">
           <h2 className="text-white font-semibold mb-4 text-sm">Inversión por socio</h2>
           <div className="space-y-4 mt-2">
             {socioData.map(s => {
@@ -227,7 +227,7 @@ export default function Stats() {
                   <span className="text-gray-300 font-medium text-xs">{s.socio}</span>
                   <div>
                     <div className="flex justify-between text-xs mb-0.5">
-                      <span className="text-gray-500">ARS</span>
+                      <span className="text-gray-400">ARS</span>
                       <span className="text-gray-400">{fmt(s.ars)} · {pctARS.toFixed(1)}%</span>
                     </div>
                     <div className="w-full bg-white/10 rounded-full h-1.5">
@@ -237,7 +237,7 @@ export default function Stats() {
                   {s.usd > 0 && (
                     <div>
                       <div className="flex justify-between text-xs mb-0.5">
-                        <span className="text-gray-500">USD</span>
+                        <span className="text-gray-400">USD</span>
                         <span className="text-gray-400">u$s{s.usd.toLocaleString()} · {pctUSD.toFixed(1)}%</span>
                       </div>
                       <div className="w-full bg-white/10 rounded-full h-1.5">
@@ -252,7 +252,7 @@ export default function Stats() {
         </div>
       </div>
 
-      <p className="text-center text-gray-600 text-xs pb-4">
+      <p className="text-center text-gray-400 text-xs pb-4">
         Datos del Excel — nov 2025 a jun 2026 · Solo ARS (USD no incluido en totales)
       </p>
     </div>

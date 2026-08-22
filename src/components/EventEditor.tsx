@@ -140,7 +140,7 @@ export default function EventEditor({ event, onDone }: Props) {
   }
 
   return (
-    <div className="space-y-4 pt-4 border-t border-white/10">
+    <div className="space-y-4 pt-4 border-t border-white/20">
       {/* Nombre */}
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-2">Nombre del evento *</label>
@@ -163,7 +163,7 @@ export default function EventEditor({ event, onDone }: Props) {
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-1">Link del evento</label>
         <div className="flex items-center gap-2 bg-neutral-900/80 border border-white/20 rounded-xl px-4 py-3 focus-within:ring-2 focus-within:ring-emerald-500 focus-within:border-transparent">
-          <span className="text-gray-500 text-sm whitespace-nowrap">/registro/</span>
+          <span className="text-gray-400 text-sm whitespace-nowrap">/registro/</span>
           <input
             type="text"
             value={form.slug}
@@ -189,7 +189,7 @@ export default function EventEditor({ event, onDone }: Props) {
             Privado
           </button>
         </div>
-        {isPrivate && <p className="text-xs text-gray-500 mt-1">El evento no aparece en la cartelera pública.</p>}
+        {isPrivate && <p className="text-xs text-gray-400 mt-1">El evento no aparece en la cartelera pública.</p>}
       </div>
 
       {/* Entradas por persona */}
@@ -205,7 +205,7 @@ export default function EventEditor({ event, onDone }: Props) {
             1 por email
           </button>
         </div>
-        {oneTicketPerEmail && <p className="text-xs text-gray-500 mt-1">Cada email solo puede registrar una entrada.</p>}
+        {oneTicketPerEmail && <p className="text-xs text-gray-400 mt-1">Cada email solo puede registrar una entrada.</p>}
       </div>
 
       {/* Cowork Day */}
@@ -231,7 +231,7 @@ export default function EventEditor({ event, onDone }: Props) {
           </button>
         </div>
         {coworkDay && (
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-gray-400 mt-1">
             Sale en /cowork en vez de la cartelera de eventos, y pide teléfono e
             Instagram al reservar.
           </p>
@@ -278,7 +278,7 @@ export default function EventEditor({ event, onDone }: Props) {
             <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${acceptsWildcardQr ? 'translate-x-5' : ''}`} />
           </button>
         </div>
-        {acceptsWildcardQr && <p className="text-xs text-gray-500 mt-1">Los QR registrados en el evento "Frees para Manso" van a poder ingresar gratis a este evento.</p>}
+        {acceptsWildcardQr && <p className="text-xs text-gray-400 mt-1">Los QR registrados en el evento "Frees para Manso" van a poder ingresar gratis a este evento.</p>}
       </div>
 
       {/* Tipo de entrada */}
@@ -335,7 +335,7 @@ export default function EventEditor({ event, onDone }: Props) {
                 </button>
               ))}
             </div>
-            <p className="text-xs text-gray-500 mt-2">
+            <p className="text-xs text-gray-400 mt-2">
               {paymentMode === 'transferencia'
                 ? 'El asistente transfiere y sube el comprobante. Hay que verificar cada entrada a mano.'
                 : paymentMode === 'mercadopago'
@@ -360,7 +360,7 @@ export default function EventEditor({ event, onDone }: Props) {
                 />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">%</span>
               </div>
-              <p className="text-xs text-gray-500 mt-2">
+              <p className="text-xs text-gray-400 mt-2">
                 {previewRecargo
                   ? <>La entrada sale <span className="text-white font-medium">${previewRecargo.conRecargo}</span> y entran <span className="text-white font-medium">${previewRecargo.neto}</span> netos, descontada la comisión de Mercado Pago (~4,3%).</>
                   : <>Mercado Pago descuenta alrededor del 4,3% de cada venta. Dejalo en 0 para absorberlo, o cargá un porcentaje para trasladarlo al precio.</>}

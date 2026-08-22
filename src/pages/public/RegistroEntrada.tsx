@@ -122,7 +122,7 @@ function Cartelera() {
               <button
                 key={event.id}
                 onClick={() => navigate(event.slug ? `/registro/${event.slug}` : `/registro?event=${event.id}`)}
-                className="group flex flex-col rounded-2xl overflow-hidden border border-white/10 bg-black/40 backdrop-blur-sm hover:border-emerald-500/50 transition-all active:scale-95 text-left"
+                className="group flex flex-col rounded-2xl overflow-hidden border border-white/20 bg-black/40 backdrop-blur-sm hover:border-emerald-500/50 transition-all active:scale-95 text-left"
               >
                 <div className="w-full relative" style={{ paddingBottom: '125%' }}>
                   {event.flyer_url ? (
@@ -508,7 +508,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
                 Entrada general · ${ticketPrice.toLocaleString('es-AR')}
               </p>
               {!pagandoConMp && (
-                <div className="inline-block bg-white/5 border border-white/10 rounded-xl px-5 py-2.5">
+                <div className="inline-block bg-white/5 border border-white/20 rounded-xl px-5 py-2.5">
                   <span className="text-white font-bold text-sm">Alias: </span>
                   <span className="text-white font-mono font-semibold tracking-wide">{activeEvent.ticket_alias_pago || venueConfig?.alias_pago || 'MANSO.CLUB'}</span>
                 </div>
@@ -528,7 +528,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
         </div>
 
         <div className="max-w-sm w-full mx-auto">
-          <div className="bg-black/50 backdrop-blur-md border border-white/15 rounded-3xl p-6 space-y-5 shadow-2xl">
+          <div className="bg-black/60 backdrop-blur-md border border-white/25 rounded-3xl p-6 space-y-5 shadow-2xl">
             <div>
               <h3 className="text-white font-bold text-xl">Reservá tu lugar</h3>
               <p className="text-gray-300 text-sm mt-1.5">
@@ -588,7 +588,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
               )}
 
               {activeEvent.cowork_day && (activeEvent.require_instagram || activeEvent.require_phone) && (
-                <div className="flex items-start gap-3 p-3 bg-white/5 border border-white/15 rounded-2xl">
+                <div className="flex items-start gap-3 p-3 bg-white/5 border border-white/25 rounded-2xl">
                   <span className="text-xl leading-none">👋</span>
                   <p className="text-gray-300 text-xs leading-relaxed">
                     {coworkLanding.notaDatos}
@@ -629,7 +629,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
 
               {activeEvent.is_paid && (
                 <>
-                  <div className="border-t border-white/10" />
+                  <div className="border-t border-white/20" />
 
                   {/* Selector visible sólo cuando el evento acepta las dos vías */}
                   {aceptaMp && aceptaTransferencia && (
@@ -642,7 +642,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
                           className={`rounded-2xl py-3 px-3 text-sm font-semibold transition-all active:scale-95 border ${
                             metodoPago === 'transferencia'
                               ? 'bg-emerald-600 border-emerald-500 text-white'
-                              : 'bg-white/5 border-white/15 text-gray-300 hover:bg-white/10'
+                              : 'bg-white/5 border-white/25 text-gray-300 hover:bg-white/10'
                           }`}
                         >
                           Transferencia
@@ -653,7 +653,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
                           className={`rounded-2xl py-3 px-3 text-sm font-semibold transition-all active:scale-95 border ${
                             metodoPago === 'mercadopago'
                               ? 'bg-emerald-600 border-emerald-500 text-white'
-                              : 'bg-white/5 border-white/15 text-gray-300 hover:bg-white/10'
+                              : 'bg-white/5 border-white/25 text-gray-300 hover:bg-white/10'
                           }`}
                         >
                           Mercado Pago
@@ -706,7 +706,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
                   )}
 
                   {pagandoConMp && (
-                    <div className="flex items-start gap-3 p-3 bg-white/5 border border-white/15 rounded-2xl">
+                    <div className="flex items-start gap-3 p-3 bg-white/5 border border-white/25 rounded-2xl">
                       <span className="text-xl leading-none">🔒</span>
                       <p className="text-gray-300 text-xs leading-relaxed">
                         Te vamos a llevar a Mercado Pago. Apenas se acredite el
@@ -783,7 +783,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
                 <button
                   type="submit"
                   disabled={submitting || !email.trim() || attendeeCount === 0 || (requiereComprobante && !receiptUrl) || (activeEvent.require_instagram && !instagram.trim()) || (activeEvent.require_phone && !phone.trim())}
-                  className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-white/10 disabled:text-gray-600 text-white font-semibold py-4 rounded-2xl transition-all active:scale-95 text-sm"
+                  className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-white/10 disabled:text-gray-400 text-white font-semibold py-4 rounded-2xl transition-all active:scale-95 text-sm"
                 >
                   {submitting
                     ? (pagandoConMp ? 'Redirigiendo a Mercado Pago...' : 'Generando entradas...')
@@ -816,7 +816,7 @@ function FormSkeleton() {
           <div className="h-8 w-48 bg-white/10 rounded-lg mx-auto" />
         </div>
         <div className="max-w-sm w-full mx-auto">
-          <div className="rounded-3xl p-6 space-y-5 border border-white/10 bg-neutral-900">
+          <div className="rounded-3xl p-6 space-y-5 border border-white/20 bg-neutral-900">
             <div className="h-6 w-36 bg-white/10 rounded" />
             <div className="h-4 w-56 bg-white/10 rounded" />
             <div className="h-12 w-full bg-white/10 rounded-2xl" />

@@ -123,7 +123,7 @@ export default function Secciones() {
     <div className="max-w-2xl space-y-6">
       <div>
         <h3 className="text-white font-semibold text-lg">Secciones</h3>
-        <p className="text-gray-500 text-sm mt-1">
+        <p className="text-gray-400 text-sm mt-1">
           Qué se ve y qué no. <span className="text-gray-400">Solo panel</span> te
           deja trabajar en una sección sin que el público la vea: aparece acá
           adentro y su página se abre sólo si tenés la sesión iniciada.
@@ -140,12 +140,12 @@ export default function Secciones() {
           return (
             <div
               key={config.seccion}
-              className="bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 space-y-3"
+              className="bg-white/5 border border-white/20 rounded-xl px-4 py-3.5 space-y-3"
             >
               <div className="flex items-baseline justify-between gap-3">
                 <p className="text-white text-sm font-medium">{config.nombre}</p>
                 {!config.tienePublico && (
-                  <span className="text-[10px] uppercase tracking-widest text-gray-500">
+                  <span className="text-[10px] uppercase tracking-widest text-gray-400">
                     sin página pública
                   </span>
                 )}
@@ -168,7 +168,7 @@ export default function Secciones() {
                 ))}
               </div>
 
-              <p className="text-gray-500 text-sm">
+              <p className="text-gray-400 text-sm">
                 {!cargado ? 'Cargando...' : config.descripciones[actual]}
               </p>
             </div>
@@ -178,7 +178,7 @@ export default function Secciones() {
 
       {error && <p className="text-red-400 text-sm">{error}</p>}
 
-      <p className="text-gray-600 text-xs leading-relaxed">
+      <p className="text-gray-400 text-xs leading-relaxed">
         Los cambios se aplican al instante, también en el celular de quien tenga
         el panel abierto. Nada de esto borra datos, y ocultar una sección no
         cierra su dirección: quien tenga el link guardado sigue entrando.

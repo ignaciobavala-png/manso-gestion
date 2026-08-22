@@ -28,7 +28,7 @@ export default function Main({ setCurrentPage }: MainProps): React.JSX.Element {
         <div className="space-y-4">
           <button
             onClick={() => handleNavigation('home')}
-            className="w-full bg-black/50 backdrop-blur-md border border-white/10 hover:bg-white/10 text-white font-medium py-6 px-8 rounded-2xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full bg-black/60 backdrop-blur-md border border-white/20 hover:bg-white/10 text-white font-medium py-6 px-8 rounded-2xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
           >
             Control
           </button>

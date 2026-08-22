@@ -364,14 +364,14 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-emerald-500" />
             </div>
           ) : rows.length === 0 ? (
-            <div className="text-center text-gray-500 py-12 text-sm">
+            <div className="text-center text-gray-400 py-12 text-sm">
               Sin registros para este evento aún.
             </div>
           ) : (
             <>
               <div className="flex gap-2 mb-4">
-                <div className="flex-1 flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2">
-                  <svg className="w-4 h-4 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex-1 flex items-center gap-2 bg-white/5 border border-white/20 rounded-xl px-3 py-2">
+                  <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
                   </svg>
                   <input
@@ -379,10 +379,10 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     placeholder="Buscar nombre o email..."
-                    className="flex-1 bg-transparent text-white text-sm placeholder-gray-500 outline-none"
+                    className="flex-1 bg-transparent text-white text-sm placeholder-gray-400 outline-none"
                   />
                   {search && (
-                    <button onClick={() => setSearch('')} className="text-gray-500 hover:text-white transition-colors text-xs">✕</button>
+                    <button onClick={() => setSearch('')} className="text-gray-400 hover:text-white transition-colors text-xs">✕</button>
                   )}
                 </div>
                 <button
@@ -391,7 +391,7 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
                   className={`flex-shrink-0 px-3 py-2 rounded-xl border text-xs font-medium transition-colors ${
                     sortAlpha
                       ? 'bg-emerald-700/40 border-emerald-600/50 text-emerald-300'
-                      : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'
+                      : 'bg-white/5 border-white/20 text-gray-400 hover:text-white'
                   }`}
                 >
                   A–Z
@@ -399,15 +399,15 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
               </div>
 
               <div className="flex gap-3 mb-4 flex-wrap">
-                <div className="bg-neutral-900 border border-white/10 rounded-xl px-3 py-1.5">
+                <div className="bg-neutral-900 border border-white/20 rounded-xl px-3 py-1.5">
                   <span className="text-gray-400 text-xs">Vendidas: </span>
                   <span className="text-white text-xs font-semibold">{vendidas.length}</span>
                 </div>
-                <div className="bg-neutral-900 border border-white/10 rounded-xl px-3 py-1.5">
+                <div className="bg-neutral-900 border border-white/20 rounded-xl px-3 py-1.5">
                   <span className="text-gray-400 text-xs">Ingresaron: </span>
                   <span className="text-emerald-400 text-xs font-semibold">{ingresados}</span>
                 </div>
-                <div className="bg-neutral-900 border border-white/10 rounded-xl px-3 py-1.5">
+                <div className="bg-neutral-900 border border-white/20 rounded-xl px-3 py-1.5">
                   <span className="text-gray-400 text-xs">Pendientes: </span>
                   <span className="text-amber-400 text-xs font-semibold">{pendientes}</span>
                 </div>
@@ -418,7 +418,7 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
                   </div>
                 )}
                 {conComprobante > 0 && (
-                  <div className="bg-neutral-900 border border-white/10 rounded-xl px-3 py-1.5">
+                  <div className="bg-neutral-900 border border-white/20 rounded-xl px-3 py-1.5">
                     <span className="text-gray-400 text-xs">Con comprobante: </span>
                     <span className="text-white text-xs font-semibold">{conComprobante}</span>
                   </div>
@@ -441,7 +441,7 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
 
               <div className="space-y-2 max-h-96 overflow-y-auto">
                 {displayRows.length === 0 && (
-                  <p className="text-center text-gray-500 py-8 text-sm">Sin resultados para "{search}"</p>
+                  <p className="text-center text-gray-400 py-8 text-sm">Sin resultados para "{search}"</p>
                 )}
                 {displayRows.map(r => {
                   const isPending = !r.used_at && !r.payment_verified
@@ -456,7 +456,7 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
                   return (
                     <div
                       key={r.id}
-                      className={`bg-neutral-900 rounded-2xl px-4 py-3 flex flex-col gap-2 border ${r.is_banned ? 'border-red-700/60' : 'border-white/10'}`}
+                      className={`bg-neutral-900 rounded-2xl px-4 py-3 flex flex-col gap-2 border ${r.is_banned ? 'border-red-700/60' : 'border-white/20'}`}
                     >
                       <div className="flex items-center gap-3 min-w-0">
                         {r.signedReceiptUrl ? (
@@ -473,12 +473,12 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
                             />
                           </a>
                         ) : r.receipt_url ? (
-                          <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
-                            <span className="text-gray-600 text-base">🖼</span>
+                          <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white/5 border border-white/20 flex items-center justify-center">
+                            <span className="text-gray-400 text-base">🖼</span>
                           </div>
                         ) : (
-                          <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
-                            <span className="text-gray-600 text-base">👤</span>
+                          <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white/5 border border-white/20 flex items-center justify-center">
+                            <span className="text-gray-400 text-base">👤</span>
                           </div>
                         )}
 
@@ -491,7 +491,7 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
                           {r.phone && (
                             <p className="text-gray-400 text-xs truncate">{r.phone}</p>
                           )}
-                          <p className="text-gray-600 text-xs mt-0.5">
+                          <p className="text-gray-400 text-xs mt-0.5">
                             {new Date(r.registered_at).toLocaleString('es-AR', {
                               day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
                             })}

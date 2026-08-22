@@ -28,7 +28,7 @@ export default function Background({ children, className = '', backgroundImage }
           backgroundPosition: 'center',
         }}
       />
-      <div className="fixed inset-0 bg-black/70 pointer-events-none z-0" />
+      <div className="fixed inset-0 bg-black/75 pointer-events-none z-0" />
       <div className="relative z-10 flex flex-col flex-grow w-full">
         {children}
       </div>

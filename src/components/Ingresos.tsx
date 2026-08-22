@@ -91,7 +91,7 @@ export default function Ingresos() {
             </div>
 
             {/* Payment Method Breakdown */}
-            <div className="bg-neutral-900 border border-white/10 rounded-2xl p-4">
+            <div className="bg-neutral-900 border border-white/20 rounded-2xl p-4">
               <p className="text-sm font-medium text-gray-300 mb-3">Ventas por Método de Pago</p>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -120,7 +120,7 @@ export default function Ingresos() {
           </div>
 
           {/* Ticket Prices Info */}
-          <div className="bg-neutral-900 border border-white/10 rounded-2xl p-4">
+          <div className="bg-neutral-900 border border-white/20 rounded-2xl p-4">
             <p className="text-sm font-medium text-gray-300 mb-3">Precios de Entradas</p>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex items-center justify-between">
@@ -169,7 +169,7 @@ export default function Ingresos() {
                     </div>
                   )
                 }) : (
-                  <p className="text-sm text-gray-500 text-center py-2">Sin ventas recientes</p>
+                  <p className="text-sm text-gray-400 text-center py-2">Sin ventas recientes</p>
                 )}
               </div>
             </div>
@@ -191,7 +191,7 @@ export default function Ingresos() {
                     <span className="text-sm font-bold text-emerald-400">{formatCurrency(ticket.price)}</span>
                   </div>
                 )) : (
-                  <p className="text-sm text-gray-500 text-center py-2">Sin tickets recientes</p>
+                  <p className="text-sm text-gray-400 text-center py-2">Sin tickets recientes</p>
                 )}
               </div>
             </div>

@@ -189,21 +189,21 @@ function TicketCard({ ticket, isFinished = false }: { ticket: TicketData; isFini
   }
 
   return (
-    <div className={`backdrop-blur-md rounded-3xl overflow-hidden border ${isFinished ? 'bg-black/40 border-white/5' : 'bg-black/60 border-white/10'}`}>
+    <div className={`backdrop-blur-md rounded-3xl overflow-hidden border ${isFinished ? 'bg-black/40 border-white/5' : 'bg-black/60 border-white/20'}`}>
       <div className={`h-1 bg-gradient-to-r ${isFinished ? 'from-neutral-700 via-neutral-600 to-neutral-700' : 'from-emerald-700 via-emerald-500 to-emerald-700'}`} />
 
       <div className="px-6 pt-5 pb-6 flex flex-col items-center">
-        <p className={`text-[10px] tracking-[3px] uppercase mb-1 ${isFinished ? 'text-gray-600' : 'text-gray-500'}`}>
+        <p className={`text-[10px] tracking-[3px] uppercase mb-1 ${isFinished ? 'text-gray-400' : 'text-gray-400'}`}>
           {isFinished ? 'evento finalizado' : 'entrada digital'}
         </p>
-        <p className={`text-sm font-medium mb-4 ${isFinished ? 'text-gray-500' : 'text-emerald-400'}`}>{ticket.event_name}</p>
+        <p className={`text-sm font-medium mb-4 ${isFinished ? 'text-gray-400' : 'text-emerald-400'}`}>{ticket.event_name}</p>
 
         <div className={`rounded-2xl p-3 shadow-2xl ${isFinished ? 'bg-white/80' : 'bg-white'}`}>
           <canvas ref={canvasRef} className="block opacity-60" style={{ width: 200, height: 200 }} />
         </div>
 
         <p className="text-white font-bold text-lg mt-4">{ticket.name}</p>
-        <p className="text-gray-500 text-xs mt-1">
+        <p className="text-gray-400 text-xs mt-1">
           {isFinished ? 'Este evento ya finalizó.' : 'Mostrá este QR en la puerta de ingreso.'}
         </p>
       </div>
@@ -409,7 +409,7 @@ export default function MiEntrada() {
                 placeholder="tu@email.com"
                 value={email}
                 onChange={e => { setEmail(e.target.value); setSearchError('') }}
-                className="w-full bg-neutral-900 border border-white/10 rounded-2xl px-4 py-4 text-white text-sm placeholder-gray-600 outline-none focus:border-white/30 transition-all"
+                className="w-full bg-neutral-900 border border-white/20 rounded-2xl px-4 py-4 text-white text-sm placeholder-gray-600 outline-none focus:border-white/30 transition-all"
               />
               <GlowBorder>
                 <button

@@ -247,7 +247,7 @@ export default function CineclubAdmin() {
       <h1 className="text-white font-bold text-xl">Cineclub</h1>
 
       {!poll && (
-        <div className="bg-black/40 border border-white/10 rounded-2xl p-6 text-center space-y-3">
+        <div className="bg-black/40 border border-white/20 rounded-2xl p-6 text-center space-y-3">
           <p className="text-white/60 text-sm">No hay ninguna votación creada.</p>
           <button onClick={handleCreatePoll} className="bg-white text-black font-semibold px-5 py-2.5 rounded-xl text-sm hover:bg-white/90 transition-colors">
             Crear nueva votación
@@ -258,7 +258,7 @@ export default function CineclubAdmin() {
       {poll && (
         <>
           {/* Estado */}
-          <div className="bg-black/40 border border-white/10 rounded-2xl p-4 space-y-3">
+          <div className="bg-black/40 border border-white/20 rounded-2xl p-4 space-y-3">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-white text-sm font-semibold">
@@ -290,7 +290,7 @@ export default function CineclubAdmin() {
 
             {/* Fecha límite opcional */}
             {poll.status === 'voting' && (
-              <div className="border-t border-white/10 pt-3 space-y-2">
+              <div className="border-t border-white/20 pt-3 space-y-2">
                 <p className="text-white/50 text-xs font-semibold uppercase tracking-wide">
                   Cierre automático <span className="normal-case font-normal">(opcional)</span>
                 </p>
@@ -307,7 +307,7 @@ export default function CineclubAdmin() {
                       type="datetime-local"
                       value={closesAt}
                       onChange={e => setClosesAt(e.target.value)}
-                      className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-white/30 [color-scheme:dark]"
+                      className="flex-1 bg-white/5 border border-white/20 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-white/30 [color-scheme:dark]"
                     />
                     <button
                       onClick={handleSaveDeadline}
@@ -332,7 +332,7 @@ export default function CineclubAdmin() {
                   const isEditing = editingId === movie.id
 
                   return (
-                    <div key={movie.id} className="flex flex-col bg-black/40 border border-white/10 rounded-2xl overflow-hidden">
+                    <div key={movie.id} className="flex flex-col bg-black/40 border border-white/20 rounded-2xl overflow-hidden">
                       {/* Flyer 3:4 */}
                       <div className="w-full relative" style={{ paddingBottom: '133%' }}>
                         {movie.flyer_url ? (
@@ -379,7 +379,7 @@ export default function CineclubAdmin() {
                             <div className="flex gap-1.5">
                               <button
                                 onClick={() => setEditingId(null)}
-                                className="flex-1 py-1.5 rounded-lg text-xs text-white/50 border border-white/10 hover:bg-white/5 transition-colors"
+                                className="flex-1 py-1.5 rounded-lg text-xs text-white/50 border border-white/20 hover:bg-white/5 transition-colors"
                               >
                                 Cancelar
                               </button>
@@ -441,7 +441,7 @@ export default function CineclubAdmin() {
                   + Agregar película
                 </button>
               ) : (
-                <div className="bg-black/40 border border-white/10 rounded-2xl p-4 space-y-3">
+                <div className="bg-black/40 border border-white/20 rounded-2xl p-4 space-y-3">
                   <p className="text-white font-semibold text-sm">Nueva película</p>
 
                   {/* Flyer 3:4 */}
@@ -464,20 +464,20 @@ export default function CineclubAdmin() {
                     value={formTitle}
                     onChange={e => setFormTitle(e.target.value)}
                     placeholder="Título de la película"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm placeholder-white/30 focus:outline-none focus:border-white/30"
+                    className="w-full bg-white/5 border border-white/20 rounded-xl px-3 py-2.5 text-white text-sm placeholder-white/30 focus:outline-none focus:border-white/30"
                   />
                   <textarea
                     value={formSynopsis}
                     onChange={e => setFormSynopsis(e.target.value)}
                     placeholder="Sinopsis (opcional)"
                     rows={3}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm placeholder-white/30 focus:outline-none focus:border-white/30 resize-none"
+                    className="w-full bg-white/5 border border-white/20 rounded-xl px-3 py-2.5 text-white text-sm placeholder-white/30 focus:outline-none focus:border-white/30 resize-none"
                   />
 
                   <div className="flex gap-2">
                     <button
                       onClick={() => { setShowForm(false); setFormTitle(''); setFormSynopsis(''); setFormFlyerFile(null); setFormFlyerPreview(null) }}
-                      className="flex-1 py-2.5 rounded-xl text-sm text-white/50 border border-white/10 hover:bg-white/5 transition-colors"
+                      className="flex-1 py-2.5 rounded-xl text-sm text-white/50 border border-white/20 hover:bg-white/5 transition-colors"
                     >
                       Cancelar
                     </button>

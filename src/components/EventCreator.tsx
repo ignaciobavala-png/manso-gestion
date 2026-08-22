@@ -156,7 +156,7 @@ export default function EventCreator({ onCreated, coworkPorDefecto = false }: Pr
         </button>
         <button
           onClick={() => onCreated?.()}
-          className="w-full py-2 text-gray-500 hover:text-gray-300 text-sm transition-colors"
+          className="w-full py-2 text-gray-400 hover:text-gray-300 text-sm transition-colors"
         >
           Listo
         </button>
@@ -187,7 +187,7 @@ export default function EventCreator({ onCreated, coworkPorDefecto = false }: Pr
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-1">Link del evento</label>
         <div className="flex items-center gap-2 bg-neutral-900/80 border border-white/20 rounded-xl px-4 py-3 focus-within:ring-2 focus-within:ring-emerald-500 focus-within:border-transparent">
-          <span className="text-gray-500 text-sm whitespace-nowrap">/registro/</span>
+          <span className="text-gray-400 text-sm whitespace-nowrap">/registro/</span>
           <input
             type="text"
             value={form.slug}
@@ -199,7 +199,7 @@ export default function EventCreator({ onCreated, coworkPorDefecto = false }: Pr
             className="flex-1 bg-transparent text-white text-sm placeholder-gray-600 focus:outline-none min-w-0"
           />
         </div>
-        <p className="text-xs text-gray-600 mt-1">Se genera automáticamente desde el nombre. Podés editarlo.</p>
+        <p className="text-xs text-gray-400 mt-1">Se genera automáticamente desde el nombre. Podés editarlo.</p>
       </div>
       {!coworkPorDefecto && (
       <div>
@@ -229,7 +229,7 @@ export default function EventCreator({ onCreated, coworkPorDefecto = false }: Pr
           </button>
         </div>
         {coworkDay && (
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-gray-400 mt-1">
             Sale en /cowork en vez de la cartelera, y pide teléfono e Instagram al reservar.
           </p>
         )}
@@ -262,7 +262,7 @@ export default function EventCreator({ onCreated, coworkPorDefecto = false }: Pr
           </button>
         </div>
         {isPrivate && (
-          <p className="text-xs text-gray-500 mt-1">El evento no aparece en la cartelera pública. Se accede solo con el link privado.</p>
+          <p className="text-xs text-gray-400 mt-1">El evento no aparece en la cartelera pública. Se accede solo con el link privado.</p>
         )}
       </div>
       <div>
@@ -292,7 +292,7 @@ export default function EventCreator({ onCreated, coworkPorDefecto = false }: Pr
           </button>
         </div>
         {oneTicketPerEmail && (
-          <p className="text-xs text-gray-500 mt-1">Cada email solo puede registrar una entrada.</p>
+          <p className="text-xs text-gray-400 mt-1">Cada email solo puede registrar una entrada.</p>
         )}
       </div>
       <div>
@@ -338,7 +338,7 @@ export default function EventCreator({ onCreated, coworkPorDefecto = false }: Pr
                 className="w-full pl-8 pr-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
               />
             </div>
-            <p className="text-sm text-gray-500 mt-1">Se aplica igual para regular e invitado.</p>
+            <p className="text-sm text-gray-400 mt-1">Se aplica igual para regular e invitado.</p>
           </div>
 
           {/* Medio de pago */}
@@ -364,7 +364,7 @@ export default function EventCreator({ onCreated, coworkPorDefecto = false }: Pr
                 </button>
               ))}
             </div>
-            <p className="text-xs text-gray-500 mt-2">
+            <p className="text-xs text-gray-400 mt-2">
               {paymentMode === 'transferencia'
                 ? 'Hay que verificar cada entrada a mano contra el comprobante.'
                 : paymentMode === 'mercadopago'
@@ -389,7 +389,7 @@ export default function EventCreator({ onCreated, coworkPorDefecto = false }: Pr
                 />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">%</span>
               </div>
-              <p className="text-xs text-gray-500 mt-2">
+              <p className="text-xs text-gray-400 mt-2">
                 {previewRecargo
                   ? <>La entrada sale <span className="text-white font-medium">${previewRecargo.conRecargo}</span> y entran <span className="text-white font-medium">${previewRecargo.neto}</span> netos, descontada la comisión de Mercado Pago (~4,3%).</>
                   : <>Mercado Pago descuenta alrededor del 4,3% de cada venta. Dejalo en 0 para absorberlo, o cargá un porcentaje para trasladarlo al precio.</>}
@@ -406,7 +406,7 @@ export default function EventCreator({ onCreated, coworkPorDefecto = false }: Pr
               placeholder="Ej: PROD.NOCHE.123"
               className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
             />
-            <p className="text-xs text-gray-500 mt-1">Opcional. Si no se especifica, se usará el alias general del venue.</p>
+            <p className="text-xs text-gray-400 mt-1">Opcional. Si no se especifica, se usará el alias general del venue.</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">CBU de pago (entradas)</label>

@@ -39,7 +39,7 @@ export default function BottomNav() {
   }
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-50 bg-black/95 border-t border-white/10 pb-[env(safe-area-inset-bottom,0px)]">
+    <nav className="fixed bottom-0 inset-x-0 z-50 bg-black/95 border-t border-white/20 pb-[env(safe-area-inset-bottom,0px)]">
       <ul className="flex overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:justify-around md:max-w-7xl md:mx-auto md:px-4">
         {tabs.map((tab) => (
           <li key={tab.path} className="flex-shrink-0 md:flex-1">

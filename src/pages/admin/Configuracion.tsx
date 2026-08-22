@@ -199,28 +199,28 @@ export default function Configuracion() {
           <div className="w-14 h-14 rounded-full bg-emerald-900/40 border border-emerald-700 flex items-center justify-center text-2xl text-emerald-400 font-bold">✓</div>
           <div>
             <p className="text-white font-semibold">Usuario actualizado</p>
-            <p className="text-gray-500 text-sm mt-1">
+            <p className="text-gray-400 text-sm mt-1">
               {usernameTarget === 'control'
                 ? `Desde ahora ingresás con "${usernames.control}".`
                 : `Los empleados ingresan con "${usernames.empleados}".`}
             </p>
           </div>
-          <button onClick={resetUsername} className="text-gray-500 text-sm underline underline-offset-2">Volver</button>
+          <button onClick={resetUsername} className="text-gray-400 text-sm underline underline-offset-2">Volver</button>
         </div>
       )
     }
 
     return (
       <div className="flex flex-col py-2">
-        <button onClick={resetUsername} className="self-start text-gray-500 text-sm mb-6">← Volver</button>
+        <button onClick={resetUsername} className="self-start text-gray-400 text-sm mb-6">← Volver</button>
 
         <p className="text-white font-semibold mb-1">
           {usernameTarget === 'control' ? 'Tu usuario (Control)' : 'Usuario de empleados'}
         </p>
-        <p className="text-gray-500 text-sm mb-1">
+        <p className="text-gray-400 text-sm mb-1">
           Actual: <span className="text-white font-mono">{usernameTarget === 'control' ? usernames.control : usernames.empleados}</span>
         </p>
-        <p className="text-gray-500 text-sm mb-6">Solo letras, números y guiones. Sin espacios.</p>
+        <p className="text-gray-400 text-sm mb-6">Solo letras, números y guiones. Sin espacios.</p>
 
         <form onSubmit={handleUsernameSubmit} className="space-y-4">
           <div>
@@ -241,7 +241,7 @@ export default function Configuracion() {
           <button
             type="submit"
             disabled={usernameLoading || !newUsername.trim()}
-            className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-white/10 disabled:text-gray-600 text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-95 text-sm"
+            className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-white/10 disabled:text-gray-400 text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-95 text-sm"
           >
             {usernameLoading ? 'Guardando...' : 'Guardar usuario'}
           </button>
@@ -253,12 +253,12 @@ export default function Configuracion() {
   if (flow.step === 'form') {
     return (
       <div className="flex flex-col py-2">
-        <button onClick={reset} className="self-start text-gray-500 text-sm mb-6">← Volver</button>
+        <button onClick={reset} className="self-start text-gray-400 text-sm mb-6">← Volver</button>
 
         <p className="text-white font-semibold mb-1">
           {flow.target === 'control' ? 'Tu contraseña' : 'Contraseña de empleados'}
         </p>
-        <p className="text-gray-500 text-sm mb-6">
+        <p className="text-gray-400 text-sm mb-6">
           {flow.target === 'control'
             ? 'Usá una contraseña segura. La vas a necesitar para entrar al panel.'
             : 'Todos los empleados usarán esta contraseña para acceder a Barra y Entradas.'}
@@ -279,7 +279,7 @@ export default function Configuracion() {
               <button
                 type="button"
                 onClick={() => setShowNew(v => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors text-xs px-1"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors text-xs px-1"
               >
                 {showNew ? 'Ocultar' : 'Ver'}
               </button>
@@ -300,7 +300,7 @@ export default function Configuracion() {
               <button
                 type="button"
                 onClick={() => setShowConfirm(v => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors text-xs px-1"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors text-xs px-1"
               >
                 {showConfirm ? 'Ocultar' : 'Ver'}
               </button>
@@ -312,7 +312,7 @@ export default function Configuracion() {
           <button
             type="submit"
             disabled={loading || !newPassword || !confirmPassword}
-            className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-white/10 disabled:text-gray-600 text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-95 text-sm mt-2"
+            className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-white/10 disabled:text-gray-400 text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-95 text-sm mt-2"
           >
             {loading ? 'Guardando...' : 'Guardar contraseña'}
           </button>
@@ -327,13 +327,13 @@ export default function Configuracion() {
         <div className="w-14 h-14 rounded-full bg-emerald-900/40 border border-emerald-700 flex items-center justify-center text-2xl text-emerald-400 font-bold">✓</div>
         <div>
           <p className="text-white font-semibold">Contraseña actualizada</p>
-          <p className="text-gray-500 text-sm mt-1">
+          <p className="text-gray-400 text-sm mt-1">
             {flow.target === 'control'
               ? 'Usá la nueva contraseña la próxima vez que ingreses.'
               : 'Los empleados ya pueden usar la nueva contraseña.'}
           </p>
         </div>
-        <button onClick={reset} className="text-gray-500 text-sm underline underline-offset-2">Volver</button>
+        <button onClick={reset} className="text-gray-400 text-sm underline underline-offset-2">Volver</button>
       </div>
     )
   }
@@ -346,21 +346,21 @@ export default function Configuracion() {
           <p className="text-white font-semibold">No se pudo cambiar</p>
           <p className="text-red-400 text-sm mt-1">{flow.message}</p>
         </div>
-        <button onClick={() => startFlow(flow.target!)} className="text-gray-500 text-sm underline underline-offset-2">Intentar de nuevo</button>
+        <button onClick={() => startFlow(flow.target!)} className="text-gray-400 text-sm underline underline-offset-2">Intentar de nuevo</button>
       </div>
     )
   }
 
   return (
     <div className="space-y-6">
-      <div className="border-t border-white/10" />
+      <div className="border-t border-white/20" />
 
       <div className="space-y-3">
-        <p className="text-gray-500 text-sm uppercase tracking-widest">Fondo de la app</p>
+        <p className="text-gray-400 text-sm uppercase tracking-widest">Fondo de la app</p>
 
         <div className="flex gap-4 items-start">
           <div
-            className="w-24 h-40 rounded-xl border border-white/15 flex-shrink-0 bg-neutral-900"
+            className="w-24 h-40 rounded-xl border border-white/25 flex-shrink-0 bg-neutral-900"
             style={{
               backgroundImage: `url(${fondoUrl ?? '/fondo.png'})`,
               backgroundSize: 'cover',
@@ -384,7 +384,7 @@ export default function Configuracion() {
               <button
                 onClick={restaurarFondo}
                 disabled={fondoSubiendo}
-                className="w-full text-gray-500 hover:text-gray-300 disabled:opacity-60 text-sm underline underline-offset-2 transition-colors"
+                className="w-full text-gray-400 hover:text-gray-300 disabled:opacity-60 text-sm underline underline-offset-2 transition-colors"
               >
                 Volver a la foto original
               </button>
@@ -405,23 +405,23 @@ export default function Configuracion() {
         />
 
         {fondoError && <p className="text-red-400 text-sm">{fondoError}</p>}
-        <p className="text-gray-600 text-xs">
+        <p className="text-gray-400 text-xs">
           Conviene una foto vertical: se recorta al centro y se le aplica una
           capa oscura para que el texto se lea.
         </p>
       </div>
 
-      <div className="border-t border-white/10" />
+      <div className="border-t border-white/20" />
 
       <div className="space-y-3">
-        <p className="text-gray-500 text-sm uppercase tracking-widest">Usuarios de acceso</p>
+        <p className="text-gray-400 text-sm uppercase tracking-widest">Usuarios de acceso</p>
         <button
           onClick={() => { setUsernameTarget('control'); setNewUsername(''); setUsernameError(''); setUsernameSuccess(false) }}
           className="w-full flex items-center justify-between bg-white/10 hover:bg-white/20 rounded-xl px-4 py-3.5 transition-colors"
         >
           <div className="text-left">
             <p className="text-white text-sm font-medium">Tu usuario (Control)</p>
-            <p className="text-gray-500 text-sm font-mono">{usernames.control}</p>
+            <p className="text-gray-400 text-sm font-mono">{usernames.control}</p>
           </div>
           <span className="text-gray-400 text-lg">›</span>
         </button>
@@ -431,23 +431,23 @@ export default function Configuracion() {
         >
           <div className="text-left">
             <p className="text-white text-sm font-medium">Usuario de empleados</p>
-            <p className="text-gray-500 text-sm font-mono">{usernames.empleados}</p>
+            <p className="text-gray-400 text-sm font-mono">{usernames.empleados}</p>
           </div>
           <span className="text-gray-400 text-lg">›</span>
         </button>
       </div>
 
-      <div className="border-t border-white/10" />
+      <div className="border-t border-white/20" />
 
       <div className="space-y-3">
-        <p className="text-gray-500 text-sm uppercase tracking-widest">Contraseñas de acceso</p>
+        <p className="text-gray-400 text-sm uppercase tracking-widest">Contraseñas de acceso</p>
         <button
           onClick={() => startFlow('control')}
           className="w-full flex items-center justify-between bg-white/10 hover:bg-white/20 rounded-xl px-4 py-3.5 transition-colors"
         >
           <div className="text-left">
             <p className="text-white text-sm font-medium">Tu contraseña (Control)</p>
-            <p className="text-gray-500 text-sm">Acceso al panel de administración</p>
+            <p className="text-gray-400 text-sm">Acceso al panel de administración</p>
           </div>
           <span className="text-gray-400 text-lg">›</span>
         </button>
@@ -457,7 +457,7 @@ export default function Configuracion() {
         >
           <div className="text-left">
             <p className="text-white text-sm font-medium">Contraseña de empleados</p>
-            <p className="text-gray-500 text-sm">Acceso a Barra y Entradas</p>
+            <p className="text-gray-400 text-sm">Acceso a Barra y Entradas</p>
           </div>
           <span className="text-gray-400 text-lg">›</span>
         </button>

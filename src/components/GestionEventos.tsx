@@ -168,7 +168,7 @@ export default function GestionEventos() {
       {/* Eventos abiertos */}
       <div className="px-6 sm:px-8 py-4 space-y-4">
         {openEvents.length === 0 && !showCreator && (
-          <p className="text-gray-500 text-sm text-center py-4">
+          <p className="text-gray-400 text-sm text-center py-4">
             No hay eventos abiertos. Creá uno para empezar.
           </p>
         )}
@@ -185,7 +185,7 @@ export default function GestionEventos() {
               className={`rounded-2xl border overflow-hidden transition-colors ${
                 isCurrent
                   ? 'bg-emerald-900/30 border-emerald-700'
-                  : 'bg-neutral-900 border border-white/10'
+                  : 'bg-neutral-900 border border-white/20'
               }`}
             >
               <div className="flex gap-4 p-4">
@@ -203,7 +203,7 @@ export default function GestionEventos() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-500 text-2xl">
+                      <div className="w-full h-full flex items-center justify-center text-gray-400 text-2xl">
                         🖼
                       </div>
                     )}
@@ -235,7 +235,7 @@ export default function GestionEventos() {
                       <p className="text-white font-semibold text-sm truncate">{e.name}</p>
                       <button
                         onClick={() => setEditingId(editingId === e.id ? null : e.id)}
-                        className="text-gray-500 hover:text-gray-300 transition-colors flex-shrink-0"
+                        className="text-gray-400 hover:text-gray-300 transition-colors flex-shrink-0"
                         title="Editar evento"
                       >
                         ✏️
@@ -254,7 +254,7 @@ export default function GestionEventos() {
                     <p className="text-gray-400 text-sm mt-1">
                       {e.start_date ? formatDateTime(e.start_date) : `Creado ${formatDate(e.created_at)}`}
                     </p>
-                    <p className="text-gray-500 text-sm mt-0.5">
+                    <p className="text-gray-400 text-sm mt-0.5">
                       {regs} {regs === 1 ? 'registro' : 'registros'}
                       {e.max_capacity !== null && ` / ${e.max_capacity}`}
                     </p>
@@ -328,18 +328,18 @@ export default function GestionEventos() {
             onClick={() => setShowHistorial(v => !v)}
             className="w-full px-6 sm:px-8 py-3 flex items-center justify-between text-left hover:bg-white/5 transition-colors"
           >
-            <span className="text-sm text-gray-500 uppercase tracking-wider">
+            <span className="text-sm text-gray-400 uppercase tracking-wider">
               Historial ({closedEvents.length})
             </span>
-            <span className="text-gray-600 text-sm">{showHistorial ? '▲' : '▼'}</span>
+            <span className="text-gray-400 text-sm">{showHistorial ? '▲' : '▼'}</span>
           </button>
 
           {showHistorial && (
             <div className="px-6 sm:px-8 pb-4 space-y-2">
               {closedEvents.map(e => (
-                <div key={e.id} className="flex items-center justify-between py-2 border-b border-white/10 last:border-0">
+                <div key={e.id} className="flex items-center justify-between py-2 border-b border-white/20 last:border-0">
                   <p className="text-gray-400 text-sm truncate">{e.name}</p>
-                  <p className="text-gray-600 text-sm flex-shrink-0 ml-3">
+                  <p className="text-gray-400 text-sm flex-shrink-0 ml-3">
                     {e.closed_at ? `Cerrado ${formatDate(e.closed_at)}` : 'Sin cerrar'}
                   </p>
                 </div>

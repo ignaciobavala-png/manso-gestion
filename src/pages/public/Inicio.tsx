@@ -65,7 +65,7 @@ export default function Inicio() {
           <button
             key={page.path}
             onClick={() => navigate(page.path)}
-            className="w-full bg-black/50 hover:bg-black/60 border border-white/20 hover:border-white/40 backdrop-blur-md rounded-2xl px-5 py-4 flex items-center gap-4 transition-colors text-left"
+            className="w-full bg-black/60 hover:bg-black/60 border border-white/20 hover:border-white/40 backdrop-blur-md rounded-2xl px-5 py-4 flex items-center gap-4 transition-colors text-left"
           >
             <span className="text-3xl">{page.icon}</span>
             <div className="flex-1 min-w-0">

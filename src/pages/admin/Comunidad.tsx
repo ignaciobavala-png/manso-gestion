@@ -223,7 +223,7 @@ export default function Comunidad() {
           </button>
           <div>
             <h2 className="text-xl font-bold text-white">Comunidad</h2>
-            <p className="text-gray-500 text-sm">
+            <p className="text-gray-400 text-sm">
               {viewMode === 'emails'
                 ? `${uniqueEmails.length} personas`
                 : viewMode === 'registros'
@@ -316,15 +316,15 @@ export default function Comunidad() {
         {/* Lista Cineclub */}
         {viewMode === 'cineclub' && (
           cineclubVoters.length === 0 ? (
-            <div className="text-center text-gray-500 py-16 text-sm">No hay votos registrados aún.</div>
+            <div className="text-center text-gray-400 py-16 text-sm">No hay votos registrados aún.</div>
           ) : (
             <div className="space-y-2">
               {cineclubVoters.map((v, i) => (
-                <div key={i} className="bg-neutral-900 border border-white/10 rounded-2xl px-4 py-3">
+                <div key={i} className="bg-neutral-900 border border-white/20 rounded-2xl px-4 py-3">
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <p className="text-white font-medium text-sm truncate">{v.email}</p>
-                      <p className="text-gray-600 text-xs mt-0.5">{new Date(v.created_at).toLocaleDateString('es-AR')}</p>
+                      <p className="text-gray-400 text-xs mt-0.5">{new Date(v.created_at).toLocaleDateString('es-AR')}</p>
                     </div>
                     <span className="text-xs bg-white/10 text-gray-300 px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">
                       🎬 {v.movie_title}
@@ -343,17 +343,17 @@ export default function Comunidad() {
           </div>
         ) : viewMode === 'emails' ? (
           uniqueEmails.length === 0 ? (
-            <div className="text-center text-gray-500 py-16 text-sm">
+            <div className="text-center text-gray-400 py-16 text-sm">
               No hay registros{selectedEvent !== 'todos' ? ' para este evento' : ''}.
             </div>
           ) : (
             <div className="space-y-2">
               {uniqueEmails.map(u => (
-                <div key={u.email} className="bg-neutral-900 border border-white/10 rounded-2xl px-4 py-3">
+                <div key={u.email} className="bg-neutral-900 border border-white/20 rounded-2xl px-4 py-3">
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <p className="text-white font-medium text-sm truncate">{u.email}</p>
-                      <p className="text-gray-600 text-xs mt-0.5">{u.lastEvent} · {new Date(u.lastDate).toLocaleDateString('es-AR')}</p>
+                      <p className="text-gray-400 text-xs mt-0.5">{u.lastEvent} · {new Date(u.lastDate).toLocaleDateString('es-AR')}</p>
                     </div>
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                       <span className="text-xs bg-white/10 text-gray-300 px-2 py-0.5 rounded-full whitespace-nowrap">
@@ -371,18 +371,18 @@ export default function Comunidad() {
             </div>
           )
         ) : filtered.length === 0 ? (
-          <div className="text-center text-gray-500 py-16 text-sm">
+          <div className="text-center text-gray-400 py-16 text-sm">
             No hay registros{selectedEvent !== 'todos' ? ' para este evento' : ''}.
           </div>
         ) : (
           <div className="space-y-2">
             {filtered.map(r => (
-              <div key={r.id} className="bg-neutral-900 border border-white/10 rounded-2xl px-4 py-3">
+              <div key={r.id} className="bg-neutral-900 border border-white/20 rounded-2xl px-4 py-3">
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <p className="text-white font-medium text-sm truncate">{r.name}</p>
                     <p className="text-gray-400 text-sm truncate">{r.email}</p>
-                    <p className="text-gray-600 text-sm">{r.event_name}</p>
+                    <p className="text-gray-400 text-sm">{r.event_name}</p>
                   </div>
                   <div className="flex items-center gap-2 sm:flex-shrink-0">
                     <span className={`inline-block text-sm px-2 py-0.5 rounded-full ${
@@ -392,13 +392,13 @@ export default function Comunidad() {
                     }`}>
                       {r.used_at ? 'Ingresó' : 'Pendiente'}
                     </span>
-                    <p className="text-gray-600 text-sm">
+                    <p className="text-gray-400 text-sm">
                       {new Date(r.registered_at).toLocaleDateString('es-AR')}
                     </p>
                     <button
                       onClick={() => handleDelete(r.id)}
                       disabled={deletingId === r.id}
-                      className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-40"
+                      className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-40"
                       aria-label="Eliminar registro"
                     >
                       {deletingId === r.id ? (

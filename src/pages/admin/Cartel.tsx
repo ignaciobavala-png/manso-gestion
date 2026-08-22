@@ -74,7 +74,7 @@ export default function Cartel() {
           </button>
           <div>
             <h2 className="text-xl font-bold text-white">Cartel para imprimir</h2>
-            <p className="text-gray-500 text-sm">QR de la app para pegar en las mesas y la puerta</p>
+            <p className="text-gray-400 text-sm">QR de la app para pegar en las mesas y la puerta</p>
           </div>
         </div>
 
@@ -89,7 +89,7 @@ export default function Cartel() {
                   className={`rounded-xl py-3 px-3 text-sm font-semibold transition-all active:scale-95 border ${
                     i === destinoIdx
                       ? 'bg-emerald-600 border-emerald-500 text-white'
-                      : 'bg-white/5 border-white/15 text-gray-300 hover:bg-white/10'
+                      : 'bg-white/5 border-white/25 text-gray-300 hover:bg-white/10'
                   }`}
                 >
                   {d.label}
@@ -106,7 +106,7 @@ export default function Cartel() {
               onChange={e => setDominio(e.target.value)}
               className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-emerald-500"
             />
-            <p className="text-gray-600 text-xs mt-1.5">
+            <p className="text-gray-400 text-xs mt-1.5">
               Se imprime tal cual queda acá: <span className="font-mono">{urlVisible}</span>
             </p>
           </div>
@@ -144,7 +144,7 @@ export default function Cartel() {
         >
           Imprimir cartel →
         </button>
-        <p className="text-gray-600 text-xs text-center mt-3 print:hidden">
+        <p className="text-gray-400 text-xs text-center mt-3 print:hidden">
           Desde el celular, "Imprimir" también permite guardarlo como PDF para
           mandarlo por WhatsApp a la imprenta.
         </p>

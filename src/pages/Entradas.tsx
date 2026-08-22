@@ -456,8 +456,8 @@ export default function Entradas(): React.JSX.Element {
                     <p className="text-sm text-emerald-300 font-medium">{getMansEventName(pendingQr.rawData)}</p>
                   </div>
                 ) : (
-                  <div className="bg-neutral-900 border border-white/10 rounded-2xl p-4">
-                    <p className="text-sm text-gray-500 mb-1">Datos del QR</p>
+                  <div className="bg-neutral-900 border border-white/20 rounded-2xl p-4">
+                    <p className="text-sm text-gray-400 mb-1">Datos del QR</p>
                     <p className="text-sm text-gray-400 break-all font-mono">{pendingQr.rawData}</p>
                   </div>
                 )}
@@ -482,7 +482,7 @@ export default function Entradas(): React.JSX.Element {
                       className={`py-3 rounded-xl border-2 font-medium transition-all ${
                         pendingType === 'regular'
                           ? 'bg-emerald-600/20 border-emerald-500 text-emerald-400'
-                          : 'bg-neutral-900/60 border-white/10 text-gray-300'
+                          : 'bg-neutral-900/60 border-white/20 text-gray-300'
                       }`}
                     >
                       Regular
@@ -492,7 +492,7 @@ export default function Entradas(): React.JSX.Element {
                       className={`py-3 rounded-xl border-2 font-medium transition-all ${
                         pendingType === 'invitado'
                           ? 'bg-amber-600/20 border-amber-500 text-amber-400'
-                          : 'bg-neutral-900/60 border-white/10 text-gray-300'
+                          : 'bg-neutral-900/60 border-white/20 text-gray-300'
                       }`}
                     >
                       Invitado
@@ -522,7 +522,7 @@ export default function Entradas(): React.JSX.Element {
             {/* Estado: scanner / idle */}
             {!showSuccess && !pendingQr && !mansoTicketPending && !validating && (
               <div className="flex flex-col items-center space-y-6">
-                <div className="w-full aspect-square max-w-xs bg-neutral-900 border-2 border-dashed border-white/10 rounded-2xl overflow-hidden">
+                <div className="w-full aspect-square max-w-xs bg-neutral-900 border-2 border-dashed border-white/20 rounded-2xl overflow-hidden">
                   {/* El video siempre está en el DOM para que videoRef.current esté disponible al iniciar */}
                   <video
                     ref={videoRef}
@@ -539,10 +539,10 @@ export default function Entradas(): React.JSX.Element {
                     </div>
                   ) : !isScanning ? (
                     <div className="flex flex-col items-center justify-center h-full">
-                      <svg className="w-12 h-12 text-gray-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-12 h-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
                       </svg>
-                      <p className="text-gray-500 text-sm">Listo para escanear</p>
+                      <p className="text-gray-400 text-sm">Listo para escanear</p>
                     </div>
                   ) : null}
                 </div>
@@ -622,7 +622,7 @@ export default function Entradas(): React.JSX.Element {
               {eventGuests.slice(0, 10).map((guest) => (
                 <div
                   key={guest.id}
-                  className="flex items-center justify-between p-4 bg-neutral-900 rounded-2xl border border-white/10"
+                  className="flex items-center justify-between p-4 bg-neutral-900 rounded-2xl border border-white/20"
                 >
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 flex items-center justify-center rounded-full ${
@@ -652,7 +652,7 @@ export default function Entradas(): React.JSX.Element {
               </div>
             )}
 
-            <div className="mt-6 pt-6 border-t border-white/10">
+            <div className="mt-6 pt-6 border-t border-white/20">
               <p className="text-sm text-gray-400 text-center">
                 Mostrando los últimos {Math.min(10, eventGuests.length)} invitados
               </p>
@@ -661,11 +661,11 @@ export default function Entradas(): React.JSX.Element {
 
           {/* Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-6 sm:p-8 border-t-2 border-zinc-800 bg-neutral-950/50">
-            <div className="bg-neutral-900 border border-white/10 rounded-2xl p-4">
+            <div className="bg-neutral-900 border border-white/20 rounded-2xl p-4">
               <p className="text-sm text-gray-400">Entradas Hoy</p>
               <p className="text-2xl font-bold mt-1 text-white">{eventGuests.length}</p>
             </div>
-            <div className="bg-neutral-900 border border-white/10 rounded-2xl p-4">
+            <div className="bg-neutral-900 border border-white/20 rounded-2xl p-4">
               <p className="text-sm text-gray-400">Invitados Activos</p>
               <p className="text-2xl font-bold mt-1 text-amber-400">
                 {eventGuests.filter(g => g.type === 'invitado').length}
