@@ -27,10 +27,7 @@ export function useSecciones() {
     secciones: {
       barra,
       cineclub,
-      // En desarrollo el Cowork Day se ve siempre, con la perilla apagada o
-      // no: es la sección que se está construyendo y hay que poder probarla
-      // sin exponerla al público, que comparte esta misma base de datos.
-      cowork: cowork || import.meta.env.DEV,
+      cowork,
     } satisfies Secciones,
     loading: !cargado,
   }

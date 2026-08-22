@@ -74,10 +74,6 @@ El estado vive en `useVenueConfig`, un store compartido con realtime sobre
 esa foto: prender una perilla guardaba bien, pero la navegación no se enteraba
 hasta recargar y parecía que el toggle no hacía nada.
 
-En **desarrollo el Cowork Day se ve siempre**, con la perilla apagada o no. La
-base de datos es la misma en local y en producción, así que era la única forma
-de probar la sección sin exponerla al público.
-
 ## Para poner en producción
 
 1. Las migraciones 022, 023 y 024 ya están aplicadas.
