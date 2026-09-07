@@ -15,6 +15,26 @@
          antes de bajar la hoja de estilos y montar React. Sin esto, cada
          arranque muestra un destello blanco. -->
     <style>html, body { background-color: #000000; color-scheme: dark; }</style>
+    <!-- La foto de fondo se recuerda en el dispositivo (ver lib/fondoCache.ts)
+         y se pinta acá, antes de bajar el bundle: es lo primero que se ve, sin
+         esperar a que React monte ni a que Supabase conteste. El velo es el
+         mismo 45% que le aplica Background.tsx, para que no haya un salto de
+         luz cuando React toma el relevo. -->
+    <script>
+      (function () {
+        try {
+          var fondo = localStorage.getItem('manso:fondo')
+          if (!fondo) return
+          var html = document.documentElement
+          html.style.backgroundImage =
+            'linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url("' + fondo.replace(/"/g, '%22') + '")'
+          html.style.backgroundSize = 'cover'
+          html.style.backgroundPosition = 'center'
+          html.style.backgroundRepeat = 'no-repeat'
+          html.style.backgroundAttachment = 'fixed'
+        } catch (e) {}
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

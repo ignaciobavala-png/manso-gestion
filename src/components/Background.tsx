@@ -1,4 +1,12 @@
 import { useFondo } from '../hooks/useSeccionPublica'
+import { leerFondoCache } from '../lib/fondoCache'
+
+/**
+ * La foto que ya estaba pintada por el script de index.html cuando cargó este
+ * módulo. Si el fondo que toca mostrar es ese mismo, no hay nada que fundir:
+ * ya se está viendo, y animarlo sería hacerla parpadear.
+ */
+const FONDO_YA_PINTADO = leerFondoCache()
 
 interface BackgroundProps {
   children: React.ReactNode
@@ -52,7 +60,11 @@ export default function Background({ children, className = '', backgroundImage }
       />
 
       {foto && (
-        <div className="fixed inset-0 z-0 pointer-events-none animate-fade-in">
+        <div
+          className={`fixed inset-0 z-0 pointer-events-none ${
+            foto === FONDO_YA_PINTADO ? '' : 'animate-fade-in'
+          }`}
+        >
           <div
             className="absolute inset-0"
             style={{

@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
 import { normalizarLanding, type CoworkLanding } from '../lib/coworkLanding'
+import { guardarFondoCache, leerFondoCache } from '../lib/fondoCache'
 
 /**
  * venue_config vivo y compartido.
@@ -46,7 +47,9 @@ export const useVenueConfig = create<VenueConfigState>(set => ({
   barra: 'oculto',
   cineclub: 'oculto',
   cowork: 'oculto',
-  fondoUrl: null,
+  // Arranca con la última foto conocida en vez de null: así el primer
+  // render ya la tiene y no hay un momento sin fondo esperando a Supabase.
+  fondoUrl: leerFondoCache(),
   coworkLanding: normalizarLanding(null),
 
   cargar: async () => {
@@ -56,12 +59,15 @@ export const useVenueConfig = create<VenueConfigState>(set => ({
       .eq('id', 1)
       .single()
 
+    const fondoUrl = data?.background_url ?? null
+    guardarFondoCache(fondoUrl)
+
     set({
       cargado: true,
       barra: aVisibilidad(data?.barra_visibilidad),
       cineclub: aVisibilidad(data?.cineclub_visibilidad),
       cowork: aVisibilidad(data?.cowork_visibilidad),
-      fondoUrl: data?.background_url ?? null,
+      fondoUrl,
       coworkLanding: normalizarLanding(data?.cowork_landing),
     })
   },
