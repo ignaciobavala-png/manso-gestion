@@ -1,3 +1,4 @@
+import { CircleAlert, TriangleAlert } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
@@ -145,7 +146,7 @@ export default function PagoRetorno() {
 
           {estado === 'consultando' && (
             <>
-              <div className="mx-auto animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-emerald-400" />
+              <div className="mx-auto animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-terra-400" />
               <h2 className="text-white font-bold text-xl">Confirmando tu pago</h2>
               <p className="text-gray-400 text-sm">
                 Estamos verificando con Mercado Pago. No cierres esta pantalla.
@@ -155,8 +156,8 @@ export default function PagoRetorno() {
 
           {estado === 'approved' && (
             <>
-              <div className="mx-auto w-14 h-14 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center">
-                <svg className="w-7 h-7 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="mx-auto w-14 h-14 rounded-full bg-terra-500/20 border border-terra-500/40 flex items-center justify-center">
+                <svg className="w-7 h-7 text-terra-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
@@ -176,7 +177,7 @@ export default function PagoRetorno() {
               </p>
               <button
                 onClick={reintentar}
-                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-95 text-sm"
+                className="w-full bg-terra-600 hover:bg-terra-500 text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-95 text-sm"
               >
                 Volver a chequear
               </button>
@@ -191,7 +192,7 @@ export default function PagoRetorno() {
 
           {estado === 'rejected' && (
             <>
-              <p className="text-4xl">😕</p>
+              <CircleAlert className="text-terra-400" size={40} strokeWidth={1.25} aria-hidden />
               <h2 className="text-white font-bold text-xl">El pago fue rechazado</h2>
               <p className="text-gray-400 text-sm">
                 No se generó ninguna entrada. Podés intentar de nuevo con otro
@@ -208,7 +209,7 @@ export default function PagoRetorno() {
 
           {estado === 'error' && (
             <>
-              <p className="text-4xl">⚠️</p>
+              <TriangleAlert className="text-amber-400" size={40} strokeWidth={1.25} aria-hidden />
               <h2 className="text-white font-bold text-xl">No pudimos verificar el pago</h2>
               <p className="text-gray-400 text-sm">
                 {detalle || 'Intentá de nuevo en un momento.'}
@@ -219,7 +220,7 @@ export default function PagoRetorno() {
               </p>
               <button
                 onClick={reintentar}
-                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-95 text-sm"
+                className="w-full bg-terra-600 hover:bg-terra-500 text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-95 text-sm"
               >
                 Reintentar
               </button>

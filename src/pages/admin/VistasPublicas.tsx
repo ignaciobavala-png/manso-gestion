@@ -1,37 +1,38 @@
+import { Ticket, Smartphone, Beer, Clapperboard, Laptop, Printer, ArrowLeft, ArrowUpRight, ChevronRight, type LucideIcon } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import Background from '../../components/Background'
 import { useSecciones, enPanel } from '../../hooks/useSeccionPublica'
 
-const PAGES = [
+const PAGES: { label: string; description: string; path: string; Icon: LucideIcon }[] = [
   {
     label: 'Registro de entrada',
     description: 'El asistente genera su entrada con nombre y email',
     path: '/registro',
-    icon: '🎟️',
+    Icon: Ticket,
   },
   {
     label: 'Mi Entrada',
     description: 'El asistente consulta su entrada por UUID o código',
     path: '/mi-entrada',
-    icon: '📲',
+    Icon: Smartphone,
   },
   {
     label: 'Carta',
     description: 'Menú público con info de transferencia',
     path: '/carta',
-    icon: '🍻',
+    Icon: Beer,
   },
   {
     label: 'Cineclub',
     description: 'Votación pública de películas',
     path: '/cineclub',
-    icon: '🎬',
+    Icon: Clapperboard,
   },
   {
     label: 'Cowork Day',
     description: 'Landing del pase por día, con las fechas abiertas',
     path: '/cowork',
-    icon: '💻',
+    Icon: Laptop,
   },
 ]
 
@@ -63,8 +64,9 @@ export default function VistasPublicas() {
           <button
             onClick={() => navigate('/admin/home')}
             className="text-gray-400 hover:text-white transition-colors"
+            aria-label="Volver"
           >
-            ←
+            <ArrowLeft size={20} strokeWidth={1.5} />
           </button>
           <div>
             <h2 className="text-xl font-bold text-white">Vistas públicas</h2>
@@ -77,9 +79,9 @@ export default function VistasPublicas() {
             <button
               key={page.path}
               onClick={() => open(page.path)}
-              className="w-full bg-black/60 hover:bg-white/10 border border-white/20 hover:border-emerald-600 rounded-2xl px-5 py-4 flex items-center gap-4 transition-colors text-left"
+              className="w-full bg-black/60 hover:bg-white/10 border border-white/20 hover:border-terra-600 rounded-2xl px-5 py-4 flex items-center gap-4 transition-colors text-left"
             >
-              <span className="text-3xl">{page.icon}</span>
+              <page.Icon className="flex-shrink-0 text-gray-300" size={26} strokeWidth={1.5} aria-hidden />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="text-white font-semibold text-sm">{page.label}</p>
@@ -90,9 +92,9 @@ export default function VistasPublicas() {
                   )}
                 </div>
                 <p className="text-gray-400 text-sm mt-0.5">{page.description}</p>
-                <p className="text-emerald-600 text-sm mt-1 font-mono">{page.path}</p>
+                <p className="text-terra-600 text-sm mt-1 font-mono">{page.path}</p>
               </div>
-              <span className="text-gray-400 text-lg flex-shrink-0">↗</span>
+              <ArrowUpRight className="text-gray-400 flex-shrink-0" size={20} strokeWidth={1.5} aria-hidden />
             </button>
           ))}
         </div>
@@ -101,17 +103,17 @@ export default function VistasPublicas() {
           <p className="text-gray-400 text-sm uppercase tracking-widest">Para el local</p>
           <button
             onClick={() => navigate('/admin/cartel')}
-            className="w-full bg-black/60 hover:bg-white/10 border border-white/20 hover:border-emerald-600 rounded-2xl px-5 py-4 flex items-center gap-4 transition-colors text-left"
+            className="w-full bg-black/60 hover:bg-white/10 border border-white/20 hover:border-terra-600 rounded-2xl px-5 py-4 flex items-center gap-4 transition-colors text-left"
           >
-            <span className="text-3xl">🖨️</span>
+            <Printer className="flex-shrink-0 text-gray-300" size={26} strokeWidth={1.5} aria-hidden />
             <div className="flex-1 min-w-0">
               <p className="text-white font-semibold text-sm">Cartel para imprimir</p>
               <p className="text-gray-400 text-sm mt-0.5">
                 QR de la app para pegar en las mesas, la barra y la puerta
               </p>
-              <p className="text-emerald-600 text-sm mt-1 font-mono">/admin/cartel</p>
+              <p className="text-terra-600 text-sm mt-1 font-mono">/admin/cartel</p>
             </div>
-            <span className="text-gray-400 text-lg flex-shrink-0">›</span>
+            <ChevronRight className="text-gray-400 flex-shrink-0" size={20} strokeWidth={1.5} aria-hidden />
           </button>
         </div>
       </div>

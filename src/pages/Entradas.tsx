@@ -1,3 +1,4 @@
+import { Check, Users, User } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import QrScanner from 'qr-scanner'
 import qrWorkerSource from 'qr-scanner/qr-scanner-worker.min.js?raw'
@@ -58,7 +59,7 @@ export default function Entradas(): React.JSX.Element {
       <Background>
         <div className="max-w-4xl mx-auto px-4 py-8">
           <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-terra-500"></div>
           </div>
         </div>
       </Background>
@@ -373,10 +374,10 @@ export default function Entradas(): React.JSX.Element {
               {activeEvent?.is_active && (
                 <div className="flex items-center gap-2">
                   <div className="relative">
-                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                    <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-75"></div>
+                    <div className="w-2 h-2 bg-terra-500 rounded-full animate-pulse"></div>
+                    <div className="absolute inset-0 bg-terra-500 rounded-full animate-ping opacity-75"></div>
                   </div>
-                  <span className="text-sm text-emerald-400 font-medium">Vivo</span>
+                  <span className="text-sm text-terra-400 font-medium">Vivo</span>
                 </div>
               )}
             </div>
@@ -393,7 +394,7 @@ export default function Entradas(): React.JSX.Element {
             {/* Estado: validando ticket */}
             {validating && (
               <div className="flex flex-col items-center justify-center py-8 gap-3">
-                <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-emerald-500" />
+                <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-terra-500" />
                 <p className="text-gray-400 text-sm">Validando ticket...</p>
               </div>
             )}
@@ -411,10 +412,10 @@ export default function Entradas(): React.JSX.Element {
                     </p>
                   </div>
                 )}
-                <div className="bg-emerald-900/20 border border-emerald-700 rounded-2xl p-4 text-center">
-                  <p className="text-sm text-emerald-500 mb-1 uppercase tracking-wider">Entrada Digital</p>
+                <div className="bg-terra-900/20 border border-terra-700 rounded-2xl p-4 text-center">
+                  <p className="text-sm text-terra-500 mb-1 uppercase tracking-wider">Entrada Digital</p>
                   <p className="text-white font-semibold text-lg">{mansoTicketPending.name}</p>
-                  <p className="text-emerald-400 text-sm mt-1">Token válido — sin uso previo</p>
+                  <p className="text-terra-400 text-sm mt-1">Token válido — sin uso previo</p>
                 </div>
                 <div className="flex gap-3 pt-2">
                   <button
@@ -427,7 +428,7 @@ export default function Entradas(): React.JSX.Element {
                   <button
                     onClick={handleConfirmMansoTicket}
                     disabled={confirming}
-                    className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold rounded-xl transition-colors"
+                    className="flex-1 py-3 bg-terra-600 hover:bg-terra-500 disabled:opacity-50 text-white font-semibold rounded-xl transition-colors"
                   >
                     {confirming ? 'Registrando...' : 'Confirmar ingreso'}
                   </button>
@@ -438,12 +439,10 @@ export default function Entradas(): React.JSX.Element {
             {/* Estado: éxito */}
             {showSuccess && (
               <div className="flex flex-col items-center justify-center py-8 space-y-3">
-                <div className="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
+                <div className="w-16 h-16 bg-olive-600 rounded-full flex items-center justify-center">
+                  <Check className="text-manso-black" size={32} strokeWidth={2} aria-hidden />
                 </div>
-                <p className="text-emerald-400 font-semibold text-lg">Entrada registrada</p>
+                <p className="text-olive-300 font-semibold text-lg">Entrada registrada</p>
               </div>
             )}
 
@@ -451,9 +450,9 @@ export default function Entradas(): React.JSX.Element {
             {!showSuccess && pendingQr && (
               <div className="space-y-4">
                 {isMansQr(pendingQr.rawData) ? (
-                  <div className="bg-emerald-900/20 border border-emerald-700 rounded-2xl p-4">
-                    <p className="text-sm text-emerald-500 mb-1">QR de Manso</p>
-                    <p className="text-sm text-emerald-300 font-medium">{getMansEventName(pendingQr.rawData)}</p>
+                  <div className="bg-terra-900/20 border border-terra-700 rounded-2xl p-4">
+                    <p className="text-sm text-terra-500 mb-1">QR de Manso</p>
+                    <p className="text-sm text-terra-300 font-medium">{getMansEventName(pendingQr.rawData)}</p>
                   </div>
                 ) : (
                   <div className="bg-neutral-900 border border-white/20 rounded-2xl p-4">
@@ -469,7 +468,7 @@ export default function Entradas(): React.JSX.Element {
                     value={pendingQr.name}
                     onChange={(e) => setPendingQr({ ...pendingQr, name: e.target.value })}
                     placeholder="Nombre del asistente"
-                    className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-terra-500 focus:border-transparent"
                     autoFocus
                   />
                 </div>
@@ -481,7 +480,7 @@ export default function Entradas(): React.JSX.Element {
                       onClick={() => setPendingType('regular')}
                       className={`py-3 rounded-xl border-2 font-medium transition-all ${
                         pendingType === 'regular'
-                          ? 'bg-emerald-600/20 border-emerald-500 text-emerald-400'
+                          ? 'bg-terra-600/20 border-terra-500 text-terra-400'
                           : 'bg-neutral-900/60 border-white/20 text-gray-300'
                       }`}
                     >
@@ -511,7 +510,7 @@ export default function Entradas(): React.JSX.Element {
                   <button
                     onClick={handleConfirmQr}
                     disabled={confirming}
-                    className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold rounded-xl transition-colors"
+                    className="flex-1 py-3 bg-terra-600 hover:bg-terra-500 disabled:opacity-50 text-white font-semibold rounded-xl transition-colors"
                   >
                     {confirming ? 'Registrando...' : 'Confirmar entrada'}
                   </button>
@@ -551,7 +550,7 @@ export default function Entradas(): React.JSX.Element {
                   {!isScanning ? (
                     <button
                       onClick={handleScanQR}
-                      className="w-full min-h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl transition-colors"
+                      className="w-full min-h-12 bg-terra-600 hover:bg-terra-700 text-white font-medium rounded-xl transition-colors"
                     >
                       Iniciar Escáner
                     </button>
@@ -626,9 +625,11 @@ export default function Entradas(): React.JSX.Element {
                 >
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 flex items-center justify-center rounded-full ${
-                      guest.type === 'invitado' ? 'bg-amber-900/30 text-amber-400' : 'bg-emerald-900/30 text-emerald-400'
+                      guest.type === 'invitado' ? 'bg-amber-900/30 text-amber-400' : 'bg-terra-900/30 text-terra-400'
                     }`}>
-                      <span className="text-lg">{guest.type === 'invitado' ? '👥' : '👤'}</span>
+                      {guest.type === 'invitado'
+                        ? <Users size={18} strokeWidth={1.5} aria-hidden />
+                        : <User size={18} strokeWidth={1.5} aria-hidden />}
                     </div>
                     <div>
                       <h3 className="font-medium text-white">{guest.name}</h3>
@@ -638,7 +639,7 @@ export default function Entradas(): React.JSX.Element {
                   <span className={`px-3 py-1 text-sm font-medium rounded-full ${
                     guest.type === 'invitado' 
                       ? 'bg-amber-900/30 text-amber-400' 
-                      : 'bg-emerald-900/30 text-emerald-400'
+                      : 'bg-terra-900/30 text-terra-400'
                   }`}>
                     {guest.type}
                   </span>

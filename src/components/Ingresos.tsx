@@ -1,3 +1,4 @@
+import { Beer, Ticket, Banknote, CreditCard, Smartphone } from 'lucide-react'
 import { useState } from 'react'
 import { useAppStore } from '../store/useAppStore'
 
@@ -38,7 +39,7 @@ export default function Ingresos() {
     <div className="border-t-2 border-zinc-800">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full p-6 sm:p-8 flex items-center justify-between text-left hover:bg-white/5 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
+        className="w-full p-6 sm:p-8 flex items-center justify-between text-left hover:bg-white/5 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-terra-500"
       >
         <h2 className="text-xl font-semibold text-white">Ingresos</h2>
         <svg
@@ -54,14 +55,14 @@ export default function Ingresos() {
       {isExpanded && (
         <div className="px-6 sm:px-8 pb-6 sm:pb-8 space-y-6">
           {/* Total Revenue */}
-          <div className="bg-gradient-to-r from-emerald-900/30 to-emerald-800/30 border border-emerald-700 rounded-2xl p-6">
+          <div className="bg-gradient-to-r from-terra-900/30 to-terra-800/30 border border-terra-700 rounded-2xl p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-emerald-400 text-sm font-medium">Ingresos Totales</p>
+                <p className="text-terra-400 text-sm font-medium">Ingresos Totales</p>
                 <p className="text-3xl font-bold text-white mt-1">{formatCurrency(totalRevenue)}</p>
               </div>
-              <div className="w-12 h-12 bg-emerald-500/20 rounded-full flex items-center justify-center">
-                <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-12 h-12 bg-terra-500/20 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-terra-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
@@ -74,7 +75,7 @@ export default function Ingresos() {
               <div className="bg-blue-900/30 border border-blue-700 rounded-2xl p-4">
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-blue-400 text-sm font-medium">Barra</p>
-                  <span className="text-2xl">🍺</span>
+                  <Beer className="text-blue-400" size={22} strokeWidth={1.5} aria-hidden />
                 </div>
                 <p className="text-2xl font-bold text-white">{formatCurrency(barRevenue)}</p>
                 <p className="text-sm text-gray-400 mt-1">{activeSales.length} ventas</p>
@@ -83,7 +84,7 @@ export default function Ingresos() {
               <div className="bg-amber-900/30 border border-amber-700 rounded-2xl p-4">
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-amber-400 text-sm font-medium">Entradas</p>
-                  <span className="text-2xl">🎫</span>
+                  <Ticket className="text-amber-400" size={22} strokeWidth={1.5} aria-hidden />
                 </div>
                 <p className="text-2xl font-bold text-white">{formatCurrency(ticketRevenue)}</p>
                 <p className="text-sm text-gray-400 mt-1">{activeTicketSales.length} tickets</p>
@@ -96,21 +97,21 @@ export default function Ingresos() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="text-lg">💵</span>
+                    <Banknote className="text-gray-400" size={18} strokeWidth={1.5} aria-hidden />
                     <span className="text-sm text-gray-300">Efectivo</span>
                   </div>
-                  <span className="text-sm font-bold text-emerald-400">{formatCurrency(barRevenueByPayment.efectivo)}</span>
+                  <span className="text-sm font-bold text-terra-400">{formatCurrency(barRevenueByPayment.efectivo)}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="text-lg">💳</span>
+                    <CreditCard className="text-gray-400" size={18} strokeWidth={1.5} aria-hidden />
                     <span className="text-sm text-gray-300">Tarjeta</span>
                   </div>
                   <span className="text-sm font-bold text-blue-400">{formatCurrency(barRevenueByPayment.tarjeta)}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="text-lg">📱</span>
+                    <Smartphone className="text-gray-400" size={18} strokeWidth={1.5} aria-hidden />
                     <span className="text-sm text-gray-300">Transferencia</span>
                   </div>
                   <span className="text-sm font-bold text-purple-400">{formatCurrency(barRevenueByPayment.transferencia)}</span>
@@ -125,7 +126,7 @@ export default function Ingresos() {
             <div className="grid grid-cols-2 gap-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-400">Regular</span>
-                <span className="text-sm font-bold text-emerald-400">{formatCurrency(ticketPrices.regular)}</span>
+                <span className="text-sm font-bold text-terra-400">{formatCurrency(ticketPrices.regular)}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-400">Invitado</span>
@@ -140,13 +141,13 @@ export default function Ingresos() {
               <h3 className="text-sm font-medium text-gray-300 mb-3">Ventas Recientes (Barra)</h3>
               <div className="space-y-2">
                 {recentSales.length > 0 ? recentSales.map((sale) => {
-                  const paymentIcons = {
-                    efectivo: '💵',
-                    tarjeta: '💳',
-                    transferencia: '📱'
-                  }
+                  const PaymentIcon = {
+                    efectivo: Banknote,
+                    tarjeta: CreditCard,
+                    transferencia: Smartphone
+                  }[sale.payment_method]
                   const paymentBubble = {
-                    efectivo: 'bg-emerald-900/30',
+                    efectivo: 'bg-terra-900/30',
                     tarjeta: 'bg-blue-900/30',
                     transferencia: 'bg-purple-900/30'
                   }
@@ -155,17 +156,17 @@ export default function Ingresos() {
                     <div key={sale.id} className="flex items-center justify-between p-3 bg-neutral-900/60 rounded-xl">
                       <div className="flex items-center gap-3">
                         <div className={`w-8 h-8 ${paymentBubble[sale.payment_method]} rounded-full flex items-center justify-center`}>
-                          <span className="text-sm">🍺</span>
+                          <Beer className="text-gray-300" size={15} strokeWidth={1.5} aria-hidden />
                         </div>
                         <div>
                           <p className="text-sm font-medium text-white">{sale.product_name} ×{sale.quantity}</p>
                           <div className="flex items-center gap-2">
                             <span className="text-sm text-gray-400">{new Date(sale.created_at).toLocaleString()}</span>
-                            <span className="text-sm">{paymentIcons[sale.payment_method]}</span>
+                            <PaymentIcon className="text-gray-400" size={14} strokeWidth={1.5} aria-hidden />
                           </div>
                         </div>
                       </div>
-                      <span className="text-sm font-bold text-emerald-400">{formatCurrency(sale.total)}</span>
+                      <span className="text-sm font-bold text-terra-400">{formatCurrency(sale.total)}</span>
                     </div>
                   )
                 }) : (
@@ -181,14 +182,14 @@ export default function Ingresos() {
                   <div key={ticket.id} className="flex items-center justify-between p-3 bg-neutral-900/60 rounded-xl">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 bg-amber-900/30 rounded-full flex items-center justify-center">
-                        <span className="text-sm">🎫</span>
+                        <Ticket className="text-amber-400" size={15} strokeWidth={1.5} aria-hidden />
                       </div>
                       <div>
                         <p className="text-sm font-medium text-white">{ticket.guest_name}</p>
                         <p className="text-sm text-gray-400">{ticket.type} • {new Date(ticket.created_at).toLocaleString()}</p>
                       </div>
                     </div>
-                    <span className="text-sm font-bold text-emerald-400">{formatCurrency(ticket.price)}</span>
+                    <span className="text-sm font-bold text-terra-400">{formatCurrency(ticket.price)}</span>
                   </div>
                 )) : (
                   <p className="text-sm text-gray-400 text-center py-2">Sin tickets recientes</p>

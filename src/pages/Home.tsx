@@ -1,3 +1,4 @@
+import { Lightbulb } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import Ingresos from '../components/Ingresos'
@@ -53,7 +54,7 @@ export default function Home() {
       <Background>
         <div className="max-w-4xl mx-auto px-4 py-8">
           <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-terra-500"></div>
           </div>
         </div>
       </Background>
@@ -204,10 +205,10 @@ export default function Home() {
               {activeEvent?.is_active && (
                 <div className="flex items-center gap-2">
                   <div className="relative">
-                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                    <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-75"></div>
+                    <div className="w-2 h-2 bg-terra-500 rounded-full animate-pulse"></div>
+                    <div className="absolute inset-0 bg-terra-500 rounded-full animate-ping opacity-75"></div>
                   </div>
-                  <span className="text-sm text-emerald-400 font-medium">Vivo</span>
+                  <span className="text-sm text-terra-400 font-medium">Vivo</span>
                 </div>
               )}
             </div>
@@ -217,7 +218,7 @@ export default function Home() {
               onClick={() => setActiveTab('operacion')}
               className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
                 activeTab === 'operacion'
-                  ? 'text-white border-b-2 border-emerald-500'
+                  ? 'text-white border-b-2 border-terra-500'
                   : 'text-gray-400 hover:text-gray-300'
               }`}
             >
@@ -227,7 +228,7 @@ export default function Home() {
               onClick={() => setActiveTab('config')}
               className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
                 activeTab === 'config'
-                  ? 'text-white border-b-2 border-emerald-500'
+                  ? 'text-white border-b-2 border-terra-500'
                   : 'text-gray-400 hover:text-gray-300'
               }`}
             >
@@ -237,7 +238,7 @@ export default function Home() {
               onClick={() => setActiveTab('secciones')}
               className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
                 activeTab === 'secciones'
-                  ? 'text-white border-b-2 border-emerald-500'
+                  ? 'text-white border-b-2 border-terra-500'
                   : 'text-gray-400 hover:text-gray-300'
               }`}
             >
@@ -266,7 +267,7 @@ export default function Home() {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div>
                     <h2 className="text-lg sm:text-xl font-medium text-gray-400">Balance Total</h2>
-                    <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-emerald-400 mt-2">
+                    <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-terra-400 mt-2">
                       {formatCurrency(balance)}
                     </p>
                   </div>
@@ -289,7 +290,7 @@ export default function Home() {
               <div className="border-t-2 border-zinc-800">
                 <button
                   onClick={() => setIsStockExpanded(!isStockExpanded)}
-                  className="w-full p-6 sm:p-8 flex items-center justify-between text-left hover:bg-white/5 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
+                  className="w-full p-6 sm:p-8 flex items-center justify-between text-left hover:bg-white/5 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-terra-500"
                 >
                   <h2 className="text-xl font-semibold text-white">Stock Inicial</h2>
                   <svg
@@ -305,7 +306,8 @@ export default function Home() {
                 {isStockExpanded && (
                   <div className="px-6 sm:px-8 pb-6 sm:pb-8">
                     <div className="mb-4 p-3 bg-indigo-950/30 border border-indigo-700/40 rounded-xl text-sm text-indigo-300 leading-relaxed">
-                      💡 <strong className="text-indigo-200">Stock Inicial</strong> — Acá se carga el stock de los
+                      <Lightbulb className="inline-block mr-1 -mt-0.5" size={14} strokeWidth={1.5} aria-hidden />
+                      <strong className="text-indigo-200">Stock Inicial</strong> — Acá se carga el stock de los
                       <strong className="text-indigo-200"> contenedores</strong> (botellas, packs, etc.).
                       Las <strong className="text-indigo-200">porciones</strong> (copas, vasos, platos) no tienen stock propio:
                       su disponibilidad se calcula automáticamente desde el contenedor en la sección <strong className="text-indigo-200">Barra</strong>.
@@ -361,7 +363,7 @@ export default function Home() {
                                     type="number"
                                     value={editPriceValue}
                                     onChange={e => setEditPriceValue(e.target.value)}
-                                    className="w-24 px-2 py-1 bg-neutral-900 border border-white/20 rounded text-white text-sm focus:outline-none focus:border-emerald-500"
+                                    className="w-24 px-2 py-1 bg-neutral-900 border border-white/20 rounded text-white text-sm focus:outline-none focus:border-terra-500"
                                     autoFocus
                                     onKeyDown={e => {
                                       if (e.key === 'Enter') saveEditPrice(product.id)
@@ -370,7 +372,7 @@ export default function Home() {
                                   />
                                   <button
                                     onClick={() => saveEditPrice(product.id)}
-                                    className="w-6 h-6 flex items-center justify-center bg-emerald-600 hover:bg-emerald-500 rounded transition-colors"
+                                    className="w-6 h-6 flex items-center justify-center bg-terra-600 hover:bg-terra-500 rounded transition-colors"
                                   >
                                     <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -390,7 +392,7 @@ export default function Home() {
                                   Precio: {formatCurrency(product.price)}
                                   <button
                                     onClick={() => startEditPrice(product.id, product.price)}
-                                    className="ml-1.5 inline-flex items-center text-gray-400 hover:text-emerald-400 transition-colors align-middle"
+                                    className="ml-1.5 inline-flex items-center text-gray-400 hover:text-terra-400 transition-colors align-middle"
                                     aria-label="Editar precio"
                                   >
                                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -405,7 +407,7 @@ export default function Home() {
                                   <select
                                     value={product.subcategory || ''}
                                     onChange={e => updateProduct(product.id, { subcategory: e.target.value || null })}
-                                    className="text-xs bg-neutral-800 border border-white/20 rounded-lg px-2 py-0.5 text-gray-300 focus:outline-none focus:border-emerald-500 cursor-pointer"
+                                    className="text-xs bg-neutral-800 border border-white/20 rounded-lg px-2 py-0.5 text-gray-300 focus:outline-none focus:border-terra-500 cursor-pointer"
                                   >
                                     <option value="">Vino</option>
                                     <option value="trago">Trago</option>
@@ -428,7 +430,7 @@ export default function Home() {
                                 min="0"
                                 value={stockValues[product.id]}
                                 onChange={(e) => handleStockChange(product.id, parseInt(e.target.value) || 0)}
-                                className="w-20 text-center bg-neutral-900/80 border border-white/20 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-white"
+                                className="w-20 text-center bg-neutral-900/80 border border-white/20 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-terra-500 focus:border-transparent text-white"
                               />
                               <button
                                 onClick={() => handleStockChange(product.id, stockValues[product.id] + 1)}
@@ -510,7 +512,7 @@ export default function Home() {
                     <div className="mt-6 border-t border-white/20 pt-4">
                       <button
                         onClick={() => setShowNewProduct(!showNewProduct)}
-                        className="flex items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 transition-colors font-medium"
+                        className="flex items-center gap-2 text-sm text-terra-400 hover:text-terra-300 transition-colors font-medium"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -524,7 +526,7 @@ export default function Home() {
                             value={newProduct.name}
                             onChange={e => setNewProduct(p => ({ ...p, name: e.target.value }))}
                             placeholder="Nombre del producto"
-                            className="flex-1 px-3 py-2 bg-neutral-900 border border-white/20 rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500 placeholder-gray-600"
+                            className="flex-1 px-3 py-2 bg-neutral-900 border border-white/20 rounded-xl text-white text-sm focus:outline-none focus:border-terra-500 placeholder-gray-600"
                           />
                           <input
                             type="number"
@@ -532,12 +534,12 @@ export default function Home() {
                             onChange={e => setNewProduct(p => ({ ...p, price: e.target.value }))}
                             placeholder="Precio"
                             min="0"
-                            className="w-full sm:w-28 px-3 py-2 bg-neutral-900 border border-white/20 rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500 placeholder-gray-600"
+                            className="w-full sm:w-28 px-3 py-2 bg-neutral-900 border border-white/20 rounded-xl text-white text-sm focus:outline-none focus:border-terra-500 placeholder-gray-600"
                           />
                           <select
                             value={newProduct.category}
                             onChange={e => setNewProduct(p => ({ ...p, category: e.target.value as 'bebida' | 'comida' | 'otro', subcategory: '' }))}
-                            className="w-full sm:w-28 px-3 py-2 bg-neutral-900 border border-white/20 rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500"
+                            className="w-full sm:w-28 px-3 py-2 bg-neutral-900 border border-white/20 rounded-xl text-white text-sm focus:outline-none focus:border-terra-500"
                           >
                             <option value="bebida">Bebida</option>
                             <option value="comida">Comida</option>
@@ -547,7 +549,7 @@ export default function Home() {
                             <select
                               value={newProduct.subcategory}
                               onChange={e => setNewProduct(p => ({ ...p, subcategory: e.target.value }))}
-                              className="w-full sm:w-36 px-3 py-2 bg-neutral-900 border border-white/20 rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500"
+                              className="w-full sm:w-36 px-3 py-2 bg-neutral-900 border border-white/20 rounded-xl text-white text-sm focus:outline-none focus:border-terra-500"
                             >
                               <option value="">Vino</option>
                               <option value="trago">Trago</option>
@@ -557,7 +559,7 @@ export default function Home() {
                           )}
                           <button
                             onClick={handleAddProduct}
-                            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-xl transition-colors"
+                            className="px-4 py-2 bg-terra-600 hover:bg-terra-700 text-white text-sm font-medium rounded-xl transition-colors"
                           >
                             Agregar
                           </button>
@@ -580,14 +582,14 @@ export default function Home() {
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                     <div>
                       <h2 className="text-xl font-semibold text-white">Arqueo de Caja</h2>
-                      <p className="text-sm text-gray-400 mt-1">Evento activo: <span className="text-emerald-400">{activeEvent.name}</span></p>
+                      <p className="text-sm text-gray-400 mt-1">Evento activo: <span className="text-terra-400">{activeEvent.name}</span></p>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
                     <div className="bg-neutral-900 border border-white/20 rounded-2xl p-3 text-center">
                       <p className="text-sm text-gray-400">Balance</p>
-                      <p className="text-lg font-bold text-emerald-400">{formatCurrency(balance)}</p>
+                      <p className="text-lg font-bold text-terra-400">{formatCurrency(balance)}</p>
                     </div>
                     <div className="bg-neutral-900 border border-white/20 rounded-2xl p-3 text-center">
                       <p className="text-sm text-gray-400">Ventas barra</p>
@@ -599,7 +601,7 @@ export default function Home() {
                     </div>
                     <div className="bg-neutral-900 border border-white/20 rounded-2xl p-3 text-center">
                       <p className="text-sm text-gray-400">Recaudado</p>
-                      <p className="text-lg font-bold text-emerald-400">
+                      <p className="text-lg font-bold text-terra-400">
                         {formatCurrency(
                           eventSales.reduce((s, v) => s + v.total, 0) +
                           eventTicketSales.reduce((s, t) => s + t.price, 0)
@@ -655,7 +657,7 @@ export default function Home() {
                 </div>
                 <div className="bg-neutral-900 border border-white/20 rounded-2xl p-4">
                   <p className="text-sm text-gray-400">Valor Stock</p>
-                  <p className="text-2xl font-bold mt-1 text-emerald-400">
+                  <p className="text-2xl font-bold mt-1 text-terra-400">
                     {formatCurrency(products.reduce((sum, product) => sum + (stockValues[product.id] * product.price), 0))}
                     </p>
                 </div>

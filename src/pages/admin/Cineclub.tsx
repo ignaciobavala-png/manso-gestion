@@ -1,3 +1,4 @@
+import { Clapperboard, Pencil, X } from 'lucide-react'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
 import { compressImage } from '../../lib/compressImage'
@@ -277,7 +278,7 @@ export default function CineclubAdmin() {
                   </button>
                 ) : (
                   <>
-                    <button onClick={handleReopenPoll} className="bg-emerald-500/20 text-emerald-400 border border-emerald-400/40 px-3 py-1.5 rounded-xl text-xs font-semibold hover:bg-emerald-500/30 transition-colors">
+                    <button onClick={handleReopenPoll} className="bg-terra-500/20 text-terra-400 border border-terra-400/40 px-3 py-1.5 rounded-xl text-xs font-semibold hover:bg-terra-500/30 transition-colors">
                       Reabrir
                     </button>
                     <button onClick={handleCreatePoll} className="bg-white/10 text-white/70 border border-white/20 px-3 py-1.5 rounded-xl text-xs font-semibold hover:bg-white/20 transition-colors">
@@ -339,7 +340,7 @@ export default function CineclubAdmin() {
                           <img src={movie.flyer_url} alt={movie.title} className="absolute inset-0 w-full h-full object-cover" />
                         ) : (
                           <div className="absolute inset-0 flex items-center justify-center bg-gray-800/80">
-                            <span className="text-3xl">🎬</span>
+                            <Clapperboard className="text-white/30" size={32} strokeWidth={1.25} aria-hidden />
                           </div>
                         )}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
@@ -348,15 +349,17 @@ export default function CineclubAdmin() {
                           <div className="absolute top-2 right-2 flex gap-1.5">
                             <button
                               onClick={() => startEdit(movie)}
-                              className="w-7 h-7 flex items-center justify-center rounded-lg bg-black/60 text-white/60 hover:text-white text-xs transition-colors"
+                              className="w-7 h-7 flex items-center justify-center rounded-lg bg-black/60 text-white/60 hover:text-white transition-colors"
+                              aria-label="Editar película"
                             >
-                              ✎
+                              <Pencil size={13} strokeWidth={1.5} />
                             </button>
                             <button
                               onClick={() => handleDeleteMovie(movie.id)}
-                              className="w-7 h-7 flex items-center justify-center rounded-lg bg-black/60 text-white/60 hover:text-red-400 text-xs transition-colors"
+                              className="w-7 h-7 flex items-center justify-center rounded-lg bg-black/60 text-white/60 hover:text-red-400 transition-colors"
+                              aria-label="Borrar película"
                             >
-                              ✕
+                              <X size={13} strokeWidth={1.5} />
                             </button>
                           </div>
                         )}
@@ -415,7 +418,7 @@ export default function CineclubAdmin() {
                               </div>
                               <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
                                 <div
-                                  className="h-full bg-emerald-400 rounded-full transition-all duration-500"
+                                  className="h-full bg-terra-400 rounded-full transition-all duration-500"
                                   style={{ width: `${pct}%` }}
                                 />
                               </div>

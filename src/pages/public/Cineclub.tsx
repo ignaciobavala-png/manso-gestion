@@ -1,3 +1,4 @@
+import { ArrowLeft, Clapperboard, Check, Share2 } from 'lucide-react'
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, Navigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
@@ -46,9 +47,10 @@ function PageHeader({ subtitle }: { subtitle?: string }) {
         <div className="flex items-center">
           <button
             onClick={() => navigate('/')}
-            className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all text-lg"
+            className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all"
+            aria-label="Volver"
           >
-            ←
+            <ArrowLeft size={20} strokeWidth={1.5} />
           </button>
         </div>
         <h1 className="text-white font-bold text-2xl text-center -mt-10">Cineclub</h1>
@@ -77,7 +79,7 @@ export default function Cineclub() {
 
   const handleShare = async (movieTitle: string, movieId: string) => {
     const url = window.location.href
-    const text = `🎬 ¡Votá por "${movieTitle}"! Elegí la próxima película del Cineclub → ${url}`
+    const text = `¡Votá por "${movieTitle}"! Elegí la próxima película del Cineclub → ${url}`
 
     if (navigator.share) {
       try {
@@ -214,7 +216,7 @@ export default function Cineclub() {
     return (
       <PublicLayout>
         <div className="flex-1 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-emerald-400" />
+          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-terra-400" />
         </div>
       </PublicLayout>
     )
@@ -225,7 +227,7 @@ export default function Cineclub() {
       <PublicLayout>
         <PageHeader />
         <div className="flex-1 flex flex-col items-center justify-center text-center gap-4 -mt-12">
-          <p className="text-4xl">🎬</p>
+          <Clapperboard className="text-white/40" size={40} strokeWidth={1.25} aria-hidden />
           <p className="text-white/60 text-sm">No hay ninguna votación activa por el momento.</p>
         </div>
       </PublicLayout>
@@ -237,7 +239,7 @@ export default function Cineclub() {
       <PublicLayout>
         <PageHeader />
         <div className="flex-1 flex flex-col items-center justify-center text-center gap-3 -mt-12">
-          <p className="text-4xl">🎬</p>
+          <Clapperboard className="text-white/40" size={40} strokeWidth={1.25} aria-hidden />
           <p className="text-white font-bold text-xl">Votación finalizada</p>
           <p className="text-gray-400 text-sm max-w-xs">
             Se confirmará la fecha de proyección próximamente.
@@ -255,9 +257,10 @@ export default function Cineclub() {
           <div className="flex items-center">
             <button
               onClick={() => navigate('/')}
-              className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all text-lg"
+              className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all"
+              aria-label="Volver"
             >
-              ←
+              <ArrowLeft size={20} strokeWidth={1.5} />
             </button>
           </div>
           <h1 className="text-white font-bold text-2xl text-center -mt-10">Cineclub</h1>
@@ -276,7 +279,7 @@ export default function Cineclub() {
               <div
                 key={movie.id}
                 className={`flex flex-col rounded-2xl overflow-hidden border bg-black/40 backdrop-blur-sm transition-all ${
-                  isVoted ? 'border-emerald-500/50' : 'border-white/20'
+                  isVoted ? 'border-terra-500/50' : 'border-white/20'
                 }`}
               >
                 {/* Flyer 3:4 */}
@@ -289,7 +292,7 @@ export default function Cineclub() {
                     />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center bg-gray-800/80">
-                      <span className="text-4xl">🎬</span>
+                      <Clapperboard className="text-white/30" size={38} strokeWidth={1.25} aria-hidden />
                     </div>
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
@@ -297,7 +300,7 @@ export default function Cineclub() {
 
                 {/* Info */}
                 <div className="p-3 space-y-2">
-                  <p className={`font-semibold text-sm leading-tight transition-colors ${isVoted ? 'text-emerald-300' : 'text-white'}`}>
+                  <p className={`font-semibold text-sm leading-tight transition-colors ${isVoted ? 'text-terra-300' : 'text-white'}`}>
                     {movie.title}
                   </p>
 
@@ -324,7 +327,7 @@ export default function Cineclub() {
                       </div>
                       <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-emerald-400 rounded-full transition-all duration-500"
+                          className="h-full bg-terra-400 rounded-full transition-all duration-500"
                           style={{ width: `${pct}%` }}
                         />
                       </div>
@@ -336,20 +339,26 @@ export default function Cineclub() {
                     disabled={!!votedMovieId || voting}
                     className={`w-full py-2 rounded-xl text-xs font-semibold transition-all active:scale-95 ${
                       isVoted
-                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-400/40 cursor-default'
+                        ? 'bg-terra-500/20 text-terra-400 border border-terra-400/40 cursor-default'
                         : votedMovieId
                         ? 'bg-white/5 text-white/30 cursor-not-allowed'
                         : 'bg-white text-black hover:bg-white/90'
                     }`}
                   >
-                    {isVoted ? '✓ Tu voto' : 'Votar'}
+                    {isVoted
+                      ? <span className="inline-flex items-center justify-center gap-1.5"><Check size={13} strokeWidth={2} aria-hidden /> Tu voto</span>
+                      : 'Votar'}
                   </button>
 
                   <button
                     onClick={() => handleShare(movie.title, movie.id)}
                     className="w-full py-2 rounded-xl text-xs font-semibold border border-white/25 text-white/70 hover:border-white/30 hover:text-white transition-all active:scale-95"
                   >
-                    {sharedId === movie.id ? '✓ Link copiado' : '↗ Compartir'}
+                    <span className="inline-flex items-center justify-center gap-1.5">
+                      {sharedId === movie.id
+                        ? <><Check size={13} strokeWidth={2} aria-hidden /> Link copiado</>
+                        : <><Share2 size={13} strokeWidth={1.5} aria-hidden /> Compartir</>}
+                    </span>
                   </button>
                 </div>
               </div>
@@ -382,7 +391,7 @@ export default function Cineclub() {
                 onChange={e => { setEmailInput(e.target.value); setEmailError('') }}
                 onKeyDown={e => e.key === 'Enter' && confirmVote()}
                 autoFocus
-                className="w-full bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-400 focus:outline-none focus:border-emerald-500"
+                className="w-full bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-400 focus:outline-none focus:border-terra-500"
               />
               {emailError && <p className="text-red-400 text-xs px-1">{emailError}</p>}
             </div>

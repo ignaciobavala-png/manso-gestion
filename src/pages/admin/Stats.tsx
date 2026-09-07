@@ -139,7 +139,7 @@ export default function Stats() {
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-emerald-400" />
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-terra-400" />
       </div>
     )
   }
@@ -151,7 +151,7 @@ export default function Stats() {
       {/* KPIs */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Ingresos totales', value: totalIngresos, color: 'text-emerald-400' },
+          { label: 'Ingresos totales', value: totalIngresos, color: 'text-terra-400' },
           { label: 'Egresos totales', value: totalEgresos, color: 'text-red-400' },
           { label: 'Inversión socios', value: totalInvARS, color: 'text-blue-400' },
         ].map(k => (

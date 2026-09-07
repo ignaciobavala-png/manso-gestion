@@ -1,3 +1,4 @@
+import { Download, Check } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import QRCode from 'qrcode'
 import { supabase } from '../lib/supabase'
@@ -129,12 +130,12 @@ export default function EventoActivo() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold text-white">Evento activo</h2>
-          <p className="text-emerald-400 text-sm mt-0.5">{activeEvent.name}</p>
+          <p className="text-terra-400 text-sm mt-0.5">{activeEvent.name}</p>
         </div>
         {/* Estado del registro */}
         <span className={`text-sm font-semibold px-3 py-1.5 rounded-full ${
           registrationsOpen
-            ? 'bg-emerald-900/50 text-emerald-400 border border-emerald-700'
+            ? 'bg-terra-900/50 text-terra-400 border border-terra-700'
             : 'bg-amber-900/50 text-amber-400 border border-amber-700'
         }`}>
           {registrationsOpen ? 'Registro abierto' : 'Pausado'}
@@ -149,9 +150,10 @@ export default function EventoActivo() {
           </div>
           <button
             onClick={downloadQR}
-            className="w-full py-2.5 bg-white/10 hover:bg-white/20 text-white text-sm font-medium rounded-xl transition-colors active:scale-95"
+            className="w-full py-2.5 bg-white/10 hover:bg-white/20 text-white text-sm font-medium rounded-xl transition-colors active:scale-95 flex items-center justify-center gap-2"
           >
-            📷 Descargar QR del evento
+            <Download size={16} strokeWidth={1.5} aria-hidden />
+            Descargar QR del evento
           </button>
         </div>
       )}
@@ -186,14 +188,14 @@ export default function EventoActivo() {
             value={maxCapacity}
             onChange={e => { setMaxCapacity(e.target.value); setCapacitySaved(false) }}
             placeholder="Sin límite"
-            className="flex-1 bg-neutral-900/80 border border-white/20 rounded-xl px-4 py-2.5 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-emerald-500 transition-colors"
+            className="flex-1 bg-neutral-900/80 border border-white/20 rounded-xl px-4 py-2.5 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-terra-500 transition-colors"
           />
           <button
             onClick={saveCapacity}
             disabled={savingCapacity}
             className="px-4 py-2.5 bg-white/10 hover:bg-white/20 disabled:opacity-50 text-white text-sm font-medium rounded-xl transition-colors"
           >
-            {capacitySaved ? '✓' : 'Guardar'}
+            {capacitySaved ? <Check size={16} strokeWidth={2} aria-label="Guardado" /> : 'Guardar'}
           </button>
         </div>
       </div>
@@ -209,7 +211,7 @@ export default function EventoActivo() {
             value={aliasPago}
             onChange={e => { setAliasPago(e.target.value); setAliasSaved(false) }}
             placeholder="Ej: PROD.NOCHE.123"
-            className="w-full bg-neutral-900/80 border border-white/20 rounded-xl px-4 py-2.5 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-emerald-500 transition-colors"
+            className="w-full bg-neutral-900/80 border border-white/20 rounded-xl px-4 py-2.5 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-terra-500 transition-colors"
           />
         </div>
         <div>
@@ -219,15 +221,19 @@ export default function EventoActivo() {
             value={cbuPago}
             onChange={e => { setCbuPago(e.target.value); setAliasSaved(false) }}
             placeholder="Opcional"
-            className="w-full bg-neutral-900/80 border border-white/20 rounded-xl px-4 py-2.5 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-emerald-500 transition-colors"
+            className="w-full bg-neutral-900/80 border border-white/20 rounded-xl px-4 py-2.5 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-terra-500 transition-colors"
           />
         </div>
         <button
           onClick={saveAlias}
           disabled={savingAlias}
-          className="w-full py-2.5 bg-white/10 hover:bg-white/20 disabled:opacity-50 text-white text-sm font-medium rounded-xl transition-colors"
+          className="w-full py-2.5 bg-white/10 hover:bg-white/20 disabled:opacity-50 text-white text-sm font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
         >
-          {savingAlias ? 'Guardando...' : aliasSaved ? '✓ Guardado' : 'Guardar alias'}
+          {savingAlias
+            ? 'Guardando...'
+            : aliasSaved
+              ? <><Check size={16} strokeWidth={2} aria-hidden /> Guardado</>
+              : 'Guardar alias'}
         </button>
       </div>
 
@@ -238,7 +244,7 @@ export default function EventoActivo() {
         className={`w-full py-3.5 rounded-2xl font-semibold text-sm transition-all active:scale-95 disabled:opacity-50 ${
           registrationsOpen
             ? 'bg-amber-700 hover:bg-amber-600 text-white'
-            : 'bg-emerald-700 hover:bg-emerald-600 text-white'
+            : 'bg-terra-700 hover:bg-terra-600 text-white'
         }`}
       >
         {savingPause

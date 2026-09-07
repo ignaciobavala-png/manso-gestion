@@ -159,7 +159,7 @@ export default function Secciones() {
                     disabled={!cargado || guardando !== null}
                     className={`flex-1 py-2.5 text-sm font-medium transition-colors disabled:opacity-60 ${
                       actual === opcion
-                        ? 'bg-emerald-600 text-white'
+                        ? 'bg-terra-600 text-white'
                         : 'text-gray-400 hover:text-white'
                     }`}
                   >

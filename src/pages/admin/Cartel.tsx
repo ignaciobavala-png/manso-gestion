@@ -88,7 +88,7 @@ export default function Cartel() {
                   onClick={() => setDestinoIdx(i)}
                   className={`rounded-xl py-3 px-3 text-sm font-semibold transition-all active:scale-95 border ${
                     i === destinoIdx
-                      ? 'bg-emerald-600 border-emerald-500 text-white'
+                      ? 'bg-terra-600 border-terra-500 text-white'
                       : 'bg-white/5 border-white/25 text-gray-300 hover:bg-white/10'
                   }`}
                 >
@@ -104,7 +104,7 @@ export default function Cartel() {
               type="text"
               value={dominio}
               onChange={e => setDominio(e.target.value)}
-              className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-emerald-500"
+              className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-terra-500"
             />
             <p className="text-gray-400 text-xs mt-1.5">
               Se imprime tal cual queda acá: <span className="font-mono">{urlVisible}</span>
@@ -140,7 +140,7 @@ export default function Cartel() {
 
         <button
           onClick={() => window.print()}
-          className="w-full mt-6 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-4 rounded-2xl transition-all active:scale-95 text-sm print:hidden"
+          className="w-full mt-6 bg-terra-600 hover:bg-terra-500 text-white font-semibold py-4 rounded-2xl transition-all active:scale-95 text-sm print:hidden"
         >
           Imprimir cartel →
         </button>

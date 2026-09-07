@@ -1,3 +1,4 @@
+import { ArrowLeft, Check, CircleAlert } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
@@ -108,7 +109,7 @@ function AccordionGroup({ group }: { group: Group }) {
               {group.items.map(product => (
                 <div key={product.id} className="flex items-center justify-between px-5 py-4">
                   <p className="text-white text-sm font-medium">{product.name}</p>
-                  <p className="text-emerald-400 text-base font-bold ml-4 flex-shrink-0">{formatPrice(product.price)}</p>
+                  <p className="text-terra-400 text-base font-bold ml-4 flex-shrink-0">{formatPrice(product.price)}</p>
                 </div>
               ))}
             </div>
@@ -151,7 +152,7 @@ export default function Carta() {
     return (
       <PublicLayout>
         <div className="flex-1 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-emerald-400" />
+          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-terra-400" />
         </div>
       </PublicLayout>
     )
@@ -161,12 +162,12 @@ export default function Carta() {
     return (
       <PublicLayout>
         <div className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-4 -mt-12">
-          <p className="text-4xl">😕</p>
+          <CircleAlert className="text-terra-400" size={40} strokeWidth={1.25} aria-hidden />
           <h2 className="text-xl font-bold text-white">Algo salió mal</h2>
           <p className="text-gray-300 text-sm max-w-xs">{error}</p>
           <button
             onClick={() => navigate(0)}
-            className="text-emerald-400 text-sm font-semibold hover:text-emerald-300 transition-colors"
+            className="text-terra-400 text-sm font-semibold hover:text-terra-300 transition-colors"
           >
             Intentar de nuevo →
           </button>
@@ -183,9 +184,10 @@ export default function Carta() {
         <div className="w-full max-w-md px-8">
           <button
             onClick={() => navigate('/')}
-            className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all text-lg mb-6"
+            className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all mb-6"
+            aria-label="Volver"
           >
-            ←
+            <ArrowLeft size={20} strokeWidth={1.5} />
           </button>
           <h1 className="text-white font-bold text-2xl text-center -mt-10 mb-6">Carta</h1>
         </div>
@@ -193,14 +195,13 @@ export default function Carta() {
         <div className="mb-8 px-6 w-full max-w-md mx-auto">
           <button
             onClick={copyAlias}
-            className="w-full bg-white/5 border border-white/20 hover:border-emerald-500/50 rounded-2xl px-4 py-4 text-center transition-all active:scale-95"
+            className="w-full bg-white/5 border border-white/20 hover:border-terra-500/50 rounded-2xl px-4 py-4 text-center transition-all active:scale-95"
           >
             <p className="text-white/40 text-xs uppercase tracking-widest mb-1">Alias de pago</p>
-            <p
-              className="text-white text-xl font-bold"
-              style={{ fontFamily: "'Space Mono', monospace", letterSpacing: '0.05em' }}
-            >
-              {aliasCopied ? '✓ Copiado' : 'MANSO.CLUB'}
+            <p className="text-white text-xl font-bold tracking-[0.08em] uppercase">
+              {aliasCopied
+                ? <span className="inline-flex items-center justify-center gap-2"><Check size={18} strokeWidth={2} aria-hidden /> Copiado</span>
+                : 'MANSO.CLUB'}
             </p>
             {!aliasCopied && <p className="text-white/30 text-xs mt-1">Tocá para copiar</p>}
           </button>

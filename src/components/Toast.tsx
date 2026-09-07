@@ -18,7 +18,7 @@ export default function Toast({ message, type, isOpen, onClose, action }: ToastP
   if (!isOpen) return null
 
   const bgColor = type === 'success'
-    ? 'bg-emerald-700/90 border-emerald-500'
+    ? 'bg-terra-700/90 border-terra-500'
     : type === 'warning'
       ? 'bg-orange-700/90 border-orange-500'
       : 'bg-zinc-800/90 border-zinc-600'
@@ -30,7 +30,7 @@ export default function Toast({ message, type, isOpen, onClose, action }: ToastP
         {action && (
           <button
             onClick={() => { action.onClick(); onClose() }}
-            className="text-emerald-300 hover:text-emerald-200 text-sm font-semibold whitespace-nowrap"
+            className="text-terra-300 hover:text-terra-200 text-sm font-semibold whitespace-nowrap"
           >
             {action.label}
           </button>

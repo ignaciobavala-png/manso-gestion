@@ -40,7 +40,7 @@ export default function RegistroEventos() {
     <div className="border-t-2 border-zinc-800">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full p-6 sm:p-8 flex items-center justify-between text-left hover:bg-white/5 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
+        className="w-full p-6 sm:p-8 flex items-center justify-between text-left hover:bg-white/5 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-terra-500"
       >
         <div>
           <h2 className="text-xl font-semibold text-white">Registro de Eventos</h2>
@@ -77,7 +77,7 @@ export default function RegistroEventos() {
                   </div>
                   <div className="text-right shrink-0">
                     <p className="text-sm text-gray-400">Total recaudado</p>
-                    <p className="text-xl font-bold text-emerald-400">{formatCurrency(total)}</p>
+                    <p className="text-xl font-bold text-terra-400">{formatCurrency(total)}</p>
                   </div>
                 </div>
 

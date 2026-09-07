@@ -7,6 +7,8 @@
  * esto y no un hueco.
  */
 
+import type { IconoNombre } from './iconos'
+
 export interface TarjetaIncluye {
   id: string
   icono: string
@@ -35,11 +37,19 @@ export const LANDING_POR_DEFECTO: CoworkLanding = {
   incluye: [],
 }
 
-/** Emojis sugeridos en el editor. No es una lista cerrada: se puede escribir otro. */
-export const ICONOS_SUGERIDOS = ['🪑', '📶', '☕', '🤫', '🔌', '🌿', '🖨️', '🧑‍💻', '🍽️', '🎧']
+/**
+ * Los íconos que ofrece el editor. Son nombres del set de la app
+ * (`components/Icono.tsx`), no emojis: lo guardado en la base es la llave.
+ * Las tarjetas viejas tienen el emoji escrito y se siguen mostrando bien —
+ * `Icono` las traduce al vuelo.
+ */
+export const ICONOS_SUGERIDOS: IconoNombre[] = [
+  'silla', 'wifi', 'cafe', 'silencio', 'enchufe',
+  'planta', 'impresora', 'laptop', 'comida', 'auriculares',
+]
 
 export function nuevaTarjeta(): TarjetaIncluye {
-  return { id: crypto.randomUUID(), icono: '🪑', titulo: '', detalle: '' }
+  return { id: crypto.randomUUID(), icono: 'silla', titulo: '', detalle: '' }
 }
 
 /**
@@ -54,7 +64,7 @@ export function normalizarLanding(guardado: unknown): CoworkLanding {
         .filter((t): t is TarjetaIncluye => !!t && typeof t === 'object')
         .map((t, i) => ({
           id: typeof t.id === 'string' ? t.id : `tarjeta-${i}`,
-          icono: typeof t.icono === 'string' ? t.icono : '•',
+          icono: typeof t.icono === 'string' ? t.icono : 'silla',
           titulo: typeof t.titulo === 'string' ? t.titulo : '',
           detalle: typeof t.detalle === 'string' ? t.detalle : '',
         }))

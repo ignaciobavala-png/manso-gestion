@@ -144,13 +144,13 @@ export default function EventCreator({ onCreated, coworkPorDefecto = false }: Pr
             <img src={qrCodeUrl} alt="QR del evento" className="w-56 h-56" />
           </div>
           <div className="text-center space-y-1">
-            <p className="text-emerald-400 font-semibold text-lg">{createdEventName}</p>
+            <p className="text-terra-400 font-semibold text-lg">{createdEventName}</p>
             <p className="text-sm text-gray-400">Evento en operación — compartí este QR para el registro público</p>
           </div>
         </div>
         <button
           onClick={downloadQR}
-          className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl transition-colors"
+          className="w-full py-3 bg-terra-600 hover:bg-terra-700 text-white font-semibold rounded-xl transition-colors"
         >
           Descargar QR
         </button>
@@ -180,13 +180,13 @@ export default function EventCreator({ onCreated, coworkPorDefecto = false }: Pr
             }))
           }}
           placeholder="Ej: La Nube — Vinilos"
-          className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+          className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-terra-500 focus:border-transparent"
         />
       </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-1">Link del evento</label>
-        <div className="flex items-center gap-2 bg-neutral-900/80 border border-white/20 rounded-xl px-4 py-3 focus-within:ring-2 focus-within:ring-emerald-500 focus-within:border-transparent">
+        <div className="flex items-center gap-2 bg-neutral-900/80 border border-white/20 rounded-xl px-4 py-3 focus-within:ring-2 focus-within:ring-terra-500 focus-within:border-transparent">
           <span className="text-gray-400 text-sm whitespace-nowrap">/registro/</span>
           <input
             type="text"
@@ -210,7 +210,7 @@ export default function EventCreator({ onCreated, coworkPorDefecto = false }: Pr
             onClick={() => setCoworkDay(false)}
             className={`flex-1 py-3 text-sm font-medium transition-colors ${
               !coworkDay
-                ? 'bg-emerald-600 text-white'
+                ? 'bg-terra-600 text-white'
                 : 'text-gray-400 hover:text-white'
             }`}
           >
@@ -221,7 +221,7 @@ export default function EventCreator({ onCreated, coworkPorDefecto = false }: Pr
             onClick={() => setCoworkDay(true)}
             className={`flex-1 py-3 text-sm font-medium transition-colors ${
               coworkDay
-                ? 'bg-emerald-600 text-white'
+                ? 'bg-terra-600 text-white'
                 : 'text-gray-400 hover:text-white'
             }`}
           >
@@ -243,7 +243,7 @@ export default function EventCreator({ onCreated, coworkPorDefecto = false }: Pr
             onClick={() => setIsPrivate(false)}
             className={`flex-1 py-3 text-sm font-medium transition-colors ${
               !isPrivate
-                ? 'bg-emerald-600 text-white'
+                ? 'bg-terra-600 text-white'
                 : 'text-gray-400 hover:text-white'
             }`}
           >
@@ -254,7 +254,7 @@ export default function EventCreator({ onCreated, coworkPorDefecto = false }: Pr
             onClick={() => setIsPrivate(true)}
             className={`flex-1 py-3 text-sm font-medium transition-colors ${
               isPrivate
-                ? 'bg-emerald-600 text-white'
+                ? 'bg-terra-600 text-white'
                 : 'text-gray-400 hover:text-white'
             }`}
           >
@@ -273,7 +273,7 @@ export default function EventCreator({ onCreated, coworkPorDefecto = false }: Pr
             onClick={() => setOneTicketPerEmail(false)}
             className={`flex-1 py-3 text-sm font-medium transition-colors ${
               !oneTicketPerEmail
-                ? 'bg-emerald-600 text-white'
+                ? 'bg-terra-600 text-white'
                 : 'text-gray-400 hover:text-white'
             }`}
           >
@@ -284,7 +284,7 @@ export default function EventCreator({ onCreated, coworkPorDefecto = false }: Pr
             onClick={() => setOneTicketPerEmail(true)}
             className={`flex-1 py-3 text-sm font-medium transition-colors ${
               oneTicketPerEmail
-                ? 'bg-emerald-600 text-white'
+                ? 'bg-terra-600 text-white'
                 : 'text-gray-400 hover:text-white'
             }`}
           >
@@ -303,7 +303,7 @@ export default function EventCreator({ onCreated, coworkPorDefecto = false }: Pr
             onClick={() => setIsPaid(false)}
             className={`flex-1 py-3 text-sm font-medium transition-colors ${
               !isPaid
-                ? 'bg-emerald-600 text-white'
+                ? 'bg-terra-600 text-white'
                 : 'text-gray-400 hover:text-white'
             }`}
           >
@@ -314,7 +314,7 @@ export default function EventCreator({ onCreated, coworkPorDefecto = false }: Pr
             onClick={() => setIsPaid(true)}
             className={`flex-1 py-3 text-sm font-medium transition-colors ${
               isPaid
-                ? 'bg-emerald-600 text-white'
+                ? 'bg-terra-600 text-white'
                 : 'text-gray-400 hover:text-white'
             }`}
           >
@@ -335,7 +335,7 @@ export default function EventCreator({ onCreated, coworkPorDefecto = false }: Pr
                 onChange={(e) => setForm(prev => ({ ...prev, ticketPrice: e.target.value }))}
                 onWheel={(e) => e.currentTarget.blur()}
                 placeholder="0"
-                className="w-full pl-8 pr-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                className="w-full pl-8 pr-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-terra-500 focus:border-transparent"
               />
             </div>
             <p className="text-sm text-gray-400 mt-1">Se aplica igual para regular e invitado.</p>
@@ -356,7 +356,7 @@ export default function EventCreator({ onCreated, coworkPorDefecto = false }: Pr
                   onClick={() => setPaymentMode(modo)}
                   className={`py-3 px-2 rounded-xl text-sm font-medium transition-colors border ${
                     paymentMode === modo
-                      ? 'bg-emerald-600 border-emerald-500 text-white'
+                      ? 'bg-terra-600 border-terra-500 text-white'
                       : 'bg-neutral-900/80 border-white/20 text-gray-400 hover:text-white'
                   }`}
                 >
@@ -385,7 +385,7 @@ export default function EventCreator({ onCreated, coworkPorDefecto = false }: Pr
                   value={form.mpSurcharge}
                   onChange={(e) => setForm(prev => ({ ...prev, mpSurcharge: e.target.value }))}
                   placeholder="0"
-                  className="w-full pl-4 pr-10 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  className="w-full pl-4 pr-10 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-terra-500 focus:border-transparent"
                 />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">%</span>
               </div>
@@ -404,7 +404,7 @@ export default function EventCreator({ onCreated, coworkPorDefecto = false }: Pr
               value={form.aliasPago}
               onChange={(e) => setForm(prev => ({ ...prev, aliasPago: e.target.value }))}
               placeholder="Ej: PROD.NOCHE.123"
-              className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-terra-500 focus:border-transparent"
             />
             <p className="text-xs text-gray-400 mt-1">Opcional. Si no se especifica, se usará el alias general del venue.</p>
           </div>
@@ -415,7 +415,7 @@ export default function EventCreator({ onCreated, coworkPorDefecto = false }: Pr
               value={form.cbuPago}
               onChange={(e) => setForm(prev => ({ ...prev, cbuPago: e.target.value }))}
               placeholder="Opcional"
-              className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-terra-500 focus:border-transparent"
             />
           </div>
         </>
@@ -426,7 +426,7 @@ export default function EventCreator({ onCreated, coworkPorDefecto = false }: Pr
           type="datetime-local"
           value={form.startDate}
           onChange={(e) => setForm(prev => ({ ...prev, startDate: e.target.value }))}
-          className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent [color-scheme:dark]"
+          className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-terra-500 focus:border-transparent [color-scheme:dark]"
         />
       </div>
       <div>
@@ -436,13 +436,13 @@ export default function EventCreator({ onCreated, coworkPorDefecto = false }: Pr
           onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
           rows={2}
           placeholder="Opcional"
-          className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
+          className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-terra-500 focus:border-transparent resize-none"
         />
       </div>
       <button
         onClick={handleCreate}
         disabled={saving}
-        className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-semibold text-lg rounded-xl transition-colors"
+        className="w-full py-4 bg-terra-600 hover:bg-terra-700 disabled:opacity-50 text-white font-semibold text-lg rounded-xl transition-colors"
       >
         {saving ? 'Iniciando...' : 'Iniciar evento'}
       </button>
