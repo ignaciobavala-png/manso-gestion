@@ -9,7 +9,12 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Manso" />
+    <meta name="theme-color" content="#000000" />
     <title>Manso Club</title>
+    <!-- El negro va acá y no solo en el CSS: es lo que pinta el navegador
+         antes de bajar la hoja de estilos y montar React. Sin esto, cada
+         arranque muestra un destello blanco. -->
+    <style>html, body { background-color: #000000; color-scheme: dark; }</style>
   </head>
   <body>
     <div id="root"></div>

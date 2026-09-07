@@ -360,19 +360,41 @@ export default function Configuracion() {
         <p className="text-gray-400 text-sm uppercase tracking-widest">Fondo de la app</p>
 
         <div className="flex gap-4 items-start">
-          <div
-            className="w-24 h-40 rounded-xl border border-white/25 flex-shrink-0 bg-neutral-900"
-            style={{
-              backgroundImage: `url(${fondoUrl ?? '/fondo.png'})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-            }}
-          />
+          {/* Sin foto el recuadro muestra el fondo de la marca —negro con la
+              textura arriba—, que es lo que se ve de verdad en la app. */}
+          {fondoUrl ? (
+            <div
+              className="w-24 h-40 rounded-xl border border-white/25 flex-shrink-0 bg-manso-black"
+              style={{
+                backgroundImage: `url(${fondoUrl})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              }}
+            />
+          ) : (
+            <div className="w-24 h-40 rounded-xl border border-white/25 flex-shrink-0 bg-manso-black relative overflow-hidden">
+              <div
+                className="absolute inset-x-0 top-0 h-2/3 opacity-[0.12] mix-blend-screen"
+                style={{
+                  backgroundImage: 'url(/fondo.png)',
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center top',
+                }}
+              />
+              <div
+                className="absolute inset-x-0 top-0 h-1/2 opacity-40"
+                style={{
+                  background:
+                    'radial-gradient(120% 100% at 50% 0%, rgba(188, 41, 21, 0.35) 0%, transparent 75%)',
+                }}
+              />
+            </div>
+          )}
           <div className="flex-1 min-w-0 space-y-2">
             <p className="text-gray-400 text-sm leading-relaxed">
               {fondoUrl
-                ? 'Fondo propio. Se ve en todas las pantallas, salvo en los eventos que tengan el suyo.'
-                : 'La foto que vino con la app. Subí otra cuando quieras renovarla.'}
+                ? 'Foto propia. Se ve en todas las pantallas, salvo en los eventos que tengan el suyo.'
+                : 'El fondo de la marca: negro con la textura de Manso, igual que manso.club. Subí una foto si querés reemplazarlo.'}
             </p>
             <button
               onClick={() => inputFondo.current?.click()}
@@ -387,7 +409,7 @@ export default function Configuracion() {
                 disabled={fondoSubiendo}
                 className="w-full text-gray-400 hover:text-gray-300 disabled:opacity-60 text-sm underline underline-offset-2 transition-colors"
               >
-                Volver a la foto original
+                Volver al fondo de la marca
               </button>
             )}
           </div>

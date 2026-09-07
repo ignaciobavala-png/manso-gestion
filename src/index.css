@@ -122,6 +122,14 @@
 
   /* ---------- ANIMACIONES ---------- */
   --animate-slide-down: slide-down 0.3s ease-out;
+  /* La foto de fondo entra fundida: llega una consulta después que el resto
+     de la pantalla y un corte seco se lee como un parpadeo. */
+  --animate-fade-in: fade-in 0.45s ease-out both;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 @keyframes slide-down {
