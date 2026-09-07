@@ -62,10 +62,11 @@ export default function Background({ children, className = '', backgroundImage }
               backgroundPosition: 'center',
             }}
           />
-          {/* Más oscuro abajo que arriba: la foto se insinúa detrás del
-              contenido en vez de pelear con él. */}
-          <div className="absolute inset-0 bg-black/80" />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/70 to-black" />
+          {/* Un velo parejo y liviano: alcanza para que el texto se lea y
+              deja pasar el color de la foto. Estaba en 80% con un degradado
+              encima y la foto quedaba casi negra — el número a mover si hay
+              que oscurecerla o aclararla es este. */}
+          <div className="absolute inset-0 bg-black/45" />
         </div>
       )}
 
