@@ -1,3 +1,4 @@
+import { CalendarDays, Music, Check, X, Users, Lock, Paperclip } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams, useParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
@@ -87,7 +88,7 @@ function Cartelera() {
     return (
       <PublicLayout>
         <div className="flex-1 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-emerald-400" />
+          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-terra-400" />
         </div>
       </PublicLayout>
     )
@@ -110,7 +111,7 @@ function Cartelera() {
 
         {events.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center gap-4 -mt-12">
-            <p className="text-4xl">🎵</p>
+            <CalendarDays className="text-manso-cream/40" size={40} strokeWidth={1.25} aria-hidden />
             <h2 className="text-xl font-bold text-white">No hay eventos próximos</h2>
             <p className="text-gray-400 text-sm max-w-xs">
               Seguinos en redes para enterarte de la próxima fecha.
@@ -122,7 +123,7 @@ function Cartelera() {
               <button
                 key={event.id}
                 onClick={() => navigate(event.slug ? `/registro/${event.slug}` : `/registro?event=${event.id}`)}
-                className="group flex flex-col rounded-2xl overflow-hidden border border-white/20 bg-black/40 backdrop-blur-sm hover:border-emerald-500/50 transition-all active:scale-95 text-left"
+                className="group flex flex-col rounded-2xl overflow-hidden border border-white/20 bg-black/40 backdrop-blur-sm hover:border-terra-500/50 transition-all active:scale-95 text-left"
               >
                 <div className="w-full relative" style={{ paddingBottom: '125%' }}>
                   {event.flyer_url ? (
@@ -133,14 +134,14 @@ function Cartelera() {
                     />
                   ) : (
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-800/80 gap-2">
-                      <span className="text-4xl">🎶</span>
+                      <Music className="text-white/30" size={38} strokeWidth={1.25} aria-hidden />
                     </div>
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                 </div>
 
                 <div className="p-3 space-y-0.5">
-                  <p className="text-white font-semibold text-sm leading-tight line-clamp-2 group-hover:text-emerald-300 transition-colors">
+                  <p className="text-white font-semibold text-sm leading-tight line-clamp-2 group-hover:text-terra-300 transition-colors">
                     {event.name}
                   </p>
                   {event.start_date && (
@@ -149,15 +150,17 @@ function Cartelera() {
                     </p>
                   )}
                   <div className="flex items-center gap-1.5 mt-1">
-                    <p className="text-emerald-400 text-xs font-semibold">
+                    <p className="text-terra-400 text-xs font-semibold">
                       Reservar lugar →
                     </p>
                     <span className="text-white/20 mx-0.5">·</span>
                     <button
                       onClick={e => { e.stopPropagation(); copyLink(event) }}
-                      className="text-gray-400 hover:text-emerald-300 text-xs transition-colors active:scale-90"
+                      className="text-gray-400 hover:text-terra-300 text-xs transition-colors active:scale-90"
                     >
-                      {copiedId === event.id ? '✓ Link copiado' : 'Copiar link'}
+                      {copiedId === event.id
+                        ? <span className="inline-flex items-center gap-1"><Check size={12} strokeWidth={2} aria-hidden /> Link copiado</span>
+                        : 'Copiar link'}
                     </button>
                   </div>
                 </div>
@@ -465,12 +468,12 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
             <button onClick={() => navigate('/registro')} className="text-white/50 hover:text-white/80 transition-colors text-2xl leading-none">←</button>
           </div>
           <div className="flex-1 flex flex-col items-center justify-center text-center gap-4 -mt-12">
-            <p className="text-4xl">🎵</p>
+            <CalendarDays className="text-manso-cream/40" size={40} strokeWidth={1.25} aria-hidden />
             <h2 className="text-2xl font-bold text-white">Este evento no está disponible</h2>
             <p className="text-gray-400 text-sm max-w-xs">El registro puede estar cerrado o el evento ya finalizó.</p>
             <button
               onClick={() => navigate('/registro')}
-              className="text-emerald-400 text-sm font-semibold hover:text-emerald-300 transition-colors"
+              className="text-terra-400 text-sm font-semibold hover:text-terra-300 transition-colors"
             >
               Ver otros eventos →
             </button>
@@ -504,7 +507,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
           <h2 className="text-3xl font-bold text-white">{activeEvent.name}</h2>
           {activeEvent.is_paid && activeEvent.regular_ticket_price > 0 && (
             <div className="mt-2 space-y-1">
-              <p className="text-emerald-400 text-sm font-medium">
+              <p className="text-terra-400 text-sm font-medium">
                 Entrada general · ${ticketPrice.toLocaleString('es-AR')}
               </p>
               {!pagandoConMp && (
@@ -516,7 +519,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
             </div>
           )}
           {!activeEvent.is_paid && (
-            <p className="mt-2 text-emerald-400/70 text-sm font-medium">
+            <p className="mt-2 text-terra-400/70 text-sm font-medium">
               Entrada gratuita
             </p>
           )}
@@ -546,7 +549,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
                   required
                   autoComplete="email"
                   placeholder="email@ejemplo.com"
-                  className="w-full bg-white/15 border border-white/25 rounded-2xl px-4 py-3.5 text-white placeholder-gray-400 focus:outline-none focus:border-emerald-400 transition-colors text-sm"
+                  className="w-full bg-white/15 border border-white/25 rounded-2xl px-4 py-3.5 text-white placeholder-gray-400 focus:outline-none focus:border-terra-400 transition-colors text-sm"
                 />
               </div>
 
@@ -562,15 +565,16 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
                       required
                       autoComplete="name"
                       placeholder={`Asistente ${i + 1}`}
-                      className="flex-1 bg-white/15 border border-white/25 rounded-2xl px-4 py-3.5 text-white placeholder-gray-400 focus:outline-none focus:border-emerald-400 transition-colors text-sm"
+                      className="flex-1 bg-white/15 border border-white/25 rounded-2xl px-4 py-3.5 text-white placeholder-gray-400 focus:outline-none focus:border-terra-400 transition-colors text-sm"
                     />
                     {attendeeNames.length > 1 && (
                       <button
                         type="button"
                         onClick={() => removeAttendee(i)}
-                        className="w-10 h-10 flex items-center justify-center rounded-xl bg-red-900/40 hover:bg-red-800/60 text-red-400 transition-colors text-lg flex-shrink-0"
+                        className="w-10 h-10 flex items-center justify-center rounded-xl bg-red-900/40 hover:bg-red-800/60 text-red-400 transition-colors flex-shrink-0"
+                        aria-label="Quitar acompañante"
                       >
-                        ✕
+                        <X size={18} strokeWidth={1.5} />
                       </button>
                     )}
                   </div>
@@ -589,7 +593,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
 
               {activeEvent.cowork_day && (activeEvent.require_instagram || activeEvent.require_phone) && (
                 <div className="flex items-start gap-3 p-3 bg-white/5 border border-white/25 rounded-2xl">
-                  <span className="text-xl leading-none">👋</span>
+                  <Users className="text-gray-300 flex-shrink-0 mt-0.5" size={18} strokeWidth={1.5} aria-hidden />
                   <p className="text-gray-300 text-xs leading-relaxed">
                     {coworkLanding.notaDatos}
                   </p>
@@ -607,7 +611,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
                       onChange={e => setInstagram(e.target.value.replace(/^@/, ''))}
                       required
                       placeholder=""
-                      className="w-full bg-white/15 border border-white/25 rounded-2xl pl-8 pr-4 py-3.5 text-white placeholder-gray-400 focus:outline-none focus:border-emerald-400 transition-colors text-sm"
+                      className="w-full bg-white/15 border border-white/25 rounded-2xl pl-8 pr-4 py-3.5 text-white placeholder-gray-400 focus:outline-none focus:border-terra-400 transition-colors text-sm"
                     />
                   </div>
                 </div>
@@ -622,7 +626,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
                     onChange={e => setPhone(e.target.value)}
                     required
                     placeholder="Ej: 11 2345 6789"
-                    className="w-full bg-white/15 border border-white/25 rounded-2xl px-4 py-3.5 text-white placeholder-gray-400 focus:outline-none focus:border-emerald-400 transition-colors text-sm"
+                    className="w-full bg-white/15 border border-white/25 rounded-2xl px-4 py-3.5 text-white placeholder-gray-400 focus:outline-none focus:border-terra-400 transition-colors text-sm"
                   />
                 </div>
               )}
@@ -641,7 +645,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
                           onClick={() => setMetodoPago('transferencia')}
                           className={`rounded-2xl py-3 px-3 text-sm font-semibold transition-all active:scale-95 border ${
                             metodoPago === 'transferencia'
-                              ? 'bg-emerald-600 border-emerald-500 text-white'
+                              ? 'bg-terra-600 border-terra-500 text-white'
                               : 'bg-white/5 border-white/25 text-gray-300 hover:bg-white/10'
                           }`}
                         >
@@ -652,7 +656,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
                           onClick={() => setMetodoPago('mercadopago')}
                           className={`rounded-2xl py-3 px-3 text-sm font-semibold transition-all active:scale-95 border ${
                             metodoPago === 'mercadopago'
-                              ? 'bg-emerald-600 border-emerald-500 text-white'
+                              ? 'bg-terra-600 border-terra-500 text-white'
                               : 'bg-white/5 border-white/25 text-gray-300 hover:bg-white/10'
                           }`}
                         >
@@ -663,18 +667,18 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
                   )}
 
                   {attendeeCount > 0 && ticketPrice > 0 && (
-                    <div className="bg-emerald-950/40 border border-emerald-800/40 rounded-2xl p-4 space-y-2">
+                    <div className="bg-terra-950/40 border border-terra-800/40 rounded-2xl p-4 space-y-2">
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-300">Entradas</span>
                         <span className="text-white font-medium">{attendeeCount} × ${ticketPrice.toLocaleString('es-AR')}</span>
                       </div>
-                      <div className="border-t border-emerald-800/30 pt-2 flex justify-between">
+                      <div className="border-t border-terra-800/30 pt-2 flex justify-between">
                         <span className="text-white font-semibold">Total a pagar</span>
-                        <span className="text-emerald-300 font-bold text-lg">${totalAmount.toLocaleString('es-AR')}</span>
+                        <span className="text-terra-300 font-bold text-lg">${totalAmount.toLocaleString('es-AR')}</span>
                       </div>
 
                       {!pagandoConMp && (activeEvent.ticket_alias_pago || venueConfig?.alias_pago || activeEvent.ticket_cbu_pago || venueConfig?.cbu_pago) && (
-                        <div className="mt-3 pt-3 border-t border-emerald-800/30 text-xs space-y-1">
+                        <div className="mt-3 pt-3 border-t border-terra-800/30 text-xs space-y-1">
                           <p className="text-gray-400 font-medium mb-1">Datos para transferencia:</p>
                           {(activeEvent.ticket_alias_pago || venueConfig?.alias_pago) && (
                             <p className="text-gray-300 flex justify-between">
@@ -682,7 +686,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
                               <button
                                 type="button"
                                 onClick={() => navigator.clipboard.writeText(activeEvent.ticket_alias_pago || venueConfig?.alias_pago || '')}
-                                className="text-white font-mono hover:text-emerald-300 transition-colors"
+                                className="text-white font-mono hover:text-terra-300 transition-colors"
                               >
                                 {activeEvent.ticket_alias_pago || venueConfig?.alias_pago}
                               </button>
@@ -694,7 +698,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
                               <button
                                 type="button"
                                 onClick={() => navigator.clipboard.writeText(activeEvent.ticket_cbu_pago || venueConfig?.cbu_pago || '')}
-                                className="text-white font-mono hover:text-emerald-300 transition-colors text-xs"
+                                className="text-white font-mono hover:text-terra-300 transition-colors text-xs"
                               >
                                 {activeEvent.ticket_cbu_pago || venueConfig?.cbu_pago}
                               </button>
@@ -707,7 +711,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
 
                   {pagandoConMp && (
                     <div className="flex items-start gap-3 p-3 bg-white/5 border border-white/25 rounded-2xl">
-                      <span className="text-xl leading-none">🔒</span>
+                      <Lock className="text-gray-300 flex-shrink-0 mt-0.5" size={18} strokeWidth={1.5} aria-hidden />
                       <p className="text-gray-300 text-xs leading-relaxed">
                         Te vamos a llevar a Mercado Pago. Apenas se acredite el
                         pago volvés acá y te aparece tu QR. Si no completás el
@@ -720,15 +724,15 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
                   <div className="space-y-3">
                     <p className="text-white text-sm font-medium">Subí tu comprobante de pago</p>
                     {!receiptUrl ? (
-                      <label className="flex flex-col items-center gap-2 p-4 border-2 border-dashed border-white/25 rounded-2xl cursor-pointer hover:border-emerald-400/50 transition-colors">
+                      <label className="flex flex-col items-center gap-2 p-4 border-2 border-dashed border-white/25 rounded-2xl cursor-pointer hover:border-terra-400/50 transition-colors">
                         {uploading ? (
                           <div className="flex items-center gap-2 text-gray-400">
-                            <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-emerald-400" />
+                            <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-terra-400" />
                             <span className="text-sm">Subiendo...</span>
                           </div>
                         ) : (
                           <>
-                            <span className="text-2xl">📎</span>
+                            <Paperclip className="text-gray-400" size={22} strokeWidth={1.5} aria-hidden />
                             <span className="text-gray-400 text-sm">Tocá para seleccionar una foto</span>
                           </>
                         )}
@@ -744,18 +748,19 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
                         />
                       </label>
                     ) : (
-                      <div className="flex items-center gap-3 p-3 bg-emerald-900/30 border border-emerald-700/40 rounded-2xl">
-                        <span className="text-xl">✅</span>
+                      <div className="flex items-center gap-3 p-3 bg-olive-900/40 border border-olive-700/50 rounded-2xl">
+                        <Check className="text-olive-300 flex-shrink-0" size={18} strokeWidth={2} aria-hidden />
                         <div className="flex-1 min-w-0">
-                          <p className="text-emerald-300 text-sm font-medium">Comprobante subido</p>
+                          <p className="text-olive-200 text-sm font-medium">Comprobante subido</p>
                           <p className="text-gray-400 text-xs truncate">{receiptFile?.name}</p>
                         </div>
                         <button
                           type="button"
                           onClick={() => { setReceiptFile(null); setReceiptUrl('') }}
-                          className="text-gray-400 hover:text-red-400 text-sm transition-colors"
+                          className="text-gray-400 hover:text-red-400 transition-colors"
+                          aria-label="Quitar comprobante"
                         >
-                          ✕
+                          <X size={16} strokeWidth={1.5} />
                         </button>
                       </div>
                     )}
@@ -769,8 +774,8 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
 
               {submitted ? (
                 <div className="flex flex-col items-center gap-2 py-4">
-                  <div className="w-12 h-12 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center">
-                    <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-12 h-12 rounded-full bg-terra-500/20 border border-terra-500/40 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-terra-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
@@ -783,7 +788,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
                 <button
                   type="submit"
                   disabled={submitting || !email.trim() || attendeeCount === 0 || (requiereComprobante && !receiptUrl) || (activeEvent.require_instagram && !instagram.trim()) || (activeEvent.require_phone && !phone.trim())}
-                  className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-white/10 disabled:text-gray-400 text-white font-semibold py-4 rounded-2xl transition-all active:scale-95 text-sm"
+                  className="w-full bg-terra-600 hover:bg-terra-500 disabled:bg-white/10 disabled:text-gray-400 text-white font-semibold py-4 rounded-2xl transition-all active:scale-95 text-sm"
                 >
                   {submitting
                     ? (pagandoConMp ? 'Redirigiendo a Mercado Pago...' : 'Generando entradas...')

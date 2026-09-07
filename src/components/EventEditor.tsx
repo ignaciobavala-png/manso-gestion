@@ -155,14 +155,14 @@ export default function EventEditor({ event, onDone }: Props) {
               slug: slugEdited ? prev.slug : slugify(name),
             }))
           }}
-          className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+          className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-terra-500 focus:border-transparent"
         />
       </div>
 
       {/* Slug */}
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-1">Link del evento</label>
-        <div className="flex items-center gap-2 bg-neutral-900/80 border border-white/20 rounded-xl px-4 py-3 focus-within:ring-2 focus-within:ring-emerald-500 focus-within:border-transparent">
+        <div className="flex items-center gap-2 bg-neutral-900/80 border border-white/20 rounded-xl px-4 py-3 focus-within:ring-2 focus-within:ring-terra-500 focus-within:border-transparent">
           <span className="text-gray-400 text-sm whitespace-nowrap">/registro/</span>
           <input
             type="text"
@@ -181,11 +181,11 @@ export default function EventEditor({ event, onDone }: Props) {
         <label className="block text-sm font-medium text-gray-300 mb-3">Visibilidad</label>
         <div className="flex rounded-xl overflow-hidden border border-white/20 bg-neutral-900/80">
           <button type="button" onClick={() => setIsPrivate(false)}
-            className={`flex-1 py-3 text-sm font-medium transition-colors ${!isPrivate ? 'bg-emerald-600 text-white' : 'text-gray-400 hover:text-white'}`}>
+            className={`flex-1 py-3 text-sm font-medium transition-colors ${!isPrivate ? 'bg-terra-600 text-white' : 'text-gray-400 hover:text-white'}`}>
             Público
           </button>
           <button type="button" onClick={() => setIsPrivate(true)}
-            className={`flex-1 py-3 text-sm font-medium transition-colors ${isPrivate ? 'bg-emerald-600 text-white' : 'text-gray-400 hover:text-white'}`}>
+            className={`flex-1 py-3 text-sm font-medium transition-colors ${isPrivate ? 'bg-terra-600 text-white' : 'text-gray-400 hover:text-white'}`}>
             Privado
           </button>
         </div>
@@ -197,11 +197,11 @@ export default function EventEditor({ event, onDone }: Props) {
         <label className="block text-sm font-medium text-gray-300 mb-3">Entradas por persona</label>
         <div className="flex rounded-xl overflow-hidden border border-white/20 bg-neutral-900/80">
           <button type="button" onClick={() => setOneTicketPerEmail(false)}
-            className={`flex-1 py-3 text-sm font-medium transition-colors ${!oneTicketPerEmail ? 'bg-emerald-600 text-white' : 'text-gray-400 hover:text-white'}`}>
+            className={`flex-1 py-3 text-sm font-medium transition-colors ${!oneTicketPerEmail ? 'bg-terra-600 text-white' : 'text-gray-400 hover:text-white'}`}>
             Sin límite
           </button>
           <button type="button" onClick={() => setOneTicketPerEmail(true)}
-            className={`flex-1 py-3 text-sm font-medium transition-colors ${oneTicketPerEmail ? 'bg-emerald-600 text-white' : 'text-gray-400 hover:text-white'}`}>
+            className={`flex-1 py-3 text-sm font-medium transition-colors ${oneTicketPerEmail ? 'bg-terra-600 text-white' : 'text-gray-400 hover:text-white'}`}>
             1 por email
           </button>
         </div>
@@ -225,7 +225,7 @@ export default function EventEditor({ event, onDone }: Props) {
                 setRequirePhone(true)
               }
             }}
-            className={`relative w-10 h-5 rounded-full transition-colors ${coworkDay ? 'bg-emerald-600' : 'bg-white/20'}`}
+            className={`relative w-10 h-5 rounded-full transition-colors ${coworkDay ? 'bg-terra-600' : 'bg-white/20'}`}
           >
             <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${coworkDay ? 'translate-x-5' : ''}`} />
           </button>
@@ -247,7 +247,7 @@ export default function EventEditor({ event, onDone }: Props) {
             <button
               type="button"
               onClick={() => setRequireInstagram(prev => !prev)}
-              className={`relative w-10 h-5 rounded-full transition-colors ${requireInstagram ? 'bg-emerald-600' : 'bg-white/20'}`}
+              className={`relative w-10 h-5 rounded-full transition-colors ${requireInstagram ? 'bg-terra-600' : 'bg-white/20'}`}
             >
               <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${requireInstagram ? 'translate-x-5' : ''}`} />
             </button>
@@ -257,7 +257,7 @@ export default function EventEditor({ event, onDone }: Props) {
             <button
               type="button"
               onClick={() => setRequirePhone(prev => !prev)}
-              className={`relative w-10 h-5 rounded-full transition-colors ${requirePhone ? 'bg-emerald-600' : 'bg-white/20'}`}
+              className={`relative w-10 h-5 rounded-full transition-colors ${requirePhone ? 'bg-terra-600' : 'bg-white/20'}`}
             >
               <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${requirePhone ? 'translate-x-5' : ''}`} />
             </button>
@@ -273,7 +273,7 @@ export default function EventEditor({ event, onDone }: Props) {
           <button
             type="button"
             onClick={() => setAcceptsWildcardQr(prev => !prev)}
-            className={`relative w-10 h-5 rounded-full transition-colors ${acceptsWildcardQr ? 'bg-emerald-600' : 'bg-white/20'}`}
+            className={`relative w-10 h-5 rounded-full transition-colors ${acceptsWildcardQr ? 'bg-terra-600' : 'bg-white/20'}`}
           >
             <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${acceptsWildcardQr ? 'translate-x-5' : ''}`} />
           </button>
@@ -286,11 +286,11 @@ export default function EventEditor({ event, onDone }: Props) {
         <label className="block text-sm font-medium text-gray-300 mb-3">Tipo de entrada</label>
         <div className="flex rounded-xl overflow-hidden border border-white/20 bg-neutral-900/80">
           <button type="button" onClick={() => setIsPaid(false)}
-            className={`flex-1 py-3 text-sm font-medium transition-colors ${!isPaid ? 'bg-emerald-600 text-white' : 'text-gray-400 hover:text-white'}`}>
+            className={`flex-1 py-3 text-sm font-medium transition-colors ${!isPaid ? 'bg-terra-600 text-white' : 'text-gray-400 hover:text-white'}`}>
             Gratuita
           </button>
           <button type="button" onClick={() => setIsPaid(true)}
-            className={`flex-1 py-3 text-sm font-medium transition-colors ${isPaid ? 'bg-emerald-600 text-white' : 'text-gray-400 hover:text-white'}`}>
+            className={`flex-1 py-3 text-sm font-medium transition-colors ${isPaid ? 'bg-terra-600 text-white' : 'text-gray-400 hover:text-white'}`}>
             Entrada paga
           </button>
         </div>
@@ -308,7 +308,7 @@ export default function EventEditor({ event, onDone }: Props) {
                 onChange={(e) => setForm(prev => ({ ...prev, ticketPrice: e.target.value }))}
                 onWheel={(e) => e.currentTarget.blur()}
                 placeholder="0"
-                className="w-full pl-8 pr-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                className="w-full pl-8 pr-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-terra-500 focus:border-transparent"
               />
             </div>
           </div>
@@ -327,7 +327,7 @@ export default function EventEditor({ event, onDone }: Props) {
                   onClick={() => setPaymentMode(modo)}
                   className={`py-3 px-2 rounded-xl text-sm font-medium transition-colors border ${
                     paymentMode === modo
-                      ? 'bg-emerald-600 border-emerald-500 text-white'
+                      ? 'bg-terra-600 border-terra-500 text-white'
                       : 'bg-neutral-900/80 border-white/20 text-gray-400 hover:text-white'
                   }`}
                 >
@@ -356,7 +356,7 @@ export default function EventEditor({ event, onDone }: Props) {
                   value={form.mpSurcharge}
                   onChange={(e) => setForm(prev => ({ ...prev, mpSurcharge: e.target.value }))}
                   placeholder="0"
-                  className="w-full pl-4 pr-10 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  className="w-full pl-4 pr-10 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-terra-500 focus:border-transparent"
                 />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">%</span>
               </div>
@@ -375,7 +375,7 @@ export default function EventEditor({ event, onDone }: Props) {
                 <input type="text" value={form.aliasPago}
                   onChange={(e) => setForm(prev => ({ ...prev, aliasPago: e.target.value }))}
                   placeholder="Ej: PROD.NOCHE.123"
-                  className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-terra-500 focus:border-transparent"
                 />
               </div>
               <div>
@@ -383,7 +383,7 @@ export default function EventEditor({ event, onDone }: Props) {
                 <input type="text" value={form.cbuPago}
                   onChange={(e) => setForm(prev => ({ ...prev, cbuPago: e.target.value }))}
                   placeholder="Opcional"
-                  className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-terra-500 focus:border-transparent"
                 />
               </div>
             </>
@@ -398,7 +398,7 @@ export default function EventEditor({ event, onDone }: Props) {
           type="datetime-local"
           value={form.startDate}
           onChange={(e) => setForm(prev => ({ ...prev, startDate: e.target.value }))}
-          className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent [color-scheme:dark]"
+          className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-terra-500 focus:border-transparent [color-scheme:dark]"
         />
       </div>
 
@@ -410,7 +410,7 @@ export default function EventEditor({ event, onDone }: Props) {
           value={form.maxCapacity}
           onChange={(e) => setForm(prev => ({ ...prev, maxCapacity: e.target.value }))}
           placeholder="Sin límite"
-          className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+          className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-terra-500 focus:border-transparent"
         />
       </div>
 
@@ -422,7 +422,7 @@ export default function EventEditor({ event, onDone }: Props) {
           onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
           rows={2}
           placeholder="Opcional"
-          className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
+          className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-terra-500 focus:border-transparent resize-none"
         />
       </div>
 
@@ -431,7 +431,7 @@ export default function EventEditor({ event, onDone }: Props) {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-semibold rounded-xl transition-colors"
+          className="flex-1 py-3 bg-terra-600 hover:bg-terra-700 disabled:opacity-50 text-white font-semibold rounded-xl transition-colors"
         >
           {saving ? 'Guardando...' : 'Guardar cambios'}
         </button>

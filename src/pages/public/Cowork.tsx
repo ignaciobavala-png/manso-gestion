@@ -1,3 +1,5 @@
+import { ArrowLeft, CalendarDays } from 'lucide-react'
+import Icono from '../../components/Icono'
 import { useEffect, useState } from 'react'
 import { useNavigate, Navigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
@@ -67,7 +69,7 @@ export default function Cowork() {
     return (
       <PublicLayout>
         <div className="flex-1 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-emerald-400" />
+          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-terra-400" />
         </div>
       </PublicLayout>
     )
@@ -81,9 +83,10 @@ export default function Cowork() {
         <div className="w-full max-w-lg pt-2">
           <button
             onClick={() => navigate('/')}
-            className="text-white/50 hover:text-white/80 transition-colors text-2xl leading-none"
+            className="text-white/50 hover:text-white/80 transition-colors"
+            aria-label="Volver"
           >
-            ←
+            <ArrowLeft size={22} strokeWidth={1.5} />
           </button>
         </div>
 
@@ -108,7 +111,7 @@ export default function Cowork() {
         )}
 
         <div className="w-full max-w-lg text-center mt-4 mb-8">
-          <p className="text-emerald-400 text-xs font-semibold uppercase tracking-widest">Manso</p>
+          <p className="text-terra-400 text-xs font-semibold uppercase tracking-widest">Manso</p>
           <h1 className="text-white font-bold text-4xl mt-1">{landing.titulo}</h1>
           <p className="text-gray-300 text-sm mt-3 leading-relaxed max-w-sm mx-auto">
             {landing.leyenda}
@@ -122,7 +125,7 @@ export default function Cowork() {
                 key={item.id}
                 className="bg-black/60 backdrop-blur-md border border-white/25 rounded-2xl p-4"
               >
-                <span className="text-2xl">{item.icono}</span>
+                <Icono nombre={item.icono} className="text-manso-cream/80" size={24} />
                 <p className="text-white font-semibold text-sm mt-2">{item.titulo}</p>
                 <p className="text-gray-400 text-xs mt-0.5 leading-snug">{item.detalle}</p>
               </div>
@@ -135,7 +138,7 @@ export default function Cowork() {
 
           {fechas.length === 0 ? (
             <div className="bg-black/60 backdrop-blur-md border border-white/25 rounded-3xl p-6 text-center">
-              <p className="text-3xl">🗓️</p>
+              <CalendarDays className="mx-auto text-manso-cream/40" size={32} strokeWidth={1.25} aria-hidden />
               <p className="text-white font-semibold text-sm mt-3">
                 No hay fechas abiertas por ahora
               </p>
@@ -149,7 +152,7 @@ export default function Cowork() {
                 <button
                   key={f.id}
                   onClick={() => navigate(registroUrl(f))}
-                  className="w-full bg-black/60 hover:bg-black/60 backdrop-blur-md border border-white/25 hover:border-emerald-500/50 rounded-2xl px-5 py-4 flex items-center gap-4 transition-colors text-left"
+                  className="w-full bg-black/60 hover:bg-black/60 backdrop-blur-md border border-white/25 hover:border-terra-500/50 rounded-2xl px-5 py-4 flex items-center gap-4 transition-colors text-left"
                 >
                   <div className="flex-1 min-w-0">
                     <p className="text-white font-semibold text-sm capitalize">
@@ -161,11 +164,11 @@ export default function Cowork() {
                   </div>
                   <div className="text-right flex-shrink-0">
                     {f.is_paid && f.regular_ticket_price > 0 ? (
-                      <p className="text-emerald-400 font-bold text-sm">
+                      <p className="text-terra-400 font-bold text-sm">
                         ${Number(f.regular_ticket_price).toLocaleString('es-AR')}
                       </p>
                     ) : (
-                      <p className="text-emerald-400 font-bold text-sm">Gratis</p>
+                      <p className="text-terra-400 font-bold text-sm">Gratis</p>
                     )}
                     <p className="text-gray-400 text-xs mt-0.5">Reservar →</p>
                   </div>
@@ -178,7 +181,7 @@ export default function Cowork() {
         {proxima && (
           <button
             onClick={() => navigate(registroUrl(proxima))}
-            className="w-full max-w-lg mt-6 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-4 rounded-2xl transition-all active:scale-95 text-sm"
+            className="w-full max-w-lg mt-6 bg-terra-600 hover:bg-terra-500 text-white font-semibold py-4 rounded-2xl transition-all active:scale-95 text-sm"
           >
             Reservar mi lugar →
           </button>

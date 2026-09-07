@@ -1,35 +1,146 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
 @import 'tailwindcss';
 
+/* ============================================================
+   Manso Gestión — sistema visual
+   Los tokens de acá son los mismos que los de manso.club
+   (`manso-club/app/globals.css` + `lib/ui-constants.ts`): misma
+   tipografía, misma paleta, misma escala. La idea es que esto se
+   sienta la aplicación de la página, no un panel aparte.
+   ============================================================ */
+
+@theme {
+  /* ---------- TIPOGRAFÍA ----------
+     Helvetica Neue es la del manual de marca. Neue Montreal (la del
+     hero de la página) es paga y sus .woff2 no están versionados ni
+     allá ni acá, así que no la pedimos: caeríamos igual a este stack. */
+  --font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono: "Space Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --text-display: clamp(2.5rem, 9vw, 5rem);
+  --text-display--line-height: 0.85;
+  --text-display--letter-spacing: -0.04em;
+  --text-display--font-weight: 900;
+
+  --text-h1: 2.25rem;
+  --text-h1--line-height: 1;
+  --text-h1--letter-spacing: -0.03em;
+  --text-h1--font-weight: 900;
+
+  --text-h2: 1.5rem;
+  --text-h2--line-height: 1;
+  --text-h2--letter-spacing: -0.025em;
+  --text-h2--font-weight: 700;
+
+  --text-h3: 1.125rem;
+  --text-h3--line-height: 1.1;
+  --text-h3--letter-spacing: -0.02em;
+  --text-h3--font-weight: 700;
+
+  --text-h4: 1rem;
+  --text-h4--line-height: 1.2;
+  --text-h4--letter-spacing: -0.01em;
+  --text-h4--font-weight: 700;
+
+  --text-label: 0.625rem;
+  --text-label--letter-spacing: 0.5em;
+  --text-label--font-weight: 700;
+
+  --text-micro: 0.5625rem;
+  --text-micro--letter-spacing: 0.3em;
+  --text-micro--font-weight: 700;
+
+  /* ---------- PALETA DE MARCA ---------- */
+  --color-manso-black: #000000;
+  --color-manso-carbon: #1D1D1B;
+  --color-manso-blue: #030044;
+  --color-manso-terra: #BC2915;
+  --color-manso-olive: #868229;
+  --color-manso-cream: #FFFCDC;
+  --color-manso-brown: #542C1B;
+  --color-manso-white: #FFFFFF;
+
+  /* Terra en rampa: el acento de la app (antes emerald). El 600 es el
+     color exacto del manual; el resto sale de ahí para tener hovers,
+     bordes y fondos apagados sin salirse de la marca. */
+  --color-terra-100: #F7D9D3;
+  --color-terra-200: #EFB3A8;
+  --color-terra-300: #E3897A;
+  --color-terra-400: #D45F4B;
+  --color-terra-500: #C63D25;
+  --color-terra-600: #BC2915;
+  --color-terra-700: #9A2011;
+  --color-terra-800: #74180D;
+  --color-terra-900: #4E1009;
+  --color-terra-950: #2A0905;
+
+  /* Olive: lo bueno confirmado (pago aprobado, entrada válida). Verde de
+     marca, no el emerald de Tailwind. */
+  --color-olive-200: #DEDBA8;
+  --color-olive-300: #C6C27A;
+  --color-olive-400: #A9A44C;
+  --color-olive-500: #949031;
+  --color-olive-600: #868229;
+  --color-olive-700: #6B681F;
+  --color-olive-800: #4E4B16;
+  --color-olive-900: #33310E;
+
+  /* ---------- NEUTRALES ----------
+     Pisamos las escalas de Tailwind en vez de tocar 400 clases: los
+     grises fríos pasan a ser una rampa tibia que baja del cream al
+     negro. `text-gray-400` sigue siendo el texto secundario, pero ahora
+     es cream apagado y no gris azulado. Los pisos de contraste sobre
+     negro se mantienen (gray-400 ≈ 7:1). */
+  --color-gray-50:  #FFFCDC;
+  --color-gray-100: #F5F1D2;
+  --color-gray-200: #E3DFC2;
+  --color-gray-300: #CAC6AE;
+  --color-gray-400: #A7A38D;
+  --color-gray-500: #86836F;
+  --color-gray-600: #63614F;
+  --color-gray-700: #454437;
+  --color-gray-800: #2A2A22;
+  --color-gray-900: #171712;
+  --color-gray-950: #0C0C09;
+
+  --color-neutral-50:  #FFFCDC;
+  --color-neutral-100: #F5F1D2;
+  --color-neutral-200: #E3DFC2;
+  --color-neutral-300: #CAC6AE;
+  --color-neutral-400: #A7A38D;
+  --color-neutral-500: #86836F;
+  --color-neutral-600: #63614F;
+  --color-neutral-700: #3A392E;
+  --color-neutral-800: #232320;
+  --color-neutral-900: #131311;
+  --color-neutral-950: #0A0A08;
+
+  --color-zinc-300: #CAC6AE;
+  --color-zinc-600: #63614F;
+  --color-zinc-700: #3A392E;
+  --color-zinc-800: #232320;
+  --color-zinc-900: #131311;
+
+  /* ---------- ANIMACIONES ---------- */
+  --animate-slide-down: slide-down 0.3s ease-out;
+}
+
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-1rem); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 :root {
-  font-family: 'Montserrat', system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans);
   line-height: 1.5;
   font-weight: 400;
   color-scheme: dark;
-  background-color: #111827;
+  /* Negro puro, como la página. Además tapa el rebote del overscroll. */
+  background-color: #000000;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-
-@theme {
-  --font-montserrat: 'Montserrat', system-ui, -apple-system, sans-serif;
-  --animate-slide-down: slide-down 0.3s ease-out;
-}
-
-@keyframes slide-down {
-  from {
-    opacity: 0;
-    transform: translateY(-1rem);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-
 
 #root {
   width: 100%;
@@ -43,9 +154,29 @@
 
 body {
   margin: 0;
-  font-family: 'Montserrat', system-ui, -apple-system, sans-serif;
-  background-color: #111827;
-  color: #f9fafb;
+  font-family: var(--font-sans);
+  background-color: #000000;
+  color: var(--color-manso-cream);
 }
 
+::selection {
+  background-color: var(--color-manso-terra);
+  color: var(--color-manso-white);
+}
 
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: #000000; }
+::-webkit-scrollbar-thumb { background: rgba(255, 252, 220, 0.2); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 252, 220, 0.4); }
+
+/* Los titulares de la página van en negra itálica con tracking negativo.
+   Un `<h1 class="text-h1">` ya sale así sin repetir cuatro clases. */
+@utility outline-text {
+  -webkit-text-stroke: 1px currentColor;
+  color: transparent;
+}
+
+@utility scrollbar-hide {
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}

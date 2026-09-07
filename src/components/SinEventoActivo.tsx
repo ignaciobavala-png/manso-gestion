@@ -1,6 +1,6 @@
 export default function SinEventoActivo() {
   return (
-    <div className="min-h-screen text-gray-200 font-montserrat flex items-center justify-center">
+    <div className="min-h-screen text-gray-200 font-sans flex items-center justify-center">
       <div className="text-center px-8 max-w-sm">
         <div className="w-16 h-16 bg-neutral-900 border border-white/20 rounded-full flex items-center justify-center mx-auto mb-6">
           <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -9,7 +9,7 @@ export default function SinEventoActivo() {
         </div>
         <h2 className="text-xl font-semibold text-white mb-2">Sin evento activo</h2>
         <p className="text-gray-400 text-sm leading-relaxed">
-          Para operar la barra o registrar entradas primero tenés que iniciar un evento desde <span className="text-emerald-400 font-medium">Control</span>.
+          Para operar la barra o registrar entradas primero tenés que iniciar un evento desde <span className="text-terra-400 font-medium">Control</span>.
         </p>
       </div>
     </div>

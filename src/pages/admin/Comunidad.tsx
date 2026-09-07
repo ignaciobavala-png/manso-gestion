@@ -1,3 +1,4 @@
+import { Clapperboard } from 'lucide-react'
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import * as XLSX from 'xlsx'
@@ -238,7 +239,7 @@ export default function Comunidad() {
           <button
             onClick={() => setViewMode('emails')}
             className={`flex-1 text-sm py-1.5 rounded-lg font-medium transition-colors ${
-              viewMode === 'emails' ? 'bg-emerald-700 text-white' : 'text-gray-400 hover:text-white'
+              viewMode === 'emails' ? 'bg-terra-700 text-white' : 'text-gray-400 hover:text-white'
             }`}
           >
             Emails únicos
@@ -267,7 +268,7 @@ export default function Comunidad() {
             <select
               value={selectedEvent}
               onChange={e => setSelectedEvent(e.target.value)}
-              className="flex-1 bg-black/40 border border-white/20 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-emerald-500"
+              className="flex-1 bg-black/40 border border-white/20 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-terra-500"
             >
               <option value="todos">Todos los eventos ({rows.length})</option>
               {events.map(e => (
@@ -286,7 +287,7 @@ export default function Comunidad() {
             <button
               onClick={handleExport}
               disabled={uniqueEmails.length === 0}
-              className="bg-emerald-700 hover:bg-emerald-600 disabled:opacity-40 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap"
+              className="bg-terra-700 hover:bg-terra-600 disabled:opacity-40 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap"
             >
               Exportar .xlsx
             </button>
@@ -306,7 +307,7 @@ export default function Comunidad() {
             <button
               onClick={handleExportCineclub}
               disabled={cineclubVoters.length === 0}
-              className="bg-emerald-700 hover:bg-emerald-600 disabled:opacity-40 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap"
+              className="bg-terra-700 hover:bg-terra-600 disabled:opacity-40 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap"
             >
               Exportar .xlsx
             </button>
@@ -327,7 +328,8 @@ export default function Comunidad() {
                       <p className="text-gray-400 text-xs mt-0.5">{new Date(v.created_at).toLocaleDateString('es-AR')}</p>
                     </div>
                     <span className="text-xs bg-white/10 text-gray-300 px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">
-                      🎬 {v.movie_title}
+                      <Clapperboard className="inline-block mr-1.5 -mt-0.5" size={13} strokeWidth={1.5} aria-hidden />
+                      {v.movie_title}
                     </span>
                   </div>
                 </div>
@@ -339,7 +341,7 @@ export default function Comunidad() {
         {/* Lista eventos */}
         {viewMode !== 'cineclub' && (loading ? (
           <div className="flex justify-center items-center h-48">
-            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-emerald-500" />
+            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-terra-500" />
           </div>
         ) : viewMode === 'emails' ? (
           uniqueEmails.length === 0 ? (
@@ -360,7 +362,7 @@ export default function Comunidad() {
                         {u.tickets} {u.tickets === 1 ? 'entrada' : 'entradas'}
                       </span>
                       {u.eventCount > 1 && (
-                        <span className="text-xs bg-emerald-900/50 text-emerald-400 px-2 py-0.5 rounded-full whitespace-nowrap">
+                        <span className="text-xs bg-terra-900/50 text-terra-400 px-2 py-0.5 rounded-full whitespace-nowrap">
                           {u.eventCount} eventos
                         </span>
                       )}
@@ -387,7 +389,7 @@ export default function Comunidad() {
                   <div className="flex items-center gap-2 sm:flex-shrink-0">
                     <span className={`inline-block text-sm px-2 py-0.5 rounded-full ${
                       r.used_at
-                        ? 'bg-emerald-900/50 text-emerald-400'
+                        ? 'bg-terra-900/50 text-terra-400'
                         : 'bg-white/10 text-gray-400'
                     }`}>
                       {r.used_at ? 'Ingresó' : 'Pendiente'}

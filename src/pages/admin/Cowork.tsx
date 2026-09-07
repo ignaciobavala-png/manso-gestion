@@ -1,3 +1,4 @@
+import { CalendarDays } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
@@ -165,7 +166,7 @@ export default function Cowork() {
               onClick={() => setPestana(p)}
               className={`px-4 py-2 text-sm font-medium transition-colors ${
                 pestana === p
-                  ? 'text-white border-b-2 border-emerald-500'
+                  ? 'text-white border-b-2 border-terra-500'
                   : 'text-gray-400 hover:text-gray-300'
               }`}
             >
@@ -190,7 +191,7 @@ export default function Cowork() {
           </div>
         ) : fechas.length === 0 ? (
           <div className="bg-neutral-900 border border-white/20 rounded-2xl p-6 text-center">
-            <p className="text-3xl">🗓️</p>
+            <CalendarDays className="mx-auto text-gray-400" size={30} strokeWidth={1.25} aria-hidden />
             <p className="text-white font-semibold text-sm mt-3">Todavía no hay ninguna fecha</p>
             <p className="text-gray-400 text-xs mt-1.5 max-w-sm mx-auto leading-relaxed">
               Creá la primera con su precio, su cupo y su medio de pago. Sale
@@ -198,7 +199,7 @@ export default function Cowork() {
             </p>
             <button
               onClick={() => setCreando(true)}
-              className="mt-4 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors"
+              className="mt-4 bg-terra-600 hover:bg-terra-500 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors"
             >
               Crear la primera fecha →
             </button>
@@ -212,7 +213,7 @@ export default function Cowork() {
                   onClick={() => { setElegidaId(f.id); setEditando(false) }}
                   className={`flex-shrink-0 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors border ${
                     f.id === elegidaId
-                      ? 'bg-emerald-600 border-emerald-500 text-white'
+                      ? 'bg-terra-600 border-terra-500 text-white'
                       : 'bg-white/5 border-white/25 text-gray-300 hover:bg-white/10'
                   }`}
                 >
@@ -270,7 +271,7 @@ export default function Cowork() {
                   <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-white/20">
                     <span className={`text-xs px-2.5 py-1 rounded-full border ${
                       elegida.registrations_open
-                        ? 'text-emerald-400 border-emerald-700/50 bg-emerald-950/40'
+                        ? 'text-terra-400 border-terra-700/50 bg-terra-950/40'
                         : 'text-gray-400 border-white/25 bg-white/5'
                     }`}>
                       {elegida.registrations_open ? 'Reservas abiertas' : 'Reservas cerradas'}
@@ -297,7 +298,7 @@ export default function Cowork() {
                   <div className="flex flex-wrap gap-2 mt-4">
                     <button
                       onClick={() => window.open(urlPublica(elegida), '_blank', 'noopener,noreferrer')}
-                      className="text-emerald-400 hover:text-emerald-300 text-sm font-semibold transition-colors"
+                      className="text-terra-400 hover:text-terra-300 text-sm font-semibold transition-colors"
                     >
                       Ver el formulario ↗
                     </button>

@@ -1,3 +1,4 @@
+import { Banknote, CreditCard, Smartphone, Beer } from 'lucide-react'
 import { useState } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import SinEventoActivo from '../components/SinEventoActivo'
@@ -43,7 +44,7 @@ export default function Barra() {
       <Background>
         <div className="max-w-6xl mx-auto px-4 py-8">
           <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-terra-500"></div>
           </div>
         </div>
       </Background>
@@ -209,16 +210,16 @@ export default function Barra() {
               {activeEvent?.is_active && (
                 <div className="flex items-center gap-2">
                   <div className="relative">
-                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                    <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-75"></div>
+                    <div className="w-2 h-2 bg-terra-500 rounded-full animate-pulse"></div>
+                    <div className="absolute inset-0 bg-terra-500 rounded-full animate-ping opacity-75"></div>
                   </div>
-                  <span className="text-sm text-emerald-400 font-medium">Vivo</span>
+                  <span className="text-sm text-terra-400 font-medium">Vivo</span>
                 </div>
               )}
             </div>
             <div className="text-right">
               <p className="text-sm text-gray-400">Balance</p>
-              <p className="text-xl font-bold text-emerald-400">{formatCurrency(balance)}</p>
+              <p className="text-xl font-bold text-terra-400">{formatCurrency(balance)}</p>
             </div>
           </div>
         </div>
@@ -244,7 +245,7 @@ export default function Barra() {
             </div>
             <div className="bg-neutral-900 border border-white/20 rounded-xl px-3 py-2">
               <p className="text-[10px] text-gray-400 uppercase tracking-wider">Ingresos</p>
-              <p className="text-lg font-bold mt-0.5 text-emerald-400">{formatCurrency(activeSales.reduce((sum, s) => sum + s.total, 0))}</p>
+              <p className="text-lg font-bold mt-0.5 text-terra-400">{formatCurrency(activeSales.reduce((sum, s) => sum + s.total, 0))}</p>
             </div>
           </div>
 
@@ -258,7 +259,7 @@ export default function Barra() {
                     onClick={() => setActiveCategory(cat)}
                     className={`px-4 py-1.5 text-sm font-medium rounded-lg capitalize transition-colors ${
                       activeCategory === cat
-                        ? 'bg-emerald-700 text-white'
+                        ? 'bg-terra-700 text-white'
                         : 'text-gray-400 hover:text-white'
                     }`}
                   >
@@ -275,7 +276,7 @@ export default function Barra() {
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   placeholder="Buscar..."
-                  className="w-full pl-9 pr-3 py-1.5 bg-neutral-900/80 border border-white/20 rounded-lg text-white text-sm placeholder-gray-400 focus:outline-none focus:border-emerald-500"
+                  className="w-full pl-9 pr-3 py-1.5 bg-neutral-900/80 border border-white/20 rounded-lg text-white text-sm placeholder-gray-400 focus:outline-none focus:border-terra-500"
                 />
               </div>
             </div>
@@ -308,7 +309,7 @@ export default function Barra() {
                             {isServing && containerName && (
                               <p className="text-[10px] text-indigo-400 truncate">Porción de {containerName}</p>
                             )}
-                            <p className="text-emerald-400 text-sm font-bold mt-1">
+                            <p className="text-terra-400 text-sm font-bold mt-1">
                               {formatCurrency(product.price)}
                             </p>
                           </div>
@@ -359,12 +360,12 @@ export default function Barra() {
                           >
                             −
                           </button>
-                          <span className={`text-base font-bold w-7 text-center ${cart[product.id] ? 'text-emerald-400' : 'text-gray-400'}`}>
+                          <span className={`text-base font-bold w-7 text-center ${cart[product.id] ? 'text-terra-400' : 'text-gray-400'}`}>
                             {cart[product.id] || 0}
                           </span>
                           <button
                             onClick={() => setCartQty(product.id, (cart[product.id] || 0) + 1)}
-                            className="w-8 h-8 flex items-center justify-center bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-500 rounded-lg transition-colors text-white text-sm font-bold"
+                            className="w-8 h-8 flex items-center justify-center bg-terra-600 hover:bg-terra-700 active:bg-terra-500 rounded-lg transition-colors text-white text-sm font-bold"
                           >
                             +
                           </button>
@@ -383,12 +384,12 @@ export default function Barra() {
             {cartItems.map(({ product, qty }) => (
               <div key={product.id} className="flex items-center justify-between text-sm">
                 <span className="text-gray-300">{product.name} <span className="text-gray-400">×{qty}</span></span>
-                <span className="text-emerald-400 font-medium">{formatCurrency(product.price * qty)}</span>
+                <span className="text-terra-400 font-medium">{formatCurrency(product.price * qty)}</span>
               </div>
             ))}
             <div className="flex items-center justify-between pt-2 border-t border-white/20">
               <span className="font-semibold text-white">Total</span>
-              <span className="text-xl font-bold text-emerald-400">{formatCurrency(cartTotal)}</span>
+              <span className="text-xl font-bold text-terra-400">{formatCurrency(cartTotal)}</span>
             </div>
           </div>
         )}
@@ -401,12 +402,12 @@ export default function Barra() {
               onClick={() => setPaymentMethod('efectivo')}
               className={`p-4 rounded-xl border-2 transition-all ${
                 paymentMethod === 'efectivo'
-                  ? 'bg-emerald-600/20 border-emerald-500 text-emerald-400'
+                  ? 'bg-terra-600/20 border-terra-500 text-terra-400'
                   : 'bg-neutral-900/60 border-white/20 text-gray-300 hover:border-white/30'
               }`}
             >
               <div className="flex flex-col items-center gap-1">
-                <span className="text-2xl">💵</span>
+                <Banknote size={24} strokeWidth={1.5} aria-hidden />
                 <span className="text-sm font-medium">Efectivo</span>
               </div>
             </button>
@@ -419,7 +420,7 @@ export default function Barra() {
               }`}
             >
               <div className="flex flex-col items-center gap-1">
-                <span className="text-2xl">💳</span>
+                <CreditCard size={24} strokeWidth={1.5} aria-hidden />
                 <span className="text-sm font-medium">Tarjeta</span>
               </div>
             </button>
@@ -432,14 +433,14 @@ export default function Barra() {
               }`}
             >
               <div className="flex flex-col items-center gap-1">
-                <span className="text-2xl">📱</span>
+                <Smartphone size={24} strokeWidth={1.5} aria-hidden />
                 <span className="text-sm font-medium">Transferencia</span>
               </div>
             </button>
           </div>
 
           {purchaseSuccess ? (
-            <div className="w-full py-4 bg-emerald-700/40 border border-emerald-600 text-emerald-300 font-bold text-lg rounded-xl text-center">
+            <div className="w-full py-4 bg-terra-700/40 border border-terra-600 text-terra-300 font-bold text-lg rounded-xl text-center">
               Venta registrada
             </div>
           ) : purchaseError ? (
@@ -450,7 +451,7 @@ export default function Barra() {
             <button
               onClick={handleConfirmPurchase}
               disabled={cartItems.length === 0 || confirming}
-              className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:bg-white/10 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-bold text-lg rounded-xl transition-colors"
+              className="w-full py-4 bg-terra-600 hover:bg-terra-500 disabled:bg-white/10 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-bold text-lg rounded-xl transition-colors"
             >
               {confirming
                 ? 'Confirmando...'
@@ -474,8 +475,8 @@ export default function Barra() {
                     <div key={sale.id} className="bg-neutral-900 rounded-2xl border border-white/20 overflow-hidden">
                       <div className="flex items-center justify-between p-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 flex items-center justify-center bg-emerald-900 bg-opacity-30 text-emerald-400 rounded-full">
-                            <span className="text-lg">🍺</span>
+                          <div className="w-10 h-10 flex items-center justify-center bg-terra-900 bg-opacity-30 text-terra-400 rounded-full">
+                            <Beer size={18} strokeWidth={1.5} aria-hidden />
                           </div>
                           <div>
                             <h3 className="font-medium text-white">{sale.product_name} ×{sale.quantity}</h3>
@@ -483,7 +484,7 @@ export default function Barra() {
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className="text-lg font-bold text-emerald-400">{formatCurrency(sale.total)}</span>
+                          <span className="text-lg font-bold text-terra-400">{formatCurrency(sale.total)}</span>
                           <button
                             onClick={() => { setConfirmingSaleDelete(sale.id); }}
                             className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-colors"

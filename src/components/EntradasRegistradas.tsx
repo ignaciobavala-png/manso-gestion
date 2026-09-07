@@ -1,3 +1,4 @@
+import { X, Image as ImageIcon, User } from 'lucide-react'
 import { useState, useCallback, useEffect } from 'react'
 import QRCode from 'qrcode'
 import { supabase } from '../lib/supabase'
@@ -361,7 +362,7 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
         <div className="px-6 sm:px-8 pb-6 sm:pb-8">
           {loading ? (
             <div className="flex justify-center items-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-emerald-500" />
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-terra-500" />
             </div>
           ) : rows.length === 0 ? (
             <div className="text-center text-gray-400 py-12 text-sm">
@@ -382,7 +383,7 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
                     className="flex-1 bg-transparent text-white text-sm placeholder-gray-400 outline-none"
                   />
                   {search && (
-                    <button onClick={() => setSearch('')} className="text-gray-400 hover:text-white transition-colors text-xs">✕</button>
+                    <button onClick={() => setSearch('')} aria-label="Limpiar búsqueda" className="text-gray-400 hover:text-white transition-colors"><X size={14} strokeWidth={1.5} /></button>
                   )}
                 </div>
                 <button
@@ -390,7 +391,7 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
                   title={sortAlpha ? 'Orden cronológico' : 'Orden alfabético'}
                   className={`flex-shrink-0 px-3 py-2 rounded-xl border text-xs font-medium transition-colors ${
                     sortAlpha
-                      ? 'bg-emerald-700/40 border-emerald-600/50 text-emerald-300'
+                      ? 'bg-terra-700/40 border-terra-600/50 text-terra-300'
                       : 'bg-white/5 border-white/20 text-gray-400 hover:text-white'
                   }`}
                 >
@@ -405,7 +406,7 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
                 </div>
                 <div className="bg-neutral-900 border border-white/20 rounded-xl px-3 py-1.5">
                   <span className="text-gray-400 text-xs">Ingresaron: </span>
-                  <span className="text-emerald-400 text-xs font-semibold">{ingresados}</span>
+                  <span className="text-olive-300 text-xs font-semibold">{ingresados}</span>
                 </div>
                 <div className="bg-neutral-900 border border-white/20 rounded-xl px-3 py-1.5">
                   <span className="text-gray-400 text-xs">Pendientes: </span>
@@ -450,7 +451,7 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
                     estado === 'Rechazado' || estado === 'Sin pagar'
                       ? 'bg-red-900/50 text-red-400'
                       : estado === 'Ingresó' || estado === 'Verificado'
-                        ? 'bg-emerald-900/50 text-emerald-400'
+                        ? 'bg-terra-900/50 text-terra-400'
                         : 'bg-white/10 text-gray-400'
 
                   return (
@@ -464,7 +465,7 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
                             href={r.signedReceiptUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-xl overflow-hidden border border-white/20 hover:border-emerald-400/50 transition-colors"
+                            className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-xl overflow-hidden border border-white/20 hover:border-terra-400/50 transition-colors"
                           >
                             <img
                               src={r.signedReceiptUrl}
@@ -474,11 +475,11 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
                           </a>
                         ) : r.receipt_url ? (
                           <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white/5 border border-white/20 flex items-center justify-center">
-                            <span className="text-gray-400 text-base">🖼</span>
+                            <ImageIcon className="text-gray-400" size={18} strokeWidth={1.5} aria-hidden />
                           </div>
                         ) : (
                           <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white/5 border border-white/20 flex items-center justify-center">
-                            <span className="text-gray-400 text-base">👤</span>
+                            <User className="text-gray-400" size={18} strokeWidth={1.5} aria-hidden />
                           </div>
                         )}
 

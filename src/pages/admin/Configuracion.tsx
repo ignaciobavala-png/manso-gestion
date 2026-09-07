@@ -1,3 +1,4 @@
+import { Check, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
@@ -196,7 +197,7 @@ export default function Configuracion() {
     if (usernameSuccess) {
       return (
         <div className="flex flex-col items-center text-center py-8 space-y-4">
-          <div className="w-14 h-14 rounded-full bg-emerald-900/40 border border-emerald-700 flex items-center justify-center text-2xl text-emerald-400 font-bold">✓</div>
+          <div className="w-14 h-14 rounded-full bg-olive-900/50 border border-olive-700 flex items-center justify-center text-olive-300"><Check size={26} strokeWidth={2} aria-hidden /></div>
           <div>
             <p className="text-white font-semibold">Usuario actualizado</p>
             <p className="text-gray-400 text-sm mt-1">
@@ -232,7 +233,7 @@ export default function Configuracion() {
               autoComplete="off"
               autoCapitalize="none"
               placeholder="ej: ana / staff"
-              className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
+              className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-terra-500 transition-colors text-sm"
             />
           </div>
 
@@ -241,7 +242,7 @@ export default function Configuracion() {
           <button
             type="submit"
             disabled={usernameLoading || !newUsername.trim()}
-            className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-white/10 disabled:text-gray-400 text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-95 text-sm"
+            className="w-full bg-terra-600 hover:bg-terra-500 disabled:bg-white/10 disabled:text-gray-400 text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-95 text-sm"
           >
             {usernameLoading ? 'Guardando...' : 'Guardar usuario'}
           </button>
@@ -274,7 +275,7 @@ export default function Configuracion() {
                 onChange={e => { setNewPassword(e.target.value); setFormError('') }}
                 autoComplete="new-password"
                 placeholder="Mínimo 6 caracteres"
-                className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 pr-16 text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
+                className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 pr-16 text-white placeholder-gray-600 focus:outline-none focus:border-terra-500 transition-colors text-sm"
               />
               <button
                 type="button"
@@ -295,7 +296,7 @@ export default function Configuracion() {
                 onChange={e => { setConfirmPassword(e.target.value); setFormError('') }}
                 autoComplete="new-password"
                 placeholder="Repetí la contraseña"
-                className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 pr-16 text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
+                className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 pr-16 text-white placeholder-gray-600 focus:outline-none focus:border-terra-500 transition-colors text-sm"
               />
               <button
                 type="button"
@@ -312,7 +313,7 @@ export default function Configuracion() {
           <button
             type="submit"
             disabled={loading || !newPassword || !confirmPassword}
-            className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-white/10 disabled:text-gray-400 text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-95 text-sm mt-2"
+            className="w-full bg-terra-600 hover:bg-terra-500 disabled:bg-white/10 disabled:text-gray-400 text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-95 text-sm mt-2"
           >
             {loading ? 'Guardando...' : 'Guardar contraseña'}
           </button>
@@ -324,7 +325,7 @@ export default function Configuracion() {
   if (flow.step === 'success') {
     return (
       <div className="flex flex-col items-center text-center py-8 space-y-4">
-        <div className="w-14 h-14 rounded-full bg-emerald-900/40 border border-emerald-700 flex items-center justify-center text-2xl text-emerald-400 font-bold">✓</div>
+        <div className="w-14 h-14 rounded-full bg-olive-900/50 border border-olive-700 flex items-center justify-center text-olive-300"><Check size={26} strokeWidth={2} aria-hidden /></div>
         <div>
           <p className="text-white font-semibold">Contraseña actualizada</p>
           <p className="text-gray-400 text-sm mt-1">
@@ -341,7 +342,7 @@ export default function Configuracion() {
   if (flow.step === 'error') {
     return (
       <div className="flex flex-col items-center text-center py-8 space-y-4">
-        <div className="w-14 h-14 rounded-full bg-red-900/40 border border-red-700 flex items-center justify-center text-2xl text-red-400 font-bold">✕</div>
+        <div className="w-14 h-14 rounded-full bg-red-900/40 border border-red-700 flex items-center justify-center text-red-400"><X size={26} strokeWidth={2} aria-hidden /></div>
         <div>
           <p className="text-white font-semibold">No se pudo cambiar</p>
           <p className="text-red-400 text-sm mt-1">{flow.message}</p>

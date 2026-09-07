@@ -139,7 +139,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Error al cargar datos'
-      console.error('❌ Error fetching data:', errorMessage)
+      console.error('Error fetching data:', errorMessage)
       set({ error: errorMessage })
     } finally {
       set({ isLoading: false })

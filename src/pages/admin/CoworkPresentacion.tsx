@@ -1,3 +1,5 @@
+import { ChevronUp, ChevronDown, X, Check } from 'lucide-react'
+import Icono from '../../components/Icono'
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { compressImage } from '../../lib/compressImage'
@@ -128,12 +130,12 @@ export default function CoworkPresentacion() {
   if (!cargado) {
     return (
       <div className="flex justify-center py-16">
-        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-emerald-400" />
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-terra-400" />
       </div>
     )
   }
 
-  const campo = 'w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-400 focus:outline-none focus:border-emerald-500 transition-colors'
+  const campo = 'w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-400 focus:outline-none focus:border-terra-500 transition-colors'
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -244,12 +246,11 @@ export default function CoworkPresentacion() {
         {borrador.incluye.map((tarjeta, i) => (
           <div key={tarjeta.id} className="bg-white/5 border border-white/20 rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={tarjeta.icono}
-                onChange={e => editarTarjeta(tarjeta.id, { icono: e.target.value })}
-                className="w-14 bg-white/10 border border-white/20 rounded-xl px-2 py-2.5 text-center text-lg focus:outline-none focus:border-emerald-500"
-              />
+              {/* El ícono ya no se escribe: se elige de la fila de abajo.
+                  Esto solo muestra cuál quedó elegido. */}
+              <div className="w-12 h-11 flex items-center justify-center rounded-xl bg-white/10 border border-white/20 text-gray-200 flex-shrink-0">
+                <Icono nombre={tarjeta.icono} size={20} />
+              </div>
               <input
                 type="text"
                 value={tarjeta.titulo}
@@ -261,23 +262,26 @@ export default function CoworkPresentacion() {
                 <button
                   onClick={() => moverTarjeta(i, -1)}
                   disabled={i === 0}
-                  className="w-7 h-6 rounded bg-white/10 hover:bg-white/20 disabled:opacity-30 text-gray-300 text-xs transition-colors"
+                  className="w-7 h-6 flex items-center justify-center rounded bg-white/10 hover:bg-white/20 disabled:opacity-30 text-gray-300 transition-colors"
+                  aria-label="Subir tarjeta"
                 >
-                  ↑
+                  <ChevronUp size={14} strokeWidth={1.5} />
                 </button>
                 <button
                   onClick={() => moverTarjeta(i, 1)}
                   disabled={i === borrador.incluye.length - 1}
-                  className="w-7 h-6 rounded bg-white/10 hover:bg-white/20 disabled:opacity-30 text-gray-300 text-xs transition-colors"
+                  className="w-7 h-6 flex items-center justify-center rounded bg-white/10 hover:bg-white/20 disabled:opacity-30 text-gray-300 transition-colors"
+                  aria-label="Bajar tarjeta"
                 >
-                  ↓
+                  <ChevronDown size={14} strokeWidth={1.5} />
                 </button>
               </div>
               <button
                 onClick={() => editar({ incluye: borrador.incluye.filter(t => t.id !== tarjeta.id) })}
                 className="w-9 h-9 flex items-center justify-center rounded-xl bg-red-900/40 hover:bg-red-800/60 text-red-400 transition-colors flex-shrink-0"
+                aria-label="Borrar tarjeta"
               >
-                ✕
+                <X size={16} strokeWidth={1.5} />
               </button>
             </div>
 
@@ -290,13 +294,19 @@ export default function CoworkPresentacion() {
             />
 
             <div className="flex flex-wrap gap-1.5">
-              {ICONOS_SUGERIDOS.map(emoji => (
+              {ICONOS_SUGERIDOS.map(nombre => (
                 <button
-                  key={emoji}
-                  onClick={() => editarTarjeta(tarjeta.id, { icono: emoji })}
-                  className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/15 transition-colors"
+                  key={nombre}
+                  onClick={() => editarTarjeta(tarjeta.id, { icono: nombre })}
+                  title={nombre}
+                  aria-label={nombre}
+                  className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${
+                    tarjeta.icono === nombre
+                      ? 'bg-terra-600/30 text-terra-300 ring-1 ring-terra-500/60'
+                      : 'bg-white/5 hover:bg-white/15 text-gray-300'
+                  }`}
                 >
-                  {emoji}
+                  <Icono nombre={nombre} size={16} />
                 </button>
               ))}
             </div>
@@ -317,13 +327,19 @@ export default function CoworkPresentacion() {
         <button
           onClick={() => guardar()}
           disabled={!tocado || guardando || subiendo}
-          className="flex-1 bg-emerald-600 hover:bg-emerald-500 disabled:bg-white/10 disabled:text-gray-400 text-white font-semibold py-3 rounded-xl transition-colors text-sm"
+          className="flex-1 bg-terra-600 hover:bg-terra-500 disabled:bg-white/10 disabled:text-gray-400 text-white font-semibold py-3 rounded-xl transition-colors text-sm"
         >
-          {guardando ? 'Guardando...' : tocado ? 'Guardar cambios' : ok ? 'Guardado ✓' : 'Sin cambios'}
+          {guardando
+            ? 'Guardando...'
+            : tocado
+              ? 'Guardar cambios'
+              : ok
+                ? <span className="inline-flex items-center justify-center gap-1.5"><Check size={15} strokeWidth={2} aria-hidden /> Guardado</span>
+                : 'Sin cambios'}
         </button>
         <button
           onClick={() => window.open('/cowork', '_blank', 'noopener,noreferrer')}
-          className="text-emerald-400 hover:text-emerald-300 text-sm font-semibold px-3 transition-colors"
+          className="text-terra-400 hover:text-terra-300 text-sm font-semibold px-3 transition-colors"
         >
           Ver la página ↗
         </button>

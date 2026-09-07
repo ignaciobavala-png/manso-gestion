@@ -1,3 +1,4 @@
+import { ArrowLeft, Ticket } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import QRCode from 'qrcode'
@@ -190,13 +191,13 @@ function TicketCard({ ticket, isFinished = false }: { ticket: TicketData; isFini
 
   return (
     <div className={`backdrop-blur-md rounded-3xl overflow-hidden border ${isFinished ? 'bg-black/40 border-white/5' : 'bg-black/60 border-white/20'}`}>
-      <div className={`h-1 bg-gradient-to-r ${isFinished ? 'from-neutral-700 via-neutral-600 to-neutral-700' : 'from-emerald-700 via-emerald-500 to-emerald-700'}`} />
+      <div className={`h-1 bg-gradient-to-r ${isFinished ? 'from-neutral-700 via-neutral-600 to-neutral-700' : 'from-terra-700 via-terra-500 to-terra-700'}`} />
 
       <div className="px-6 pt-5 pb-6 flex flex-col items-center">
         <p className={`text-[10px] tracking-[3px] uppercase mb-1 ${isFinished ? 'text-gray-400' : 'text-gray-400'}`}>
           {isFinished ? 'evento finalizado' : 'entrada digital'}
         </p>
-        <p className={`text-sm font-medium mb-4 ${isFinished ? 'text-gray-400' : 'text-emerald-400'}`}>{ticket.event_name}</p>
+        <p className={`text-sm font-medium mb-4 ${isFinished ? 'text-gray-400' : 'text-terra-400'}`}>{ticket.event_name}</p>
 
         <div className={`rounded-2xl p-3 shadow-2xl ${isFinished ? 'bg-white/80' : 'bg-white'}`}>
           <canvas ref={canvasRef} className="block opacity-60" style={{ width: 200, height: 200 }} />
@@ -220,7 +221,7 @@ function TicketCard({ ticket, isFinished = false }: { ticket: TicketData; isFini
         </GlowBorder>
       </div>
 
-      <div className="h-1 bg-gradient-to-r from-emerald-700 via-emerald-500 to-emerald-700" />
+      <div className="h-1 bg-gradient-to-r from-terra-700 via-terra-500 to-terra-700" />
     </div>
   )
 }
@@ -371,13 +372,14 @@ export default function MiEntrada() {
           <div className="w-full flex justify-start -mb-2">
             <button
               onClick={() => navigate('/')}
-              className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all text-lg"
+              className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all"
+              aria-label="Volver"
             >
-              ←
+              <ArrowLeft size={20} strokeWidth={1.5} />
             </button>
           </div>
 
-          <span className="text-5xl">📲</span>
+          <Ticket className="text-manso-cream/40" size={48} strokeWidth={1.25} aria-hidden />
           <div>
             <h2 className="text-xl font-bold text-white">No tenés entradas guardadas</h2>
             <p className="text-gray-400 text-sm mt-2 max-w-xs">
@@ -442,7 +444,7 @@ export default function MiEntrada() {
         <div className="w-full max-w-sm space-y-5">
 
           <div className="flex items-center justify-between">
-            <button onClick={() => navigate('/')} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all text-lg">←</button>
+            <button onClick={() => navigate('/')} aria-label="Volver" className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all"><ArrowLeft size={20} strokeWidth={1.5} /></button>
             {totalTickets > 1 && (
               <span className="text-gray-400 text-sm font-medium">{totalTickets} entradas</span>
             )}

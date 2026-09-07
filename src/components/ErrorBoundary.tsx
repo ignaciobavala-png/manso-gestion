@@ -1,3 +1,4 @@
+import { CircleAlert } from 'lucide-react'
 import { Component } from 'react'
 import type { ReactNode, ErrorInfo } from 'react'
 
@@ -27,15 +28,15 @@ export default class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-gray-950 text-gray-200 font-montserrat flex flex-col items-center justify-center px-6 text-center gap-4">
-          <p className="text-4xl">💥</p>
+        <div className="min-h-screen bg-gray-950 text-gray-200 font-sans flex flex-col items-center justify-center px-6 text-center gap-4">
+          <CircleAlert className="text-terra-400" size={40} strokeWidth={1.25} aria-hidden />
           <h2 className="text-xl font-bold text-white">Algo salió mal</h2>
           <p className="text-gray-300 text-sm max-w-xs">
             Ocurrió un error inesperado. Recargá la página para continuar.
           </p>
           <button
             onClick={() => window.location.reload()}
-            className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 px-6 rounded-2xl transition-all"
+            className="bg-terra-600 hover:bg-terra-500 text-white font-semibold py-3 px-6 rounded-2xl transition-all"
           >
             Recargar
           </button>

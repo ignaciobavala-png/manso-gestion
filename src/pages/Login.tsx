@@ -70,7 +70,7 @@ export default function Login() {
                   autoComplete="username"
                   autoCapitalize="none"
                   placeholder="Tu usuario"
-                  className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
+                  className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-terra-500 transition-colors text-sm"
                 />
               </div>
 
@@ -83,7 +83,7 @@ export default function Login() {
                     onChange={e => { setPassword(e.target.value); setError('') }}
                     autoComplete="current-password"
                     placeholder="••••••••"
-                    className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 pr-12 text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
+                    className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 pr-12 text-white placeholder-gray-600 focus:outline-none focus:border-terra-500 transition-colors text-sm"
                   />
                   <button
                     type="button"
@@ -102,7 +102,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={loading || !username.trim() || !password}
-                className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-white/10 disabled:text-gray-400 text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-95 text-sm mt-2"
+                className="w-full bg-terra-600 hover:bg-terra-500 disabled:bg-white/10 disabled:text-gray-400 text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-95 text-sm mt-2"
               >
                 {loading ? 'Ingresando...' : 'Ingresar'}
               </button>

@@ -1,3 +1,4 @@
+import { X, Plus, Check, Pencil, Image as ImageIcon } from 'lucide-react'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAppStore } from '../store/useAppStore'
@@ -148,9 +149,11 @@ export default function GestionEventos() {
         <h2 className="text-xl font-semibold text-white">Eventos</h2>
         <button
           onClick={() => setShowCreator(v => !v)}
-          className="text-sm text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
+          className="text-sm text-terra-400 hover:text-terra-300 font-medium transition-colors inline-flex items-center gap-1.5"
         >
-          {showCreator ? '✕ Cancelar' : '+ Nuevo evento'}
+          {showCreator
+            ? <><X size={14} strokeWidth={2} aria-hidden /> Cancelar</>
+            : <><Plus size={14} strokeWidth={2} aria-hidden /> Nuevo evento</>}
         </button>
       </div>
 
@@ -184,7 +187,7 @@ export default function GestionEventos() {
               key={e.id}
               className={`rounded-2xl border overflow-hidden transition-colors ${
                 isCurrent
-                  ? 'bg-emerald-900/30 border-emerald-700'
+                  ? 'bg-terra-900/30 border-terra-700'
                   : 'bg-neutral-900 border border-white/20'
               }`}
             >
@@ -203,15 +206,15 @@ export default function GestionEventos() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-400 text-2xl">
-                        🖼
+                      <div className="w-full h-full flex items-center justify-center text-gray-400">
+                        <ImageIcon size={22} strokeWidth={1.5} aria-hidden />
                       </div>
                     )}
                   </div>
                   <button
                     onClick={() => fileInputRefs.current[e.id]?.click()}
                     disabled={isUploading}
-                    className="text-xs text-emerald-400 hover:text-emerald-300 font-medium transition-colors disabled:opacity-50"
+                    className="text-xs text-terra-400 hover:text-terra-300 font-medium transition-colors disabled:opacity-50"
                   >
                     {isUploading ? 'Subiendo...' : e.flyer_url ? 'Cambiar foto' : 'Subir foto'}
                   </button>
@@ -237,11 +240,12 @@ export default function GestionEventos() {
                         onClick={() => setEditingId(editingId === e.id ? null : e.id)}
                         className="text-gray-400 hover:text-gray-300 transition-colors flex-shrink-0"
                         title="Editar evento"
+                        aria-label="Editar evento"
                       >
-                        ✏️
+                        <Pencil size={14} strokeWidth={1.5} />
                       </button>
                       {isCurrent && (
-                        <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-700 text-emerald-100 uppercase tracking-wide whitespace-nowrap">
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-terra-700 text-terra-100 uppercase tracking-wide whitespace-nowrap">
                           En operación
                         </span>
                       )}
@@ -264,7 +268,7 @@ export default function GestionEventos() {
                     {!isCurrent && (
                       <button
                         onClick={() => selectOperatingEvent(e.id)}
-                        className="text-sm px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white font-medium rounded-xl transition-colors whitespace-nowrap"
+                        className="text-sm px-3 py-1.5 bg-terra-700 hover:bg-terra-600 text-white font-medium rounded-xl transition-colors whitespace-nowrap"
                       >
                         Operar
                       </button>
@@ -283,9 +287,11 @@ export default function GestionEventos() {
                         setCopiedId(e.id)
                         setTimeout(() => setCopiedId(null), 2000)
                       }}
-                      className="text-sm px-3 py-1.5 bg-white/10 hover:bg-white/20 text-gray-300 font-medium rounded-xl transition-colors whitespace-nowrap"
+                      className="text-sm px-3 py-1.5 bg-white/10 hover:bg-white/20 text-gray-300 font-medium rounded-xl transition-colors whitespace-nowrap inline-flex items-center gap-1.5"
                     >
-                      {copiedId === e.id ? '✓ Copiado' : e.is_private ? 'Link privado' : 'Copiar link'}
+                      {copiedId === e.id
+                        ? <><Check size={14} strokeWidth={2} aria-hidden /> Copiado</>
+                        : e.is_private ? 'Link privado' : 'Copiar link'}
                     </button>
                     <button
                       onClick={() => bgFileInputRefs.current[e.id]?.click()}
