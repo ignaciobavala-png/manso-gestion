@@ -1,7 +1,16 @@
 # Cowork — propuesta de sección con stickers NFC
 
-> Estado: **propuesta, nada implementado.** Documento para discutir con los socios
-> antes de escribir código. Fecha: 2026-08-20.
+> Estado: **fase 1 y 2 en la rama `traking-cowork`** (migraciones 027 y 028).
+> El llavero existe —personas, llaves con período, visitas, credencial QR y las
+> dos funciones de puerta— y hay una lista de miembros en el panel del Cowork.
+> Lo que sigue sin escribirse de este documento: los stickers NFC (la credencial
+> ya los contempla como otro `soporte`), la pantalla de puerta, los perks y la
+> analítica. Escrito como propuesta el 2026-08-20; decisiones tomadas el
+> 2026-09-15, ver el mensaje del commit del llavero.
+>
+> Dos cosas cambiaron respecto de lo que está más abajo: el mensual lo vende
+> manso.club y lo empuja por HTTP (no se carga acá), y la llave se emite sola
+> desde la compra en vez de darse de alta a mano.
 
 ## La idea en una línea
 
