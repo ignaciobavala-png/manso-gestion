@@ -36,8 +36,9 @@ interface EmitirBody {
   nombre?: string
   /** Inclusive. ISO 'YYYY-MM-DD'. */
   desde?: string
-  /** Inclusive: el ultimo dia que la llave abre la puerta. */
-  hasta?: string
+  /** Inclusive: el ultimo dia que la llave abre la puerta.
+   *  `null` es una llave sin vencimiento (el vitalicio del panel). */
+  hasta?: string | null
   /** Nombre del plan al momento de la compra: "FULL", "LITE", "Flex 1D". */
   plan?: string
   precio?: number
@@ -115,15 +116,18 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   // ── Alta / renovacion ─────────────────────────────────────
-  if (!body.email || !body.desde || !body.hasta) {
+  // `hasta` puede venir null: es el vitalicio del panel de manso.club, que
+  // en el llavero es una llave que no vence. Distinto de que falte la clave,
+  // que casi siempre es un bug del que llama.
+  if (!body.email || !body.desde || body.hasta === undefined) {
     return json({ error: 'Faltan email, desde o hasta' }, 400)
   }
 
-  if (!ES_FECHA.test(body.desde) || !ES_FECHA.test(body.hasta)) {
-    return json({ error: 'desde y hasta van como YYYY-MM-DD' }, 400)
+  if (!ES_FECHA.test(body.desde) || (body.hasta !== null && !ES_FECHA.test(body.hasta))) {
+    return json({ error: 'desde y hasta van como YYYY-MM-DD (hasta admite null)' }, 400)
   }
 
-  if (body.hasta < body.desde) {
+  if (body.hasta !== null && body.hasta < body.desde) {
     return json({ error: 'hasta no puede ser anterior a desde' }, 400)
   }
 
@@ -132,7 +136,7 @@ export default async function handler(req: Request): Promise<Response> {
     p_nombre: body.nombre ?? null,
     p_tipo: 'mensual',
     p_desde: body.desde,
-    p_hasta: body.hasta,
+    p_hasta: body.hasta,   // null = no vence
     p_origen: 'pagina',
     p_origen_ref: body.ref,
     p_plan: body.plan ?? null,

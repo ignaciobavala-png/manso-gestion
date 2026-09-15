@@ -126,14 +126,17 @@ export default function CarnetCowork() {
               </div>
             </div>
 
-            {carnet.puede_entrar && carnet.llave_hasta && (
+            {carnet.puede_entrar && (
               <p className="text-gray-300 text-xs mt-4 flex items-center gap-1.5">
                 <CalendarClock size={13} aria-hidden />
                 {carnet.llave_tipo === 'dia'
                   ? 'Vale por hoy'
-                  : vence === 0
-                    ? 'Vence hoy'
-                    : `Te quedan ${vence} ${vence === 1 ? 'día' : 'días'}`}
+                  // null = no vence (vitalicio), que no es lo mismo que cero.
+                  : vence === null
+                    ? 'Sin vencimiento'
+                    : vence === 0
+                      ? 'Vence hoy'
+                      : `Te quedan ${vence} ${vence === 1 ? 'día' : 'días'}`}
               </p>
             )}
           </div>

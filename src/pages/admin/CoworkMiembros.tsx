@@ -282,7 +282,12 @@ function FilaMiembro({
     : miembro.estado === 'pausada' ? 'Pausada'
     : !miembro.llave_hasta       ? 'Sin llave vigente'
     : miembro.llave_tipo === 'dia' ? 'Pase de un día'
-    : `${miembro.llave_plan ?? 'Mensual'} · ${vence === 0 ? 'vence hoy' : `quedan ${vence} días`}`
+    // dias_restantes viene null cuando la llave no vence (el vitalicio del
+    // panel de manso.club). No es lo mismo que cero.
+    : `${miembro.llave_plan ?? 'Mensual'} · ${
+        vence === null ? 'no vence'
+        : vence === 0  ? 'vence hoy'
+        : `quedan ${vence} ${vence === 1 ? 'día' : 'días'}`}`
 
   return (
     <div className="bg-neutral-900 border border-white/20 rounded-2xl overflow-hidden">
