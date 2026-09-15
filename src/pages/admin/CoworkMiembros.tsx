@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import QRCode from 'qrcode'
-import { Search, UserPlus, QrCode, RotateCw, Download } from 'lucide-react'
+import { Search, UserPlus, QrCode, RotateCw, Download, Link2, Check } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import ConfirmModal from '../../components/ConfirmModal'
 
@@ -250,6 +250,7 @@ function FilaMiembro({
   onRotar: () => void
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [copiado, setCopiado] = useState(false)
 
   useEffect(() => {
     if (!abierto || !canvasRef.current || !miembro.token) return
@@ -262,6 +263,18 @@ function FilaMiembro({
       color: { dark: '#000000', light: '#ffffff' },
     })
   }, [abierto, miembro.token])
+
+  // El link del carnet es lo que se le manda al miembro. Abrirlo una vez deja
+  // su credencial guardada en su celular, que es lo que después hace que el QR
+  // de una sala lo reconozca.
+  const copiarLink = async () => {
+    if (!miembro.token) return
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/c/${miembro.token}`)
+      setCopiado(true)
+      setTimeout(() => setCopiado(false), 2000)
+    } catch { /* sin permiso de portapapeles: queda el QR para bajar */ }
+  }
 
   const descargar = () => {
     if (!canvasRef.current) return
@@ -329,10 +342,18 @@ function FilaMiembro({
               <canvas ref={canvasRef} className="rounded-xl" />
               <div className="flex gap-2 mt-3">
                 <button
+                  onClick={copiarLink}
+                  className="flex items-center gap-1.5 bg-terra-600 hover:bg-terra-500 text-white text-xs font-medium rounded-xl px-3.5 py-2 transition-colors"
+                >
+                  {copiado
+                    ? <><Check size={14} aria-hidden /> Copiado</>
+                    : <><Link2 size={14} aria-hidden /> Copiar link</>}
+                </button>
+                <button
                   onClick={descargar}
                   className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-medium rounded-xl px-3.5 py-2 transition-colors"
                 >
-                  <Download size={14} aria-hidden /> Bajar PNG
+                  <Download size={14} aria-hidden /> PNG
                 </button>
                 <button
                   onClick={onRotar}
