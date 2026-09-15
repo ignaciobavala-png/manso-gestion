@@ -17,6 +17,8 @@ import Stats from './pages/admin/Stats'
 import CineclubAdmin from './pages/admin/Cineclub'
 import Cineclub from './pages/public/Cineclub'
 import Cowork from './pages/public/Cowork'
+import CarnetCowork from './pages/public/Carnet'
+import Sala from './pages/public/Sala'
 import Cartel from './pages/admin/Cartel'
 import CoworkAdmin from './pages/admin/Cowork'
 
@@ -38,6 +40,11 @@ function App() {
           <Route path="/carta" element={<Carta />} />
           <Route path="/cineclub" element={<Cineclub />} />
           <Route path="/cowork" element={<Cowork />} />
+          {/* El carnet del coworker y el QR de la puerta de cada sala. Van
+              cortas a propósito: el token ya es largo y estas dos URLs se
+              tipean, se mandan por WhatsApp y se imprimen en un cartel. */}
+          <Route path="/c/:token" element={<CarnetCowork />} />
+          <Route path="/sala/:token" element={<Sala />} />
 
           <Route
             path="/admin"
