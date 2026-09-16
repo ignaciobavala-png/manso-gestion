@@ -1,11 +1,16 @@
 # Cowork — propuesta de sección con stickers NFC
 
-> Estado: **fase 1 y 2 en la rama `traking-cowork`** (migraciones 027 y 028).
-> El llavero existe —personas, llaves con período, visitas, credencial QR y las
-> dos funciones de puerta— y hay una lista de miembros en el panel del Cowork.
+> Estado: **en producción** (migraciones 027 a 032). El llavero existe
+> —personas, llaves con período, visitas y credencial QR—, las salas con su QR
+> de puerta, el carnet del miembro, y en el panel del Cowork están Miembros,
+> Puerta y Salas.
 > Lo que sigue sin escribirse de este documento: los stickers NFC (la credencial
-> ya los contempla como otro `soporte`), la pantalla de puerta, los perks y la
-> analítica. Escrito como propuesta el 2026-08-20; decisiones tomadas el
+> ya los contempla como otro `soporte`), los perks y la analítica.
+>
+> La pantalla de puerta terminó siendo una pestaña del panel del Cowork y no
+> `/admin/cowork/puerta` ni una vista de `/admin/entradas`: aquella trabaja
+> siempre contra el evento activo, y una visita de cowork un martes a la mañana
+> no tiene evento. Escrito como propuesta el 2026-08-20; decisiones tomadas el
 > 2026-09-15, ver el mensaje del commit del llavero.
 >
 > Dos cosas cambiaron respecto de lo que está más abajo: el mensual lo vende

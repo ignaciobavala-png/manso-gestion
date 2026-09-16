@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import QRCode from 'qrcode'
-import { Search, UserPlus, QrCode, RotateCw, Download, Link2, Check } from 'lucide-react'
+import { Search, UserPlus, QrCode, RotateCw, Download, Link2, Check, MessageCircle } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import ConfirmModal from '../../components/ConfirmModal'
 
@@ -29,6 +29,7 @@ interface Miembro {
   ultima_visita: string | null
   visitas_totales: number
   token: string | null
+  telefono: string | null
 }
 
 type Filtro = 'todos' | 'al-dia' | 'sin-llave'
@@ -58,7 +59,7 @@ export default function CoworkMiembros() {
     // Dos consultas y no un join: la vista ya resuelve el semáforo (qué llave
     // manda, cuántos días quedan, última visita) y las credenciales vigentes
     // son una lista corta que se cruza en memoria.
-    const [estados, credenciales] = await Promise.all([
+    const [estados, credenciales, personas] = await Promise.all([
       supabase
         .from('cowork_estado_personas')
         .select('id, nombre, email, estado, llave_tipo, llave_plan, llave_hasta, dias_restantes, ultima_visita, visitas_totales')
@@ -68,19 +69,28 @@ export default function CoworkMiembros() {
         .select('persona_id, token')
         .eq('soporte', 'qr')
         .is('revocada_at', null),
+      // El telefono no esta en la vista —la vista resuelve el semaforo, no el
+      // contacto— y es lo que permite mandarle el carnet por WhatsApp de un
+      // toque en vez de copiar y pegar el link.
+      supabase.from('cowork_personas').select('id, telefono'),
     ])
 
     if (estados.error) return { error: estados.error.message }
     if (credenciales.error) return { error: credenciales.error.message }
+    if (personas.error) return { error: personas.error.message }
 
     const tokens = new Map(
       (credenciales.data ?? []).map(c => [c.persona_id as string, c.token as string])
     )
+    const telefonos = new Map(
+      (personas.data ?? []).map(p => [p.id as string, (p.telefono as string | null) ?? null])
+    )
 
     return {
       miembros: (estados.data ?? []).map(e => ({
-        ...(e as Omit<Miembro, 'token'>),
+        ...(e as Omit<Miembro, 'token' | 'telefono'>),
         token: tokens.get(e.id as string) ?? null,
+        telefono: telefonos.get(e.id as string) ?? null,
       })),
     }
   }, [])
@@ -241,6 +251,27 @@ export default function CoworkMiembros() {
   )
 }
 
+/**
+ * wa.me quiere el número en formato internacional y sin signos. Los teléfonos
+ * se cargan como los escribe la gente en el formulario del cowork day
+ * ("1161578095"), así que se asume Argentina y se antepone 54 9 cuando el
+ * número no trae país. Si ya lo trae, se respeta tal cual.
+ */
+function linkWhatsApp(telefono: string, texto: string) {
+  let numero = telefono.replace(/\D/g, '').replace(/^0+/, '')
+  if (!numero.startsWith('54')) numero = `549${numero}`
+  return `https://wa.me/${numero}?text=${encodeURIComponent(texto)}`
+}
+
+// El mensaje dice qué hacer con el link, no sólo lo pega: abrirlo una vez es
+// el paso del que depende todo lo demás y nadie lo adivina.
+function mensajeCarnet(miembro: Miembro) {
+  const nombre = miembro.nombre.split(' ')[0]
+  return `Hola ${nombre}! Este es tu carnet del cowork: ${window.location.origin}/c/${miembro.token}\n\n` +
+    'Abrilo una vez desde tu celular y listo: ahí ves tu plan y, de ahí en más, ' +
+    'el QR pegado en la puerta de cada sala te reconoce solo.'
+}
+
 function FilaMiembro({
   miembro, abierto, onToggle, onRotar,
 }: {
@@ -254,10 +285,13 @@ function FilaMiembro({
 
   useEffect(() => {
     if (!abierto || !canvasRef.current || !miembro.token) return
-    // Mismo formato que las entradas (`manso-ticket|<token>`), con su propio
-    // prefijo: el scanner de la puerta sabe por el prefijo si lo que leyó es
-    // una entrada de un show o una credencial de cowork.
-    QRCode.toCanvas(canvasRef.current, `manso-cowork|${miembro.token}`, {
+    // Una URL y no nuestro formato interno (`manso-cowork|<token>`), porque
+    // este QR se lo mostramos al miembro para que lo apunte con la cámara de
+    // su celular: el sistema operativo sabe abrir links y no sabe de prefijos
+    // nuestros. Y abrirlo es justamente lo que deja su credencial guardada en
+    // ese teléfono, que es de lo que dependen los QR de las salas. El formato
+    // con prefijo es el del carnet, que lo lee nuestro scanner.
+    QRCode.toCanvas(canvasRef.current, `${window.location.origin}/c/${miembro.token}`, {
       width: 200,
       margin: 2,
       color: { dark: '#000000', light: '#ffffff' },
@@ -338,12 +372,33 @@ function FilaMiembro({
           </div>
 
           {miembro.token ? (
-            <div className="mt-4 flex flex-col items-center">
-              <canvas ref={canvasRef} className="rounded-xl" />
-              <div className="flex gap-2 mt-3">
+            <div className="mt-4 rounded-2xl bg-white/5 border border-white/15 p-4 flex flex-col items-center">
+              <p className="text-white text-xs font-semibold">Entregarle el carnet</p>
+              <p className="text-gray-400 text-[11px] text-center mt-1 leading-relaxed max-w-[16rem]">
+                Si está acá, que lo apunte con la cámara. Se le abre el carnet y
+                desde ese celular los QR de las salas lo reconocen solos.
+              </p>
+
+              <canvas ref={canvasRef} className="rounded-xl mt-3" />
+
+              <div className="flex flex-wrap justify-center gap-2 mt-3">
+                {miembro.telefono && (
+                  <a
+                    href={linkWhatsApp(miembro.telefono, mensajeCarnet(miembro))}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 bg-terra-600 hover:bg-terra-500 text-white text-xs font-medium rounded-xl px-3.5 py-2 transition-colors"
+                  >
+                    <MessageCircle size={14} aria-hidden /> Mandárselo
+                  </a>
+                )}
                 <button
                   onClick={copiarLink}
-                  className="flex items-center gap-1.5 bg-terra-600 hover:bg-terra-500 text-white text-xs font-medium rounded-xl px-3.5 py-2 transition-colors"
+                  className={`flex items-center gap-1.5 text-xs font-medium rounded-xl px-3.5 py-2 transition-colors ${
+                    miembro.telefono
+                      ? 'bg-white/10 hover:bg-white/20 text-white'
+                      : 'bg-terra-600 hover:bg-terra-500 text-white'
+                  }`}
                 >
                   {copiado
                     ? <><Check size={14} aria-hidden /> Copiado</>

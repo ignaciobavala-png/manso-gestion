@@ -49,6 +49,8 @@ export default function Sala() {
   const [ocupando, setOcupando] = useState(false)
   const [hecho, setHecho] = useState<Resultado | null>(null)
   const [error, setError] = useState('')
+  const [email, setEmail] = useState('')
+  const [porEmail, setPorEmail] = useState(false)
 
   const consultar = useCallback(async () => {
     if (!token) return null
@@ -94,6 +96,38 @@ export default function Sala() {
     setEstado(fresco)
   }
 
+  /**
+   * La salida del callejón: el que escanea sin haber abierto nunca su carnet
+   * no tiene el link acá ni forma de conseguirlo. Con el mail queda
+   * registrado igual.
+   *
+   * La función de la base no le devuelve su token —ocupa la sala y nada más—,
+   * así que este camino no deja credencial guardada: es para esta vez. El
+   * carnet se lo sigue entregando el staff, y recién entonces el celular lo
+   * reconoce solo.
+   */
+  const ocuparConEmail = async () => {
+    if (!token || !email.trim()) return
+
+    setOcupando(true)
+    setError('')
+
+    const { data, error: err } = await supabase.rpc('cowork_ocupar_sala_por_email', {
+      p_sala_token: token,
+      p_email: email.trim(),
+    })
+
+    const r = ((data as Resultado[] | null) ?? [])[0] ?? null
+
+    if (err) setError(err.message)
+    else if (r && !r.ok) setError(r.motivo ?? 'No se pudo registrar')
+    else if (r) { setHecho(r); setPorEmail(true) }
+
+    setOcupando(false)
+    const fresco = await consultar()
+    setEstado(fresco)
+  }
+
   if (cargando) {
     return (
       <PublicLayout showHeader={false}>
@@ -118,6 +152,9 @@ export default function Sala() {
   }
 
   const sinCredencial = estado.soy === null
+  // Sin credencial, pero la sala está para ocuparse: es el caso que antes
+  // terminaba en un cartel sin salida.
+  const puedeIdentificarse = sinCredencial && estado.ocupable && estado.libre
 
   return (
     <PublicLayout showHeader={false}>
@@ -146,6 +183,12 @@ export default function Sala() {
               <p className="text-gray-400 text-xs mt-3 leading-relaxed">
                 Si te quedás más tiempo, volvé a escanear el QR y se extiende.
               </p>
+              {porEmail && (
+                <p className="text-gray-400 text-xs mt-2 leading-relaxed">
+                  Pedile tu carnet a alguien del staff y abrilo una vez: de ahí
+                  en más este celular te reconoce sin escribir nada.
+                </p>
+              )}
             </div>
           ) : (
             <>
@@ -174,6 +217,31 @@ export default function Sala() {
                 >
                   {ocupando ? 'Registrando…' : 'Estoy acá'}
                 </button>
+              ) : puedeIdentificarse ? (
+                // Sólo si la sala está para ocupar: si está ocupada o es de uso
+                // común, pedirle el mail sería hacerlo escribir para nada.
+                <div className="mt-4 bg-neutral-900 border border-white/20 rounded-2xl p-4">
+                  <p className="text-white text-sm font-medium">Este celular todavía no te conoce</p>
+                  <p className="text-gray-400 text-xs mt-1 leading-relaxed">
+                    Poné el mail con el que sos miembro y quedás registrado igual.
+                  </p>
+                  <input
+                    type="email"
+                    inputMode="email"
+                    autoComplete="email"
+                    placeholder="tu@email.com"
+                    value={email}
+                    onChange={e => { setEmail(e.target.value); setError('') }}
+                    className="w-full mt-3 bg-black/40 border border-white/20 rounded-2xl px-4 py-3.5 text-white text-sm placeholder-gray-600 outline-none focus:border-white/30 transition-all"
+                  />
+                  <button
+                    onClick={ocuparConEmail}
+                    disabled={ocupando || !email.trim()}
+                    className="w-full mt-2 bg-terra-600 hover:bg-terra-500 disabled:opacity-40 text-white font-semibold py-3.5 rounded-2xl transition-colors"
+                  >
+                    {ocupando ? 'Registrando…' : 'Estoy acá'}
+                  </button>
+                </div>
               ) : (
                 <div className="mt-4 bg-neutral-900 border border-white/20 rounded-2xl p-4 flex items-start gap-2.5">
                   <Lock size={15} className="text-gray-400 flex-shrink-0 mt-0.5" aria-hidden />
@@ -181,7 +249,7 @@ export default function Sala() {
                 </div>
               )}
 
-              {sinCredencial && (
+              {sinCredencial && !puedeIdentificarse && (
                 <p className="text-gray-500 text-xs mt-3 text-center leading-relaxed">
                   Si sos miembro, abrí una vez el link de tu carnet desde este
                   celular y el QR de cualquier sala te va a reconocer solo.

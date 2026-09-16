@@ -1,13 +1,6 @@
 import { Check, Users, User } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
-import QrScanner from 'qr-scanner'
-import qrWorkerSource from 'qr-scanner/qr-scanner-worker.min.js?raw'
-
-// Crea un blob URL con el contenido del worker para garantizar que funcione
-// en producción (Vercel) sin depender de rutas relativas ni CDN
-const workerBlob = new Blob([qrWorkerSource], { type: 'application/javascript' })
-const workerBlobUrl = URL.createObjectURL(workerBlob)
-QrScanner.WORKER_PATH = workerBlobUrl
+import QrScanner, { OPCIONES_ESCANER } from '../lib/escanerQr'
 import { useAppStore } from '../store/useAppStore'
 import { supabase } from '../lib/supabase'
 import SinEventoActivo from '../components/SinEventoActivo'
@@ -259,6 +252,19 @@ export default function Entradas(): React.JSX.Element {
             return
           }
 
+          // Un carnet de cowork. No se registra acá —esta pantalla trabaja
+          // contra el evento activo y una visita de cowork no tiene evento—,
+          // pero hay que decirlo: sin esto, el nombre del asistente salía
+          // "manso-cowork" y quedaba un invitado basura cargado en el evento.
+          if (rawData.startsWith('manso-cowork|')) {
+            setAlertModal({
+              isOpen: true,
+              message: 'Este es un carnet del cowork. Se escanea desde Cowork → Puerta.',
+              type: 'warning'
+            })
+            return
+          }
+
           // Si es QR de Manso (evento) pero de otro evento → rechazar
           if (isMansQr(rawData) && !isMansQrFromActiveEvent(rawData)) {
             setAlertModal({
@@ -273,12 +279,7 @@ export default function Entradas(): React.JSX.Element {
           setPendingQr({ rawData, name: extractName(rawData) })
           setPendingType('regular')
         },
-        {
-          returnDetailedScanResult: true,
-          highlightScanRegion: true,
-          highlightCodeOutline: true,
-          preferredCamera: 'environment',
-        }
+        OPCIONES_ESCANER
       )
       await qrScannerRef.current.start()
     } catch (error) {

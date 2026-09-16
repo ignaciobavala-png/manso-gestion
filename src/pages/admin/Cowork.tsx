@@ -9,6 +9,7 @@ import EventEditor from '../../components/EventEditor'
 import ConfirmModal from '../../components/ConfirmModal'
 import CoworkMiembros from './CoworkMiembros'
 import CoworkSalas from './CoworkSalas'
+import CoworkPuerta from './CoworkPuerta'
 import CoworkPresentacion from './CoworkPresentacion'
 import { useAppStore } from '../../store/useAppStore'
 import { useCoworkActivo } from '../../hooks/useSeccionPublica'
@@ -25,7 +26,7 @@ import { useCoworkActivo } from '../../hooks/useSeccionPublica'
  * presentación de la landing, que antes vivía clavada en el código.
  */
 
-type Pestana = 'fechas' | 'miembros' | 'salas' | 'presentacion'
+type Pestana = 'fechas' | 'miembros' | 'puerta' | 'salas' | 'presentacion'
 
 interface Conteo {
   vendidas: number
@@ -162,7 +163,7 @@ export default function Cowork() {
         )}
 
         <div className="flex gap-1 mb-6 border-b border-white/20">
-          {(['fechas', 'miembros', 'salas', 'presentacion'] as Pestana[]).map(p => (
+          {(['fechas', 'miembros', 'puerta', 'salas', 'presentacion'] as Pestana[]).map(p => (
             <button
               key={p}
               onClick={() => setPestana(p)}
@@ -172,7 +173,11 @@ export default function Cowork() {
                   : 'text-gray-400 hover:text-gray-300'
               }`}
             >
-              {p === 'fechas' ? 'Fechas' : p === 'miembros' ? 'Miembros' : p === 'salas' ? 'Salas' : 'Presentación'}
+              {p === 'fechas' ? 'Fechas'
+                : p === 'miembros' ? 'Miembros'
+                : p === 'puerta' ? 'Puerta'
+                : p === 'salas' ? 'Salas'
+                : 'Presentación'}
             </button>
           ))}
         </div>
@@ -181,6 +186,8 @@ export default function Cowork() {
           <CoworkPresentacion />
         ) : pestana === 'miembros' ? (
           <CoworkMiembros />
+        ) : pestana === 'puerta' ? (
+          <CoworkPuerta />
         ) : pestana === 'salas' ? (
           <CoworkSalas />
         ) : creando ? (
