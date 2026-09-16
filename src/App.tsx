@@ -19,6 +19,7 @@ import Cineclub from './pages/public/Cineclub'
 import Cowork from './pages/public/Cowork'
 import CarnetCowork from './pages/public/Carnet'
 import Sala from './pages/public/Sala'
+import Llegada from './pages/public/Llegada'
 import Cartel from './pages/admin/Cartel'
 import CoworkAdmin from './pages/admin/Cowork'
 
@@ -45,6 +46,9 @@ function App() {
               tipean, se mandan por WhatsApp y se imprimen en un cartel. */}
           <Route path="/c/:token" element={<CarnetCowork />} />
           <Route path="/sala/:token" element={<Sala />} />
+          {/* El cartel de la entrada: registra la visita del día sin ocupar
+              ninguna sala. */}
+          <Route path="/llegue/:token" element={<Llegada />} />
 
           <Route
             path="/admin"

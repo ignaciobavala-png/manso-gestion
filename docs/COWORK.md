@@ -184,6 +184,8 @@ Siguiendo la estructura actual (rutas públicas + `/admin/*` con `BottomNav`):
 |---|---|---|
 | `/c/:token` | público | Carnet del coworker. Deja la credencial y el mail guardados en ese celular |
 | `/mi-entrada` | público | La página personal: entradas + carnet. Se identifica por mail |
+| `/sala/:token` | público | El QR de la puerta de una sala: quién está y "estoy acá" |
+| `/llegue/:token` | público | El cartel de la entrada: registra la visita del día sin ocupar nada |
 | `/cowork` | público | Info del espacio, planes y formulario de interés (leads) |
 | `/admin/cowork` | control/owner | Miembros, alta, vincular sticker, estado de pagos |
 | `/admin/cowork/puerta` | control/empleado | Modo puerta a pantalla completa, esperando tap |

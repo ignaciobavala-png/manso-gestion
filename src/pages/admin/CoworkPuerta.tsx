@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { Camera, Check, ScanLine, UserCheck } from 'lucide-react'
+import { Camera, Check, DoorOpen, Download, QrCode, ScanLine, UserCheck } from 'lucide-react'
+import QRCode from 'qrcode'
 import QrScanner, { OPCIONES_ESCANER } from '../../lib/escanerQr'
 import { supabase } from '../../lib/supabase'
 
@@ -16,6 +17,12 @@ import { supabase } from '../../lib/supabase'
  * una URL, justamente porque lo lee este scanner y no la cámara del sistema.
  * El semáforo lo calcula la base (cowork_validar_qr): esta pantalla lo muestra
  * y nada más, así la puerta y el panel nunca dicen cosas distintas.
+ *
+ * Arriba está la otra mitad de lo mismo: el cartel que se pega en la entrada,
+ * que hace el mismo trabajo al revés —lo escanea el miembro con su celular— y
+ * no necesita que haya nadie del staff disponible. En la práctica es el que va
+ * a registrar casi todas las visitas; el scanner queda para cuando alguien
+ * quiera chequear a una persona en particular.
  */
 
 const PREFIJO = 'manso-cowork|'
@@ -152,6 +159,8 @@ export default function CoworkPuerta() {
 
   return (
     <div className="space-y-4">
+      <CartelDeEntrada />
+
       <video
         ref={videoRef}
         className={`w-full rounded-2xl bg-black ${escaneando ? 'block' : 'hidden'}`}
@@ -287,6 +296,79 @@ export default function CoworkPuerta() {
           >
             <Camera size={15} aria-hidden /> Escanear el próximo
           </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function CartelDeEntrada() {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [token, setToken] = useState<string | null>(null)
+  const [abierto, setAbierto] = useState(false)
+
+  useEffect(() => {
+    let cancelado = false
+    supabase.from('cowork_entrada').select('token').limit(1).maybeSingle().then(({ data }) => {
+      if (!cancelado) setToken((data?.token as string | undefined) ?? null)
+    })
+    return () => { cancelado = true }
+  }, [])
+
+  useEffect(() => {
+    if (!abierto || !canvasRef.current || !token) return
+    // URL completa: este QR lo lee la cámara del celular del miembro, que sabe
+    // abrir links y no sabe de nuestros prefijos.
+    QRCode.toCanvas(canvasRef.current, `${window.location.origin}/llegue/${token}`, {
+      width: 200,
+      margin: 2,
+      color: { dark: '#000000', light: '#ffffff' },
+    })
+  }, [abierto, token])
+
+  const descargar = () => {
+    if (!canvasRef.current) return
+    const enlace = document.createElement('a')
+    enlace.download = 'cartel-entrada-cowork.png'
+    enlace.href = canvasRef.current.toDataURL('image/png')
+    enlace.click()
+  }
+
+  return (
+    <div className="bg-neutral-900 border border-white/20 rounded-2xl overflow-hidden">
+      <button
+        onClick={() => setAbierto(a => !a)}
+        className="w-full flex items-center gap-3 p-4 text-left hover:bg-white/5 transition-colors"
+      >
+        <DoorOpen size={18} className="flex-shrink-0 text-terra-400" aria-hidden />
+        <span className="min-w-0 flex-1">
+          <span className="block text-white font-semibold text-sm">Cartel de la entrada</span>
+          <span className="block text-gray-400 text-xs">
+            Lo escanea el miembro al llegar. Registra su visita sin ocupar ninguna sala.
+          </span>
+        </span>
+        <QrCode size={18} className="flex-shrink-0 text-gray-400" aria-hidden />
+      </button>
+
+      {abierto && (
+        <div className="border-t border-white/10 p-4 flex flex-col items-center">
+          {token ? (
+            <>
+              <canvas ref={canvasRef} className="rounded-xl" />
+              <p className="text-gray-400 text-xs mt-3 text-center max-w-xs leading-relaxed">
+                Imprimilo y pegalo donde se entra. Es el que va a registrar casi
+                todas las visitas: no necesita que haya nadie del staff.
+              </p>
+              <button
+                onClick={descargar}
+                className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-medium rounded-xl px-3.5 py-2 mt-3 transition-colors"
+              >
+                <Download size={14} aria-hidden /> Bajar para imprimir
+              </button>
+            </>
+          ) : (
+            <p className="text-gray-400 text-sm">Buscando el cartel…</p>
+          )}
         </div>
       )}
     </div>
