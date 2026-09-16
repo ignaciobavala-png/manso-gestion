@@ -11,8 +11,8 @@ const PAGES: { label: string; description: string; path: string; Icon: LucideIco
     Icon: Ticket,
   },
   {
-    label: 'Mi entrada',
-    description: 'revisá tus entradas',
+    label: 'Lo mío',
+    description: 'tus entradas y tu carnet',
     path: '/mi-entrada',
     Icon: Smartphone,
   },
