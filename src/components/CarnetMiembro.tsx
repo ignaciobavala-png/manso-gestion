@@ -1,16 +1,27 @@
-import { useEffect, useRef } from 'react'
-import { CalendarClock, DoorOpen, Footprints } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { DoorOpen, QrCode } from 'lucide-react'
 import QRCode from 'qrcode'
 import { qrDeCredencial } from '../lib/credencialCowork'
 
 /**
- * El carnet del coworker, como tarjeta.
+ * El carnet del coworker: una carta de identidad, no un porta-QR.
  *
- * Vive en un componente y no dentro de una pantalla porque se muestra por dos
- * caminos: /c/<token>, que es el link que se entrega una vez, y /mi-entrada,
- * donde la persona llega escribiendo su mail. Lo que ve tiene que ser lo
- * mismo por los dos lados — si no, cada camino termina contando una historia
- * distinta sobre el mismo estado.
+ * Hoy nadie escanea los ingresos —no hay nadie parado en la puerta del
+ * cowork—, así que lo que hace útil a esta pantalla no es el QR sino que diga
+ * quién sos, que sos socio y que estás al día. Por eso el número, el "socio
+ * desde" y el estado son el cuerpo de la tarjeta, y el QR quedó guardado
+ * detrás de un botón: sigue estando para cuando el staff lo escanee, pero no
+ * ocupa la pantalla mientras nadie lo pida.
+ *
+ * Lo que de verdad identifica no es el QR igual: es el token, que quedó
+ * guardado en este navegador al abrir el carnet. El QR es ese mismo token
+ * hecho imagen, para cuando hace falta mostrarlo.
+ *
+ * Vive en un componente porque se muestra por dos caminos —/c/<token> y
+ * /mi-entrada— y lo que ve el miembro no puede depender de por dónde entró.
+ * La única diferencia entre los dos es `sala_actual`, que la base manda en
+ * null cuando quien mira llegó escribiendo un mail: saber un mail no puede
+ * ser saber dónde está sentada una persona.
  */
 
 export interface Carnet {
@@ -26,63 +37,107 @@ export interface Carnet {
   sala_actual: string | null
   sala_hasta: string | null
   email: string | null
+  numero: number
+  socio_desde: string | null
 }
 
 const hora = (iso: string) =>
   new Date(iso).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
 
+const dia = (iso: string) =>
+  new Date(`${iso}T12:00:00`).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })
+
+const mesYAno = (iso: string) =>
+  new Date(`${iso}T12:00:00`).toLocaleDateString('es-AR', { month: 'short', year: 'numeric' })
+
+function Dato({ etiqueta, children }: { etiqueta: string; children: React.ReactNode }) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-gray-400 text-[11px] uppercase tracking-wider">{etiqueta}</dt>
+      <dd className="text-white text-sm font-medium mt-0.5 truncate">{children}</dd>
+    </div>
+  )
+}
+
 export default function CarnetMiembro({ carnet, token }: { carnet: Carnet; token: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [verQr, setVerQr] = useState(false)
 
   useEffect(() => {
-    if (!canvasRef.current) return
+    if (!verQr || !canvasRef.current) return
     QRCode.toCanvas(canvasRef.current, qrDeCredencial(token), {
       width: 210,
       margin: 2,
       color: { dark: '#000000', light: '#ffffff' },
     })
-  }, [token])
+  }, [token, verQr])
 
   const vence = carnet.dias_restantes
 
+  const vencimiento =
+    carnet.llave_tipo === 'dia' ? 'Hoy'
+    // null = no vence (el vitalicio), que no es lo mismo que cero.
+    : vence === null ? 'No vence'
+    : carnet.llave_hasta
+      ? `${dia(carnet.llave_hasta)} · ${
+          vence === 0 ? 'hoy' : `${vence} ${vence === 1 ? 'día' : 'días'}`}`
+      : '—'
+
   return (
     <div>
-      <div className={`rounded-2xl border p-5 ${
-        carnet.puede_entrar
-          ? 'bg-emerald-950/40 border-emerald-500/40'
-          : 'bg-red-950/40 border-red-500/40'
-      }`}>
-        <div className="flex items-center gap-3">
-          {carnet.foto_url && (
-            <img
-              src={carnet.foto_url}
-              alt=""
-              className="w-14 h-14 rounded-full object-cover flex-shrink-0"
-            />
-          )}
-          <div className="min-w-0">
-            <p className="text-white font-semibold text-lg truncate">{carnet.nombre}</p>
-            <p className={`text-sm ${carnet.puede_entrar ? 'text-emerald-300' : 'text-red-300'}`}>
-              {carnet.puede_entrar
-                ? carnet.llave_tipo === 'dia' ? 'Pase de hoy' : (carnet.llave_plan ?? 'Al día')
-                : (carnet.motivo ?? 'Sin llave vigente')}
-            </p>
-          </div>
+      <div className="rounded-2xl border border-white/20 bg-neutral-900 overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-white/10">
+          <span className="text-gray-400 text-[11px] uppercase tracking-[0.25em]">
+            Manso · Cowork
+          </span>
+          <span className="text-terra-400 text-[11px] uppercase tracking-[0.2em] font-medium">
+            Socio {carnet.numero}
+          </span>
         </div>
 
-        {carnet.puede_entrar && (
-          <p className="text-gray-300 text-xs mt-4 flex items-center gap-1.5">
-            <CalendarClock size={13} aria-hidden />
-            {carnet.llave_tipo === 'dia'
-              ? 'Vale por hoy'
-              // null = no vence (vitalicio), que no es lo mismo que cero.
-              : vence === null
-                ? 'Sin vencimiento'
-                : vence === 0
-                  ? 'Vence hoy'
-                  : `Te quedan ${vence} ${vence === 1 ? 'día' : 'días'}`}
-          </p>
-        )}
+        <div className="p-5">
+          <div className="flex items-center gap-4">
+            {carnet.foto_url ? (
+              <img
+                src={carnet.foto_url}
+                alt=""
+                className="w-16 h-16 rounded-full object-cover flex-shrink-0 border border-white/20"
+              />
+            ) : (
+              <div className="w-16 h-16 rounded-full flex-shrink-0 bg-terra-600/20 border border-terra-500/40 flex items-center justify-center">
+                <span className="text-terra-300 text-2xl font-bold">
+                  {carnet.nombre.trim().charAt(0).toUpperCase()}
+                </span>
+              </div>
+            )}
+
+            <div className="min-w-0">
+              <p className="text-white font-bold text-xl leading-tight truncate">{carnet.nombre}</p>
+              <p className="flex items-center gap-2 mt-1.5">
+                <span
+                  className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                    carnet.puede_entrar ? 'bg-emerald-500' : 'bg-red-500'
+                  }`}
+                  aria-hidden
+                />
+                <span className={`text-sm ${carnet.puede_entrar ? 'text-emerald-300' : 'text-red-300'}`}>
+                  {carnet.puede_entrar ? 'Al día' : (carnet.motivo ?? 'Sin llave vigente')}
+                </span>
+              </p>
+            </div>
+          </div>
+
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-4 mt-5 pt-5 border-t border-white/10">
+            <Dato etiqueta="Plan">
+              {carnet.llave_tipo === 'dia' ? 'Pase de un día' : (carnet.llave_plan ?? 'Mensual')}
+            </Dato>
+            <Dato etiqueta="Vence">{vencimiento}</Dato>
+            <Dato etiqueta="Socio desde">
+              {carnet.socio_desde ? mesYAno(carnet.socio_desde) : '—'}
+            </Dato>
+            <Dato etiqueta="Visitas">{carnet.visitas_totales}</Dato>
+          </dl>
+        </div>
       </div>
 
       {carnet.sala_actual && carnet.sala_hasta && (
@@ -90,25 +145,27 @@ export default function CarnetMiembro({ carnet, token }: { carnet: Carnet; token
           <DoorOpen size={16} className="text-terra-400 flex-shrink-0" aria-hidden />
           <p className="text-white text-sm">
             Estás en <span className="font-semibold">{carnet.sala_actual}</span>
-            <span className="text-gray-400"> hasta las {hora(carnet.sala_hasta)}</span>
+            <span className="text-gray-300"> hasta las {hora(carnet.sala_hasta)}</span>
           </p>
         </div>
       )}
 
-      <div className="mt-3 bg-neutral-900 border border-white/20 rounded-2xl p-5 flex flex-col items-center">
-        <canvas ref={canvasRef} className="rounded-xl" />
-        <p className="text-gray-400 text-xs mt-3 text-center leading-relaxed">
-          Mostralo en la puerta.<br />
-          Para entrar a una sala, apuntá la cámara al QR de su puerta.
-        </p>
-      </div>
+      <button
+        onClick={() => setVerQr(v => !v)}
+        className="w-full mt-3 bg-neutral-900/80 hover:bg-neutral-800 border border-white/20 text-white/70 hover:text-white text-sm font-medium py-3.5 rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2"
+      >
+        <QrCode size={15} aria-hidden /> {verQr ? 'Ocultar el QR' : 'Mostrar mi QR'}
+      </button>
 
-      <p className="text-gray-500 text-xs mt-4 flex items-center justify-center gap-1.5">
-        <Footprints size={13} aria-hidden />
-        {carnet.visitas_totales === 0
-          ? 'Todavía no registraste ninguna visita'
-          : `${carnet.visitas_totales} ${carnet.visitas_totales === 1 ? 'visita' : 'visitas'} hasta ahora`}
-      </p>
+      {verQr && (
+        <div className="mt-3 bg-neutral-900 border border-white/20 rounded-2xl p-5 flex flex-col items-center">
+          <canvas ref={canvasRef} className="rounded-xl" />
+          <p className="text-gray-400 text-xs mt-3 text-center leading-relaxed">
+            Sólo si alguien del staff te lo pide.<br />
+            Para entrar a una sala no hace falta: apuntá la cámara al QR de su puerta.
+          </p>
+        </div>
+      )}
     </div>
   )
 }

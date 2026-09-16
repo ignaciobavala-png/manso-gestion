@@ -250,14 +250,14 @@ export default function Sala() {
               )}
 
               {sinCredencial && !puedeIdentificarse && (
-                <p className="text-gray-500 text-xs mt-3 text-center leading-relaxed">
+                <p className="text-gray-400 text-xs mt-3 text-center leading-relaxed">
                   Si sos miembro, abrí una vez el link de tu carnet desde este
                   celular y el QR de cualquier sala te va a reconocer solo.
                 </p>
               )}
 
               {estado.puedo_ocupar && (
-                <p className="text-gray-500 text-xs mt-3 text-center">
+                <p className="text-gray-400 text-xs mt-3 text-center">
                   Queda tuya por {estado.minutos_bloque} minutos y se libera sola.
                 </p>
               )}

@@ -92,7 +92,7 @@ export default function CarnetCowork() {
             <Ticket size={15} aria-hidden /> Ver también mis entradas
           </button>
 
-          <p className="text-gray-600 text-[11px] mt-6 text-center leading-relaxed">
+          <p className="text-gray-400 text-[11px] mt-6 text-center leading-relaxed">
             Guardá este link. Este celular ya te reconoce; si cambiás de
             teléfono, abrilo una vez desde el nuevo.
           </p>

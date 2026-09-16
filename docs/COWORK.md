@@ -196,6 +196,10 @@ para el Cineclub: la sección se prende cuando esté lista, sin exponer nada a m
 
 ## 6. Seguridad y privacidad
 
+- **La sala no viaja por mail.** El carnet por mail (033) muestra todo menos
+  `sala_actual`: ver el plan de otro es molesto, ver dónde está sentado ahora
+  mismo es otra cosa. Por el link propio sí se ve. Es la misma garantía que ya
+  daba la pantalla de sala y que la 034 le devolvió al carnet.
 - **La identidad es el mail, y eso es deliberado.** No hay cuentas en gestión:
   `/mi-entrada` muestra entradas y carnet a quien escriba el mail, y eso incluye
   el QR de la credencial. Es el mismo criterio que ya regía para las entradas
