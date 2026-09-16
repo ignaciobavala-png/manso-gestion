@@ -182,7 +182,8 @@ Siguiendo la estructura actual (rutas públicas + `/admin/*` con `BottomNav`):
 
 | Ruta | Acceso | Qué es |
 |---|---|---|
-| `/c/:token` | público | Carnet del coworker / vista puerta si hay sesión staff |
+| `/c/:token` | público | Carnet del coworker. Deja la credencial y el mail guardados en ese celular |
+| `/mi-entrada` | público | La página personal: entradas + carnet. Se identifica por mail |
 | `/cowork` | público | Info del espacio, planes y formulario de interés (leads) |
 | `/admin/cowork` | control/owner | Miembros, alta, vincular sticker, estado de pagos |
 | `/admin/cowork/puerta` | control/empleado | Modo puerta a pantalla completa, esperando tap |
@@ -195,6 +196,14 @@ para el Cineclub: la sección se prende cuando esté lista, sin exponer nada a m
 
 ## 6. Seguridad y privacidad
 
+- **La identidad es el mail, y eso es deliberado.** No hay cuentas en gestión:
+  `/mi-entrada` muestra entradas y carnet a quien escriba el mail, y eso incluye
+  el QR de la credencial. Es el mismo criterio que ya regía para las entradas
+  —`get_my_tickets` devuelve por mail los QR de shows, que valen plata—, así que
+  sostener un estándar más alto sólo para el cowork sería incoherente. La
+  excepción es `cowork_ocupar_sala_por_email` (032), que ocupa la sala pero no
+  devuelve el token: esa la llama un QR pegado en una pared, donde el que
+  escanea puede ser cualquiera que pase.
 - **El token no es una llave de valor.** Un tap identifica; no paga, no abre la puerta
   física, no cobra. Lo máximo que hace por sí solo es registrar una visita y mostrar
   datos mínimos. Cualquier cosa con plata (aplicar un perk, cobrar) pasa por un staff

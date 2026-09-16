@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom'
 import QRCode from 'qrcode'
 import { supabase } from '../../lib/supabase'
 import PublicLayout from '../../components/PublicLayout'
+import CarnetMiembro, { type Carnet } from '../../components/CarnetMiembro'
+import { guardarCredencial } from '../../lib/credencialCowork'
 
 interface TicketData {
   token: string
@@ -60,6 +62,23 @@ function saveTicketsToStorage(eventId: string, tickets: TicketData[], eventEndDa
   localStorage.setItem(`manso_tickets_${eventId}`, JSON.stringify(tickets))
   localStorage.setItem(`manso_tickets_ts_${eventId}`, Date.now().toString())
   if (eventEndDate) localStorage.setItem(`manso_tickets_end_${eventId}`, eventEndDate)
+}
+
+/** El carnet de cowork de esa persona, si es miembro.
+ *
+ *  Acá la identidad es el mail, igual que para las entradas: con un mail,
+ *  get_my_tickets ya devuelve los QR de los shows de alguien, que valen plata.
+ *  Un carnet no es más sensible que eso, así que el criterio es el mismo y
+ *  nadie necesita una cuenta. Encontrarlo deja además la credencial guardada
+ *  en este navegador, que es lo que hace que los QR de las salas lo
+ *  reconozcan: el que perdió su link lo recupera solo. */
+type CarnetConToken = Carnet & { token: string }
+
+async function buscarCarnet(mail: string): Promise<CarnetConToken | null> {
+  const { data } = await supabase.rpc('cowork_carnet_por_email', { p_email: mail })
+  const c = ((data as CarnetConToken[] | null) ?? [])[0] ?? null
+  if (c) guardarCredencial(c.token)
+  return c
 }
 
 const TWO_DAYS_MS = 2 * 24 * 60 * 60 * 1000
@@ -234,6 +253,7 @@ export default function MiEntrada() {
   const [email, setEmail] = useState('')
   const [searching, setSearching] = useState(false)
   const [searchError, setSearchError] = useState('')
+  const [carnet, setCarnet] = useState<CarnetConToken | null>(null)
 
   useEffect(() => {
     let cancelado = false
@@ -244,6 +264,15 @@ export default function MiEntrada() {
       const guardados = getAllStoredGroups()
       setGrupos(guardados.length > 0 ? guardados : null)
       setLoading(false)
+
+      // El carnet no depende del evento activo —un coworker viene un martes a
+      // la mañana, sin que haya ningún show— así que se pide antes y aparte.
+      const mailGuardado = localStorage.getItem('manso_email')
+      if (mailGuardado) {
+        const c = await buscarCarnet(mailGuardado)
+        if (cancelado) return
+        if (c) setCarnet(c)
+      }
 
       const { data: activo } = await supabase.from('active_event').select('id').single()
       if (cancelado || !activo?.id) return
@@ -289,7 +318,11 @@ export default function MiEntrada() {
     setSearching(true)
     setSearchError('')
 
-    const { data: rawData, error } = await supabase.rpc('get_my_tickets', { p_email: email.trim().toLowerCase() })
+    const mail = email.trim().toLowerCase()
+    const [{ data: rawData, error }, suCarnet] = await Promise.all([
+      supabase.rpc('get_my_tickets', { p_email: mail }),
+      buscarCarnet(mail),
+    ])
     const data = rawData as { token: string; name: string; event_id: string }[] | null
 
     if (error) {
@@ -298,9 +331,20 @@ export default function MiEntrada() {
       return
     }
 
-    if (!data || data.length === 0) {
-      setSearchError('No encontramos entradas para ese email.')
+    // Alcanza con ser una de las dos cosas: hay coworkers que nunca fueron a
+    // un show, y gente con entradas que no tiene nada que ver con el cowork.
+    if ((!data || data.length === 0) && !suCarnet) {
+      setSearchError('No encontramos entradas ni carnet para ese email.')
       setSearching(false)
+      return
+    }
+
+    localStorage.setItem('manso_email', mail)
+    if (suCarnet) setCarnet(suCarnet)
+
+    if (!data || data.length === 0) {
+      setSearching(false)
+      setShowEmailSearch(false)
       return
     }
 
@@ -325,8 +369,6 @@ export default function MiEntrada() {
     for (const [eid, tix] of ticketsByEvent) {
       saveTicketsToStorage(eid, tix, eventEndDateMap.get(eid))
     }
-    localStorage.setItem('manso_email', email.trim().toLowerCase())
-
     setSearching(false)
     setShowEmailSearch(false)
     const encontrados = getAllStoredGroups()
@@ -365,7 +407,7 @@ export default function MiEntrada() {
 
   const totalTickets = grupos?.reduce((acc, g) => acc + g.tickets.length, 0) ?? 0
 
-  if (grupos === null) {
+  if (grupos === null && !carnet) {
     return (
       <PublicLayout showHeader={false}>
         <div className="flex-1 flex flex-col items-center justify-center px-5 pb-10 max-w-sm w-full mx-auto text-center gap-5">
@@ -381,9 +423,11 @@ export default function MiEntrada() {
 
           <Ticket className="text-manso-cream/40" size={48} strokeWidth={1.25} aria-hidden />
           <div>
-            <h2 className="text-xl font-bold text-white">No tenés entradas guardadas</h2>
+            <h2 className="text-xl font-bold text-white">No hay nada guardado acá</h2>
             <p className="text-gray-400 text-sm mt-2 max-w-xs">
-              Las entradas se guardan solo en el dispositivo donde las registraste.
+              Las entradas se guardan solo en el dispositivo donde las
+              registraste. Con tu email traemos las tuyas y, si sos del cowork,
+              también tu carnet.
             </p>
           </div>
 
@@ -401,7 +445,7 @@ export default function MiEntrada() {
                 onClick={() => setShowEmailSearch(true)}
                 className="w-full bg-neutral-900/80 hover:bg-neutral-800 text-white/55 hover:text-white/80 font-semibold py-4 rounded-2xl transition-all active:scale-95 text-sm"
               >
-                Ya me registré, buscar por email
+                Buscar por email
               </button>
             </div>
           ) : (
@@ -419,7 +463,7 @@ export default function MiEntrada() {
                   disabled={searching || !email.trim()}
                   className="relative w-full bg-neutral-900 hover:bg-neutral-800 disabled:opacity-40 text-white font-semibold py-4 rounded-2xl transition-all active:scale-95 text-sm"
                 >
-                  {searching ? 'Buscando...' : 'Buscar entradas'}
+                  {searching ? 'Buscando...' : 'Buscar'}
                 </button>
               </GlowBorder>
               {searchError && (
@@ -450,6 +494,19 @@ export default function MiEntrada() {
             )}
           </div>
 
+          {carnet && (
+            <div>
+              <p className="text-gray-400 text-xs uppercase tracking-[0.2em] mb-3">Tu cowork</p>
+              <CarnetMiembro carnet={carnet} token={carnet.token} />
+            </div>
+          )}
+
+          {carnet && totalTickets > 0 && (
+            <p className="text-gray-400 text-xs uppercase tracking-[0.2em] pt-2">
+              {totalTickets === 1 ? 'Tu entrada' : 'Tus entradas'}
+            </p>
+          )}
+
           {totalTickets > 1 && (
             <div className="bg-amber-950/60 border border-amber-700/40 rounded-2xl px-4 py-3 text-center">
               <p className="text-amber-300 text-sm">
@@ -458,7 +515,7 @@ export default function MiEntrada() {
             </div>
           )}
 
-          {grupos.map(grupo => (
+          {(grupos ?? []).map(grupo => (
             <div key={grupo.eventId} className="space-y-5">
               {grupo.tickets.map((ticket, i) => (
                 <TicketCard key={`${ticket.token}-${i}`} ticket={ticket} isFinished={grupo.isFinished} />
@@ -471,7 +528,7 @@ export default function MiEntrada() {
                   onClick={() => navigate(`/registro?event=${grupo.eventId}&otra=1`)}
                   className="w-full bg-neutral-900/80 hover:bg-neutral-800 text-white/55 hover:text-white/80 font-semibold py-4 rounded-2xl transition-all active:scale-95 text-sm"
                 >
-                  {grupos.length > 1
+                  {(grupos?.length ?? 0) > 1
                     ? `Comprar otra para ${grupo.eventName} →`
                     : 'Comprar otra entrada →'}
                 </button>
@@ -485,6 +542,15 @@ export default function MiEntrada() {
                 Guardá esta imagen. No necesitás internet para mostrarla en la puerta.
               </p>
             </div>
+          )}
+
+          {totalTickets === 0 && (
+            <button
+              onClick={() => navigate('/registro')}
+              className="w-full bg-neutral-900/80 hover:bg-neutral-800 text-white/55 hover:text-white/80 font-semibold py-4 rounded-2xl transition-all active:scale-95 text-sm"
+            >
+              Ver las próximas fechas →
+            </button>
           )}
 
         </div>
