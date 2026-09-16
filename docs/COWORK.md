@@ -187,7 +187,7 @@ Siguiendo la estructura actual (rutas públicas + `/admin/*` con `BottomNav`):
 | `/sala/:token` | público | El QR de la puerta de una sala: quién está y "estoy acá" |
 | `/llegue/:token` | público | El cartel de la entrada: registra la visita del día sin ocupar nada |
 | `/cowork` | público | Info del espacio, planes y formulario de interés (leads) |
-| `/admin/cowork` | control/owner | Miembros, alta, vincular sticker, estado de pagos |
+| `/admin/cowork` | control/owner | Fechas, Miembros (con alta a mano), Puerta, Salas y Presentación |
 | `/admin/cowork/puerta` | control/empleado | Modo puerta a pantalla completa, esperando tap |
 | `/admin/cowork/stats` | owner | Ocupación, churn, ranking de visitas |
 

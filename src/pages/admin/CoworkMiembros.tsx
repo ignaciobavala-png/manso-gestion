@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import QRCode from 'qrcode'
-import { Search, UserPlus, QrCode, RotateCw, Download, Link2, Check, MessageCircle } from 'lucide-react'
+import { Search, UserPlus, QrCode, RotateCw, Download, Link2, Check, MessageCircle, X } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import ConfirmModal from '../../components/ConfirmModal'
 
@@ -46,6 +46,8 @@ export default function CoworkMiembros() {
   const [rotando, setRotando] = useState<Miembro | null>(null)
   const [trabajando, setTrabajando] = useState(false)
   const [recarga, setRecarga] = useState(0)
+  const [dandoAlta, setDandoAlta] = useState(false)
+  const [reciente, setReciente] = useState<{ creada: boolean } | null>(null)
 
   // No toca estado antes del await a propósito: llamarla desde un efecto con
   // un setState sincrónico encadena renders (react-hooks/set-state-in-effect).
@@ -182,6 +184,35 @@ export default function CoworkMiembros() {
         </div>
       </div>
 
+      {dandoAlta ? (
+        <FormularioAlta
+          onCancelar={() => setDandoAlta(false)}
+          onListo={(personaId, creada) => {
+            setDandoAlta(false)
+            setReciente({ creada })
+            setAbierto(personaId)
+            setRecarga(n => n + 1)
+          }}
+        />
+      ) : (
+        <button
+          onClick={() => { setDandoAlta(true); setReciente(null) }}
+          className="w-full flex items-center justify-center gap-1.5 bg-terra-600 hover:bg-terra-500 text-white text-sm font-medium rounded-xl py-3 transition-colors"
+        >
+          <UserPlus size={15} aria-hidden /> Agregar miembro
+        </button>
+      )}
+
+      {reciente && (
+        <div className="bg-emerald-950/40 border border-emerald-500/40 rounded-xl p-3">
+          <p className="text-emerald-300 text-sm">
+            {reciente.creada
+              ? 'Miembro nuevo. Abajo está su carnet para entregárselo.'
+              : 'Esa persona ya estaba: le agregamos la llave nueva.'}
+          </p>
+        </div>
+      )}
+
       <div className="relative">
         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" aria-hidden />
         <input
@@ -217,8 +248,10 @@ export default function CoworkMiembros() {
           </p>
           {miembros.length === 0 && (
             <p className="text-gray-400 text-xs mt-1.5 max-w-sm mx-auto leading-relaxed">
-              Cada persona entra sola al llavero: al venderse un pase de cowork day
-              o al activarse una membresía en manso.club. Su QR se emite con ella.
+              Cada persona entra sola al llavero: al venderse un pase de cowork
+              day o al activarse una membresía en manso.club. Su QR se emite con
+              ella. Para todo lo demás —un canje, una prueba, alguien que paga
+              por transferencia— está "Agregar miembro".
             </p>
           )}
         </div>
@@ -270,6 +303,146 @@ function mensajeCarnet(miembro: Miembro) {
   return `Hola ${nombre}! Este es tu carnet del cowork: ${window.location.origin}/c/${miembro.token}\n\n` +
     'Abrilo una vez desde tu celular y listo: ahí ves tu plan y, de ahí en más, ' +
     'el QR pegado en la puerta de cada sala te reconoce solo.'
+}
+
+/**
+ * El alta a mano.
+ *
+ * El llavero se llena solo con las compras, y eso cubre el caso normal: lo que
+ * deja afuera es todo lo otro —el canje, la prueba de una semana, el que paga
+ * por transferencia, el invitado del mes—. Para esos, hasta ahora, había que
+ * entrar a la base.
+ *
+ * El mail es obligatorio y no por formalismo: es con lo que el sistema
+ * reconoce a una persona. Si ya existe, esto no crea a nadie de nuevo, le suma
+ * la llave — que es lo que uno quiere cuando alguien renueva.
+ *
+ * Las tres opciones de llave son las que se usan en la práctica; la de "sin
+ * vencimiento" es la misma que emite el panel de manso.club para el vitalicio.
+ */
+type TipoAlta = 'mensual' | 'dia' | 'vitalicio'
+
+const EN_UN_MES = () => {
+  const d = new Date()
+  d.setDate(d.getDate() + 30)
+  return d.toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' })
+}
+
+function FormularioAlta({
+  onCancelar, onListo,
+}: {
+  onCancelar: () => void
+  onListo: (personaId: string, creada: boolean) => void
+}) {
+  const [nombre, setNombre] = useState('')
+  const [email, setEmail] = useState('')
+  const [telefono, setTelefono] = useState('')
+  const [instagram, setInstagram] = useState('')
+  const [tipo, setTipo] = useState<TipoAlta>('mensual')
+  const [plan, setPlan] = useState('')
+  const [hasta, setHasta] = useState(EN_UN_MES)
+  const [guardando, setGuardando] = useState(false)
+  const [error, setError] = useState('')
+
+  const guardar = async () => {
+    if (!nombre.trim() || !email.trim()) return
+    setGuardando(true)
+    setError('')
+
+    const { data, error: err } = await supabase.rpc('cowork_alta_miembro', {
+      p_nombre: nombre.trim(),
+      p_email: email.trim(),
+      p_tipo: tipo === 'dia' ? 'dia' : 'mensual',
+      // El vitalicio es una llave mensual sin fecha de fin, igual que la que
+      // emite manso.club. Y el pase de un día lo resuelve la base: es hoy.
+      p_hasta: tipo === 'mensual' ? hasta : null,
+      p_plan: plan.trim() || null,
+      p_telefono: telefono.trim() || null,
+      p_instagram: instagram.trim() || null,
+    })
+
+    setGuardando(false)
+
+    if (err) { setError(err.message); return }
+
+    const fila = ((data as { persona_id: string; creada: boolean }[] | null) ?? [])[0]
+    if (!fila) { setError('No se pudo dar de alta'); return }
+    onListo(fila.persona_id, fila.creada)
+  }
+
+  const campo = 'w-full bg-white/5 border border-white/20 rounded-xl px-3.5 py-3 text-sm text-white placeholder:text-gray-400 focus:outline-none focus:border-terra-500 transition-colors'
+
+  return (
+    <div className="bg-neutral-900 border border-white/20 rounded-2xl p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-white font-semibold text-sm">Agregar miembro</p>
+        <button
+          onClick={onCancelar}
+          className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 transition-colors"
+          aria-label="Cancelar"
+        >
+          <X size={15} aria-hidden />
+        </button>
+      </div>
+
+      <input className={campo} placeholder="Nombre y apellido" value={nombre}
+        onChange={e => { setNombre(e.target.value); setError('') }} />
+      <input className={campo} type="email" inputMode="email" placeholder="Mail" value={email}
+        onChange={e => { setEmail(e.target.value); setError('') }} />
+
+      <p className="text-gray-400 text-[11px] leading-relaxed -mt-1">
+        El mail es con lo que el sistema lo reconoce. Si ya es miembro, no se
+        duplica: se le suma la llave.
+      </p>
+
+      <div className="grid grid-cols-2 gap-3">
+        <input className={campo} type="tel" inputMode="tel" placeholder="Teléfono" value={telefono}
+          onChange={e => setTelefono(e.target.value)} />
+        <input className={campo} placeholder="Instagram" value={instagram}
+          onChange={e => setInstagram(e.target.value)} />
+      </div>
+
+      <div className="flex gap-2">
+        {([['mensual', 'Mensual'], ['dia', 'Un día'], ['vitalicio', 'Sin vencimiento']] as [TipoAlta, string][])
+          .map(([t, texto]) => (
+            <button
+              key={t}
+              onClick={() => setTipo(t)}
+              className={`flex-1 rounded-xl px-2 py-2 text-xs font-medium transition-colors border ${
+                tipo === t
+                  ? 'bg-terra-600 border-terra-500 text-white'
+                  : 'bg-white/5 border-white/25 text-gray-300 hover:bg-white/10'
+              }`}
+            >
+              {texto}
+            </button>
+          ))}
+      </div>
+
+      {tipo === 'mensual' && (
+        <label className="block">
+          <span className="text-gray-400 text-[11px] uppercase tracking-wider">Hasta</span>
+          <input className={`${campo} mt-1`} type="date" value={hasta}
+            onChange={e => setHasta(e.target.value)} />
+        </label>
+      )}
+
+      {tipo !== 'dia' && (
+        <input className={campo} placeholder="Plan (FULL, LITE, canje…)" value={plan}
+          onChange={e => setPlan(e.target.value)} />
+      )}
+
+      {error && <p className="text-red-300 text-sm">{error}</p>}
+
+      <button
+        onClick={guardar}
+        disabled={guardando || !nombre.trim() || !email.trim() || (tipo === 'mensual' && !hasta)}
+        className="w-full bg-terra-600 hover:bg-terra-500 disabled:opacity-40 text-white text-sm font-semibold rounded-xl py-3 transition-colors"
+      >
+        {guardando ? 'Dando de alta…' : 'Dar de alta'}
+      </button>
+    </div>
+  )
 }
 
 function FilaMiembro({
