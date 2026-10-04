@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -13,7 +14,6 @@ import Carta from './pages/public/Carta'
 import Inicio from './pages/public/Inicio'
 import Comunidad from './pages/admin/Comunidad'
 import VistasPublicas from './pages/admin/VistasPublicas'
-import Stats from './pages/admin/Stats'
 import CineclubAdmin from './pages/admin/Cineclub'
 import Cineclub from './pages/public/Cineclub'
 import Cowork from './pages/public/Cowork'
@@ -22,6 +22,11 @@ import Sala from './pages/public/Sala'
 import Llegada from './pages/public/Llegada'
 import Cartel from './pages/admin/Cartel'
 import CoworkAdmin from './pages/admin/Cowork'
+import { importarConRecarga } from './lib/importarConRecarga'
+
+// Stats arrastra recharts (~300 KB con d3) y solo la abre el owner: va en
+// su propio chunk para que no lo baje el que entra a buscar su QR.
+const Stats = lazy(() => importarConRecarga(() => import('./pages/admin/Stats')))
 
 function App() {
   return (
@@ -80,7 +85,9 @@ function App() {
               path="stats"
               element={
                 <ProtectedRoute requiredRole="owner">
-                  <Stats />
+                  <Suspense fallback={<p className="text-gray-400 text-sm text-center py-10">Cargando…</p>}>
+                    <Stats />
+                  </Suspense>
                 </ProtectedRoute>
               }
             />

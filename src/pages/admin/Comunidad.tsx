@@ -1,8 +1,8 @@
 import { Clapperboard } from 'lucide-react'
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import * as XLSX from 'xlsx'
 import { supabase } from '../../lib/supabase'
+import { importarConRecarga } from '../../lib/importarConRecarga'
 import { useAppStore } from '../../store/useAppStore'
 import Background from '../../components/Background'
 
@@ -46,6 +46,10 @@ async function fetchAllRows<T>(
   }
   return all
 }
+
+/** xlsx pesa ~275 KB y solo se usa al tocar "Exportar": se baja recién ahí,
+ *  en vez de viajar en el bundle que carga hasta el que abre su entrada. */
+const cargarXlsx = () => importarConRecarga(() => import('xlsx'))
 
 export default function Comunidad() {
   const navigate = useNavigate()
@@ -182,7 +186,8 @@ export default function Comunidad() {
     setTimeout(() => setCineclubCopied(false), 2000)
   }
 
-  const handleExportCineclub = () => {
+  const handleExportCineclub = async () => {
+    const XLSX = await cargarXlsx()
     const data = cineclubVoters.map(v => ({
       Email: v.email,
       'Película votada': v.movie_title,
@@ -194,7 +199,8 @@ export default function Comunidad() {
     XLSX.writeFile(wb, 'manso-cineclub-voters.xlsx')
   }
 
-  const handleExport = () => {
+  const handleExport = async () => {
+    const XLSX = await cargarXlsx()
     const data = uniqueEmails.map(u => ({
       Email: u.email,
       Entradas: u.tickets,
