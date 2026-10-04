@@ -1,5 +1,6 @@
 /// <reference types="node" />
-import { json, registrarTickets, type RegistroInput } from './_lib/registro'
+import { json, registrarTickets, adminClient, resolverBaseUrl, type RegistroInput } from './_lib/registro'
+import { enviarMailEntradas } from './_lib/mailEntradas'
 
 export const config = {
   runtime: 'edge'
@@ -29,6 +30,15 @@ export default async function handler(req: Request): Promise<Response> {
   if (!result.ok) {
     return json({ error: result.error }, result.status)
   }
+
+  // Por transferencia la entrada se emite ya, así que el mail sale ya.
+  // Se espera la respuesta (en edge, lo que queda corriendo después de
+  // responder se puede cortar), pero un error de mail no cambia la respuesta.
+  await enviarMailEntradas(
+    adminClient(),
+    { eventId: input.event_id, email: input.email },
+    resolverBaseUrl(req)
+  )
 
   return json({ tickets: result.tickets }, result.status)
 }

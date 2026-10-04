@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import { json, registrarTickets, adminClient, type RegistroInput } from '../_lib/registro'
+import { json, registrarTickets, adminClient, resolverBaseUrl, type RegistroInput } from '../_lib/registro'
 import { createPreference, type PreferenceItem } from '../_lib/mp'
 
 export const config = {
@@ -164,22 +164,4 @@ export default async function handler(req: Request): Promise<Response> {
 
 function redondear(n: number): number {
   return Math.round(n * 100) / 100
-}
-
-/**
- * URL pública de este deploy, para armar back_urls y notification_url.
- * Se prefiere una env explícita porque en Vercel la URL del request puede
- * ser la interna del deploy y no el dominio que ve el usuario.
- */
-function resolverBaseUrl(req: Request): string {
-  const explicita = process.env.PUBLIC_BASE_URL
-  if (explicita) return explicita.replace(/\/$/, '')
-
-  const origin = req.headers.get('origin')
-  if (origin) return origin.replace(/\/$/, '')
-
-  const host = req.headers.get('x-forwarded-host') ?? req.headers.get('host')
-  if (host) return `https://${host}`
-
-  return new URL(req.url).origin
 }

@@ -1,5 +1,6 @@
 /// <reference types="node" />
-import { json, adminClient } from '../_lib/registro'
+import { json, adminClient, resolverBaseUrl } from '../_lib/registro'
+import { enviarMailEntradas } from '../_lib/mailEntradas'
 import { getPayment, applyPayment, verifyWebhookSignature } from '../_lib/mp'
 
 export const config = {
@@ -72,11 +73,19 @@ export default async function handler(req: Request): Promise<Response> {
     const supabase = adminClient()
     const afectados = await applyPayment(supabase, payment)
 
+    // Después de aplicar, nunca antes: el mail sólo encuentra entradas que
+    // ya quedaron con el pago verificado. Si falla, no se devuelve error —
+    // un reintento de MP no arregla un Resend caído y la entrada ya está.
+    const mail = payment.status === 'approved'
+      ? await enviarMailEntradas(supabase, { mpExternalReference: payment.external_reference }, resolverBaseUrl(req))
+      : null
+
     return json({
       ok: true,
       payment_id: String(payment.id),
       status: payment.status,
       tickets_actualizados: afectados,
+      mail,
       firma,
     }, 200)
   } catch (err) {

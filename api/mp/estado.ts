@@ -1,5 +1,6 @@
 /// <reference types="node" />
-import { json, adminClient } from '../_lib/registro'
+import { json, adminClient, resolverBaseUrl } from '../_lib/registro'
+import { enviarMailEntradas } from '../_lib/mailEntradas'
 import { searchPaymentsByReference, pickRelevantPayment, applyPayment } from '../_lib/mp'
 
 export const config = {
@@ -99,6 +100,9 @@ export default async function handler(req: Request): Promise<Response> {
       tickets = (frescos ?? [])
         .filter(r => r.payment_verified && !r.is_banned)
         .map(r => ({ token: r.token, name: r.name }))
+
+      // Si el webhook ya lo mandó, no encuentra nada que reclamar.
+      await enviarMailEntradas(supabase, { mpExternalReference: ref }, resolverBaseUrl(req))
     }
 
     return json({

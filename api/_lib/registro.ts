@@ -71,6 +71,24 @@ export function adminClient(): SupabaseClient {
   )
 }
 
+/**
+ * URL pública de este deploy, para armar back_urls y notification_url.
+ * Se prefiere una env explícita porque en Vercel la URL del request puede
+ * ser la interna del deploy y no el dominio que ve el usuario.
+ */
+export function resolverBaseUrl(req: Request): string {
+  const explicita = process.env.PUBLIC_BASE_URL
+  if (explicita) return explicita.replace(/\/$/, '')
+
+  const origin = req.headers.get('origin')
+  if (origin) return origin.replace(/\/$/, '')
+
+  const host = req.headers.get('x-forwarded-host') ?? req.headers.get('host')
+  if (host) return `https://${host}`
+
+  return new URL(req.url).origin
+}
+
 export function json(body: unknown, status: number): Response {
   return new Response(JSON.stringify(body), {
     status,
