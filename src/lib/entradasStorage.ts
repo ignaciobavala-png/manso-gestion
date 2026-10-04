@@ -19,6 +19,30 @@ export const LS_TS = (eventId: string) => `manso_tickets_ts_${eventId}`
 export const LS_END = (eventId: string) => `manso_tickets_end_${eventId}`
 export const LS_EMAIL = 'manso_email'
 
+/** Margen para eventos sin end_date: un show que arranca a la noche termina
+ *  de madrugada, así que se lo da por terminado medio día después. */
+const DURACION_SUPUESTA_MS = 12 * 60 * 60 * 1000
+
+/**
+ * Cuándo terminó (o termina) el evento, para purgar y ordenar las entradas.
+ *
+ * La mayoría de los eventos se cargan sin end_date. Sin esto, /mi-entrada
+ * caía al momento en que la entrada se guardó en el dispositivo: al buscar
+ * por mail se guardan todas las históricas de golpe, y los eventos viejos
+ * aparecían arriba de todo, sin marcar como finalizados y sin purgarse.
+ */
+export function finDelEvento(e: {
+  end_date?: string | null
+  closed_at?: string | null
+  start_date?: string | null
+} | null | undefined): string | null {
+  if (!e) return null
+  if (e.end_date) return e.end_date
+  if (e.closed_at) return e.closed_at
+  if (e.start_date) return new Date(new Date(e.start_date).getTime() + DURACION_SUPUESTA_MS).toISOString()
+  return null
+}
+
 export function tieneTickets(eventId: string): boolean {
   return !!localStorage.getItem(LS_TICKETS(eventId))
 }

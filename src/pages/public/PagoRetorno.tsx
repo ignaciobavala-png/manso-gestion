@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import PublicLayout from '../../components/PublicLayout'
-import { guardarTickets } from '../../lib/entradasStorage'
+import { guardarTickets, finDelEvento } from '../../lib/entradasStorage'
 
 // Pantalla a la que vuelve el usuario desde Mercado Pago.
 //
@@ -55,14 +55,14 @@ export default function PagoRetorno() {
     if (tickets.length > 0 && eventId) {
       const { data: evento } = await supabase
         .from('events')
-        .select('name, end_date')
+        .select('name, end_date, closed_at, start_date')
         .eq('id', eventId)
         .single()
 
       guardarTickets({
         eventId,
         eventName: evento?.name ?? 'Evento',
-        endDate: evento?.end_date,
+        endDate: finDelEvento(evento),
         tickets,
       })
     }

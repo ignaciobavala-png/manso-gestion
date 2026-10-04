@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase'
 import PublicLayout from '../../components/PublicLayout'
 import CarnetMiembro, { type Carnet } from '../../components/CarnetMiembro'
 import { guardarCredencial } from '../../lib/credencialCowork'
+import { finDelEvento, LS_END } from '../../lib/entradasStorage'
 
 interface TicketData {
   token: string
@@ -107,7 +108,9 @@ function purgeExpiredTickets() {
   keysToDelete.forEach(k => localStorage.removeItem(k))
 }
 
-/** Las entradas guardadas, agrupadas por evento y de más nuevo a más viejo. */
+/** Las entradas guardadas, agrupadas por evento: primero las que vienen, de
+ *  la más próxima a la más lejana (la de esta noche tiene que quedar arriba),
+ *  y abajo las que ya pasaron, de la más reciente a la más vieja. */
 function getAllStoredGroups(): EventoGuardado[] {
   purgeExpiredTickets()
   const META_PREFIXES = ['manso_tickets_ts_', 'manso_tickets_end_']
@@ -133,7 +136,10 @@ function getAllStoredGroups(): EventoGuardado[] {
       })
     } catch { /* ignorar entradas corruptas */ }
   }
-  events.sort((a, b) => b.sortVal - a.sortVal)
+  events.sort((a, b) => {
+    if (a.isFinished !== b.isFinished) return a.isFinished ? 1 : -1
+    return a.isFinished ? b.sortVal - a.sortVal : a.sortVal - b.sortVal
+  })
   return events
 }
 
@@ -265,6 +271,29 @@ export default function MiEntrada() {
       setGrupos(guardados.length > 0 ? guardados : null)
       setLoading(false)
 
+      // Entradas guardadas antes de finDelEvento quedaron sin fecha de fin y
+      // se ordenaban por cuándo se guardaron. Se completa la fecha y se
+      // vuelve a armar la lista, que de paso purga las que ya vencieron.
+      const sinFin = guardados
+        .map(g => g.eventId)
+        .filter(id => !localStorage.getItem(LS_END(id)))
+      if (sinFin.length > 0) {
+        const { data: evs } = await supabase
+          .from('events')
+          .select('id, end_date, closed_at, start_date')
+          .in('id', sinFin)
+        if (cancelado) return
+        let completadas = 0
+        for (const ev of evs ?? []) {
+          const fin = finDelEvento(ev)
+          if (fin) { localStorage.setItem(LS_END(ev.id), fin); completadas++ }
+        }
+        if (completadas > 0) {
+          const corregidos = getAllStoredGroups()
+          setGrupos(corregidos.length > 0 ? corregidos : null)
+        }
+      }
+
       // El carnet no depende del evento activo —un coworker viene un martes a
       // la mañana, sin que haya ningún show— así que se pide antes y aparte.
       const mailGuardado = localStorage.getItem('manso_email')
@@ -283,7 +312,7 @@ export default function MiEntrada() {
 
       const [rpcResult, { data: eventData }] = await Promise.all([
         supabase.rpc('get_my_tickets', { p_email: storedEmail }),
-        supabase.from('events').select('name, end_date').eq('id', eventId).single(),
+        supabase.from('events').select('name, end_date, closed_at, start_date').eq('id', eventId).single(),
       ])
       if (cancelado) return
 
@@ -304,7 +333,7 @@ export default function MiEntrada() {
         event_id: r.event_id,
       }))
 
-      saveTicketsToStorage(eventId, freshTickets, eventData?.end_date ?? undefined)
+      saveTicketsToStorage(eventId, freshTickets, finDelEvento(eventData) ?? undefined)
       const actualizados = getAllStoredGroups()
       setGrupos(actualizados.length > 0 ? actualizados : null)
     }
@@ -351,11 +380,11 @@ export default function MiEntrada() {
     const eventIds = [...new Set(data.map(r => r.event_id))]
     const { data: events } = await supabase
       .from('events')
-      .select('id, name, end_date')
+      .select('id, name, end_date, closed_at, start_date')
       .in('id', eventIds)
 
     const eventMap = new Map(events?.map(e => [e.id, e.name]) ?? [])
-    const eventEndDateMap = new Map(events?.map(e => [e.id, e.end_date ?? undefined]) ?? [])
+    const eventEndDateMap = new Map(events?.map(e => [e.id, finDelEvento(e) ?? undefined]) ?? [])
 
     const ticketsByEvent = new Map<string, TicketData[]>()
     for (const row of data) {

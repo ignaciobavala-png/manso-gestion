@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams, useParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import PublicLayout from '../../components/PublicLayout'
-import { guardarTickets, tieneTickets, LS_EMAIL } from '../../lib/entradasStorage'
+import { guardarTickets, tieneTickets, finDelEvento, LS_EMAIL } from '../../lib/entradasStorage'
 import { useCoworkLanding } from '../../hooks/useSeccionPublica'
 
 interface EventCard {
@@ -337,7 +337,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
     guardarTickets({
       eventId: activeEvent.id,
       eventName: activeEvent.name,
-      endDate: activeEvent.end_date,
+      endDate: finDelEvento(activeEvent),
       email,
       tickets,
     })
