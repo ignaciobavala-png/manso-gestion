@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
@@ -51,23 +51,67 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // Los usuarios configurados sólo hacen falta para iniciar sesión, así que
+  // se cargan aparte y signIn los espera. Antes el spinner de todo el panel
+  // esperaba también a esta consulta.
+  const usernamesCargados = useRef<Promise<void> | null>(null)
+
   useEffect(() => {
-    Promise.all([
-      supabase.auth.getSession(),
-      refreshUsernames(),
-    ]).then(([{ data: { session } }]) => {
-      setSession(session)
-      setIsLoading(false)
-    })
+    usernamesCargados.current = refreshUsernames().catch(() => {})
 
+    let resuelto = false
+    const terminar = (s: Session | null) => {
+      setSession(s)
+      if (!resuelto) {
+        resuelto = true
+        setIsLoading(false)
+      }
+    }
+
+    // INITIAL_SESSION llega apenas el cliente termina de leer la sesión
+    // guardada, y es el camino normal para soltar el spinner.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
+      terminar(session)
     })
 
-    return () => subscription.unsubscribe()
+    // getSession() puede tirar en vez de resolver: Supabase sincroniza la
+    // sesión entre pestañas con un lock del navegador, y con varias pestañas
+    // del panel abiertas (barra, entradas, home) una le roba el lock a otra
+    // y la perdedora recibe un NavigatorLockAcquireTimeoutError. Sin catch,
+    // el panel quedaba girando para siempre hasta recargar. Se reintenta
+    // una vez y, si vuelve a fallar, se sigue sin sesión (va al login).
+    const leerSesion = async () => {
+      for (let intento = 0; intento < 2; intento++) {
+        try {
+          const { data } = await supabase.auth.getSession()
+          return terminar(data.session)
+        } catch (err) {
+          console.warn('[auth] getSession falló', err)
+        }
+      }
+      // Sólo si nadie resolvió antes: si el evento ya trajo una sesión
+      // válida, un getSession fallido no puede mandar al login.
+      if (!resuelto) terminar(null)
+    }
+    leerSesion()
+
+    // Último recurso si ni el evento ni getSession responden (red colgada
+    // al refrescar el token): un spinner eterno es peor que pedir login.
+    const plazo = setTimeout(() => {
+      if (!resuelto) {
+        console.warn('[auth] la sesión no respondió a tiempo')
+        terminar(null)
+      }
+    }, 10000)
+
+    return () => {
+      subscription.unsubscribe()
+      clearTimeout(plazo)
+    }
   }, [])
 
   const signIn = async (username: string, password: string): Promise<Role> => {
+    await usernamesCargados.current
     const u = username.toLowerCase().trim()
     let email: string | null = null
 
