@@ -35,6 +35,8 @@ export interface VenueConfigState {
   /** null = usar la foto por defecto que viene con la app. */
   fondoUrl: string | null
   coworkLanding: CoworkLanding
+  /** Dónde es Manso. '' = sin cargar: las entradas no muestran lugar. */
+  direccion: string
   cargar: () => Promise<void>
 }
 
@@ -51,11 +53,12 @@ export const useVenueConfig = create<VenueConfigState>(set => ({
   // render ya la tiene y no hay un momento sin fondo esperando a Supabase.
   fondoUrl: leerFondoCache(),
   coworkLanding: normalizarLanding(null),
+  direccion: '',
 
   cargar: async () => {
     const { data } = await supabase
       .from('venue_config')
-      .select('barra_visibilidad, cineclub_visibilidad, cowork_visibilidad, background_url, cowork_landing')
+      .select('barra_visibilidad, cineclub_visibilidad, cowork_visibilidad, background_url, cowork_landing, direccion')
       .eq('id', 1)
       .single()
 
@@ -69,6 +72,7 @@ export const useVenueConfig = create<VenueConfigState>(set => ({
       cowork: aVisibilidad(data?.cowork_visibilidad),
       fondoUrl,
       coworkLanding: normalizarLanding(data?.cowork_landing),
+      direccion: data?.direccion ?? '',
     })
   },
 }))

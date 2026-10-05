@@ -155,6 +155,7 @@ export interface Database {
           end_date?: string
           flyer_url?: string | null
           background_url?: string | null
+          direccion?: string | null
           ticket_alias_pago?: string | null
           ticket_cbu_pago?: string | null
           slug?: string | null
@@ -185,6 +186,7 @@ export interface Database {
           end_date?: string
           flyer_url?: string | null
           background_url?: string | null
+          direccion?: string | null
           ticket_alias_pago?: string | null
           ticket_cbu_pago?: string | null
           slug?: string | null
@@ -215,6 +217,7 @@ export interface Database {
           end_date?: string
           flyer_url?: string | null
           background_url?: string | null
+          direccion?: string | null
           ticket_alias_pago?: string | null
           ticket_cbu_pago?: string | null
           slug?: string | null
@@ -255,6 +258,7 @@ export interface Database {
           mp_expires_at?: string | null
           paid_at?: string | null
           is_banned?: boolean
+          recordatorio_enviado_at?: string | null
         }
         Insert: {
           id?: string
@@ -278,6 +282,7 @@ export interface Database {
           mp_expires_at?: string | null
           paid_at?: string | null
           is_banned?: boolean
+          recordatorio_enviado_at?: string | null
         }
         Update: {
           id?: string
@@ -301,6 +306,7 @@ export interface Database {
           mp_expires_at?: string | null
           paid_at?: string | null
           is_banned?: boolean
+          recordatorio_enviado_at?: string | null
         }
       }
       wildcard_qr_redemptions: {
@@ -397,6 +403,7 @@ export interface Database {
           cowork_activo: boolean | null
           barra_activa: boolean | null
           background_url: string | null
+          direccion: string
           barra_visibilidad: string | null
           cineclub_visibilidad: string | null
           cowork_visibilidad: string | null
@@ -411,6 +418,7 @@ export interface Database {
           cowork_activo?: boolean | null
           barra_activa?: boolean | null
           background_url?: string | null
+          direccion?: string
           barra_visibilidad?: string | null
           cineclub_visibilidad?: string | null
           cowork_visibilidad?: string | null

@@ -17,6 +17,10 @@ export interface DatosMail {
   eventoNombre: string
   /** ISO. Si el evento no tiene fecha, el mail no la muestra. */
   eventoInicio: string | null
+  /** Ya resuelta (la del evento o la de Manso). null = no se muestra. */
+  direccion: string | null
+  /** 'entrada' al emitirla; 'recordatorio' es el mail "Es hoy" del día del evento. */
+  tipo?: 'entrada' | 'recordatorio'
   entradas: EntradaMail[]
   /** Link a /mi-entrada del deploy. */
   urlMisEntradas: string
@@ -45,7 +49,14 @@ function fechaLarga(iso: string): string {
   return `${dia} · ${hora} h`
 }
 
+function urlMaps(direccion: string): string {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(direccion)}`
+}
+
 export function asuntoMail(d: DatosMail): string {
+  if (d.tipo === 'recordatorio') {
+    return `Hoy es ${d.eventoNombre} — ${d.entradas.length === 1 ? 'tu entrada' : 'tus entradas'}`
+  }
   return d.entradas.length === 1
     ? `Tu entrada para ${d.eventoNombre}`
     : `Tus ${d.entradas.length} entradas para ${d.eventoNombre}`
@@ -76,6 +87,11 @@ function tarjeta(e: EntradaMail, d: DatosMail): string {
 export function htmlMailEntradas(d: DatosMail): string {
   const varias = d.entradas.length > 1
   const fecha = d.eventoInicio ? fechaLarga(d.eventoInicio) : null
+  const recordatorio = d.tipo === 'recordatorio'
+  const titulo = recordatorio ? 'Es hoy' : varias ? 'Ya tenés tus entradas' : 'Ya tenés tu entrada'
+  const lugar = d.direccion
+    ? `<br><span style="color:${C.gris};">${esc(d.direccion)}</span> &nbsp;<a href="${esc(urlMaps(d.direccion))}" style="color:${C.terra};font-weight:600;text-decoration:underline;">Cómo llegar</a>`
+    : ''
 
   return `<!doctype html>
 <html lang="es">
@@ -87,7 +103,7 @@ export function htmlMailEntradas(d: DatosMail): string {
 <title>${esc(asuntoMail(d))}</title>
 </head>
 <body style="margin:0;padding:0;background-color:${C.negro};" bgcolor="${C.negro}">
-<div style="display:none;max-height:0;overflow:hidden;opacity:0;">${varias ? 'Tus QR' : 'Tu QR'} para entrar a ${esc(d.eventoNombre)}${fecha ? ` — ${esc(fecha)}` : ''}.</div>
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;">${recordatorio ? 'Es hoy: ' : ''}${varias ? 'Tus QR' : 'Tu QR'} para entrar a ${esc(d.eventoNombre)}${fecha ? ` — ${esc(fecha)}` : ''}.</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.negro}" style="background-color:${C.negro};">
 <tr><td align="center" style="padding:32px 16px 40px 16px;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:420px;">
@@ -97,8 +113,8 @@ export function htmlMailEntradas(d: DatosMail): string {
     </td></tr>
 
     <tr><td style="padding:0 4px 24px 4px;">
-      <p style="margin:0;font-family:${FUENTE};font-size:22px;line-height:1.25;font-weight:700;color:${C.crema};">${varias ? 'Ya tenés tus entradas' : 'Ya tenés tu entrada'}</p>
-      <p style="margin:10px 0 0 0;font-family:${FUENTE};font-size:15px;line-height:1.5;color:${C.crema};">${esc(d.eventoNombre)}${fecha ? `<br><span style="color:${C.gris};">${esc(fecha)}</span>` : ''}</p>
+      <p style="margin:0;font-family:${FUENTE};font-size:22px;line-height:1.25;font-weight:700;color:${C.crema};">${titulo}</p>
+      <p style="margin:10px 0 0 0;font-family:${FUENTE};font-size:15px;line-height:1.5;color:${C.crema};">${esc(d.eventoNombre)}${fecha ? `<br><span style="color:${C.gris};">${esc(fecha)}</span>` : ''}${lugar}</p>
     </td></tr>
 
     <tr><td>${d.entradas.map(e => tarjeta(e, d)).join('')}</td></tr>

@@ -1,4 +1,4 @@
-import { ArrowLeft, Ticket } from 'lucide-react'
+import { ArrowLeft, CalendarPlus, MapPin, Ticket } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import QRCode from 'qrcode'
@@ -6,7 +6,7 @@ import { supabase } from '../../lib/supabase'
 import PublicLayout from '../../components/PublicLayout'
 import CarnetMiembro, { type Carnet } from '../../components/CarnetMiembro'
 import { guardarCredencial } from '../../lib/credencialCowork'
-import { finDelEvento, fechaEntrada, LS_END } from '../../lib/entradasStorage'
+import { fechaEntrada, infoEventos, urlMaps, descargarCalendario, type InfoEvento, LS_END } from '../../lib/entradasStorage'
 
 interface TicketData {
   token: string
@@ -14,6 +14,8 @@ interface TicketData {
   event_name: string
   event_id: string
   event_start?: string | null
+  event_end?: string | null
+  event_address?: string | null
   isFinished?: boolean
 }
 
@@ -58,6 +60,13 @@ function getTicketsForEvent(eventId: string): TicketData[] {
     }
   } catch { /* ignorar entradas corruptas */ }
   return []
+}
+
+/** La entrada con la fecha y el lugar del evento puestos. Sin info (el
+ *  evento no se pudo leer) quedan undefined, para completarse más adelante. */
+function conInfo(t: TicketData, info: InfoEvento | undefined): TicketData {
+  if (!info) return t
+  return { ...t, event_start: info.start, event_end: info.end, event_address: info.direccion }
 }
 
 function saveTicketsToStorage(eventId: string, tickets: TicketData[], eventEndDate?: string) {
@@ -231,11 +240,22 @@ function TicketCard({ ticket, isFinished = false }: { ticket: TicketData; isFini
         </p>
         <p className={`text-sm font-medium ${ticket.event_start ? 'mb-0.5' : 'mb-4'} ${isFinished ? 'text-gray-400' : 'text-terra-400'}`}>{ticket.event_name}</p>
         {ticket.event_start && (
-          <p className={`text-xs mb-4 ${isFinished ? 'text-gray-500' : 'text-white/70'}`}>{fechaEntrada(ticket.event_start)}</p>
+          <p className={`text-xs ${ticket.event_address ? 'mb-1' : 'mb-4'} ${isFinished ? 'text-gray-500' : 'text-white/70'}`}>{fechaEntrada(ticket.event_start)}</p>
+        )}
+        {ticket.event_address && (
+          <a
+            href={urlMaps(ticket.event_address)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`text-xs mb-4 flex items-center gap-1 underline decoration-white/30 underline-offset-2 hover:decoration-white/70 ${isFinished ? 'text-gray-500' : 'text-white/70'}`}
+          >
+            <MapPin size={12} aria-hidden />
+            {ticket.event_address}
+          </a>
         )}
 
         <div className={`rounded-2xl p-3 shadow-2xl ${isFinished ? 'bg-white/80' : 'bg-white'}`}>
-          <canvas ref={canvasRef} className="block opacity-60" style={{ width: 200, height: 200 }} />
+          <canvas ref={canvasRef} className={`block ${isFinished ? 'opacity-60' : ''}`} style={{ width: 200, height: 200 }} />
         </div>
 
         <p className="text-white font-bold text-lg mt-4">{ticket.name}</p>
@@ -244,8 +264,8 @@ function TicketCard({ ticket, isFinished = false }: { ticket: TicketData; isFini
         </p>
       </div>
 
-      <div className="border-t border-white/5 px-6 py-3">
-        <GlowBorder>
+      <div className="border-t border-white/5 px-6 py-3 flex gap-2">
+        <GlowBorder className="flex-1">
           <button
             onClick={handleDownload}
             disabled={downloading}
@@ -254,6 +274,15 @@ function TicketCard({ ticket, isFinished = false }: { ticket: TicketData; isFini
             {downloading ? 'Generando...' : 'Descargar entrada'}
           </button>
         </GlowBorder>
+        {ticket.event_start && !isFinished && (
+          <button
+            onClick={() => descargarCalendario(ticket, `${window.location.origin}/mi-entrada`)}
+            className="flex-1 flex items-center justify-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 border border-white/15 text-white/80 font-medium py-2.5 rounded-2xl transition-all active:scale-95 text-sm"
+          >
+            <CalendarPlus size={15} aria-hidden />
+            Agendar
+          </button>
+        )}
       </div>
 
       <div className="h-1 bg-gradient-to-r from-terra-700 via-terra-500 to-terra-700" />
@@ -282,26 +311,25 @@ export default function MiEntrada() {
       setLoading(false)
 
       // Entradas guardadas antes de finDelEvento quedaron sin fecha de fin y
-      // se ordenaban por cuándo se guardaron; las de antes de event_start, sin
-      // la fecha que muestra el QR. Se completan y se vuelve a armar la
-      // lista, que de paso purga las que ya vencieron.
+      // se ordenaban por cuándo se guardaron; las de antes de event_start o
+      // event_address, sin la fecha y el lugar que muestra el QR. Se
+      // completan y se vuelve a armar la lista, que de paso purga las que ya
+      // vencieron.
+      const faltaInfo = (g: EventoGuardado) =>
+        g.tickets.some(t => t.event_start === undefined || t.event_address === undefined)
       const incompletos = guardados
-        .filter(g => !localStorage.getItem(LS_END(g.eventId)) || g.tickets.some(t => t.event_start === undefined))
+        .filter(g => !localStorage.getItem(LS_END(g.eventId)) || faltaInfo(g))
         .map(g => g.eventId)
       if (incompletos.length > 0) {
-        const { data: evs } = await supabase
-          .from('events')
-          .select('id, end_date, closed_at, start_date')
-          .in('id', incompletos)
+        const evs = await infoEventos(incompletos)
         if (cancelado) return
         let completadas = 0
-        for (const ev of evs ?? []) {
-          const fin = finDelEvento(ev)
-          if (fin && !localStorage.getItem(LS_END(ev.id))) { localStorage.setItem(LS_END(ev.id), fin); completadas++ }
-          const grupo = guardados.find(g => g.eventId === ev.id)
-          if (grupo?.tickets.some(t => t.event_start === undefined)) {
-            const conFecha = grupo.tickets.map(t => ({ ...t, event_start: ev.start_date ?? null }))
-            localStorage.setItem(`manso_tickets_${ev.id}`, JSON.stringify(conFecha))
+        for (const [id, ev] of evs) {
+          if (ev.fin && !localStorage.getItem(LS_END(id))) { localStorage.setItem(LS_END(id), ev.fin); completadas++ }
+          const grupo = guardados.find(g => g.eventId === id)
+          if (grupo && faltaInfo(grupo)) {
+            const completos = grupo.tickets.map(t => conInfo(t, ev.info))
+            localStorage.setItem(`manso_tickets_${id}`, JSON.stringify(completos))
             completadas++
           }
         }
@@ -327,10 +355,11 @@ export default function MiEntrada() {
       const storedEmail = localStorage.getItem('manso_email')
       if (!storedEmail) return
 
-      const [rpcResult, { data: eventData }] = await Promise.all([
+      const [rpcResult, eventos] = await Promise.all([
         supabase.rpc('get_my_tickets', { p_email: storedEmail }),
-        supabase.from('events').select('name, end_date, closed_at, start_date').eq('id', eventId).single(),
+        infoEventos([eventId]),
       ])
+      const eventData = eventos.get(eventId)
       if (cancelado) return
 
       const rows = (rpcResult.data as { token: string; name: string; event_id: string }[] | null)
@@ -343,15 +372,14 @@ export default function MiEntrada() {
       if (rows.length < currentLocal.length) return
 
       const eventName = eventData?.name ?? 'Evento'
-      const freshTickets: TicketData[] = rows.map(r => ({
+      const freshTickets: TicketData[] = rows.map(r => conInfo({
         token: r.token,
         name: r.name,
         event_name: eventName,
         event_id: r.event_id,
-        event_start: eventData?.start_date ?? null,
-      }))
+      }, eventData?.info))
 
-      saveTicketsToStorage(eventId, freshTickets, finDelEvento(eventData) ?? undefined)
+      saveTicketsToStorage(eventId, freshTickets, eventData?.fin ?? undefined)
       const actualizados = getAllStoredGroups()
       setGrupos(actualizados.length > 0 ? actualizados : null)
     }
@@ -396,26 +424,19 @@ export default function MiEntrada() {
     }
 
     const eventIds = [...new Set(data.map(r => r.event_id))]
-    const { data: events } = await supabase
-      .from('events')
-      .select('id, name, end_date, closed_at, start_date')
-      .in('id', eventIds)
-
-    const eventMap = new Map(events?.map(e => [e.id, e.name]) ?? [])
-    const eventStartMap = new Map(events?.map(e => [e.id, e.start_date as string | null]) ?? [])
-    const eventEndDateMap = new Map(events?.map(e => [e.id, finDelEvento(e) ?? undefined]) ?? [])
+    const eventos = await infoEventos(eventIds)
 
     const ticketsByEvent = new Map<string, TicketData[]>()
     for (const row of data) {
-      const eventName = eventMap.get(row.event_id) ?? 'Evento'
-      const ticket: TicketData = { token: row.token, name: row.name, event_name: eventName, event_id: row.event_id, event_start: eventStartMap.get(row.event_id) ?? null }
+      const ev = eventos.get(row.event_id)
+      const ticket = conInfo({ token: row.token, name: row.name, event_name: ev?.name ?? 'Evento', event_id: row.event_id }, ev?.info)
       const existing = ticketsByEvent.get(row.event_id) ?? []
       existing.push(ticket)
       ticketsByEvent.set(row.event_id, existing)
     }
 
     for (const [eid, tix] of ticketsByEvent) {
-      saveTicketsToStorage(eid, tix, eventEndDateMap.get(eid))
+      saveTicketsToStorage(eid, tix, eventos.get(eid)?.fin ?? undefined)
     }
     setSearching(false)
     setShowEmailSearch(false)

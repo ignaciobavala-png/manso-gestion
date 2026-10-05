@@ -28,6 +28,29 @@ export default function Configuracion() {
   // fondo de la app (venue_config.background_url)
   useEffect(() => { sincronizarVenueConfig() }, [])
   const fondoUrl = useVenueConfig(s => s.fondoUrl)
+
+  // dirección del lugar (venue_config.direccion): la que muestran la entrada,
+  // el mail y el calendario cuando el evento no tiene una propia.
+  const direccionGuardada = useVenueConfig(s => s.direccion)
+  const [direccion, setDireccion] = useState<string | null>(null)
+  const [direccionEstado, setDireccionEstado] = useState<'' | 'guardando' | 'ok' | 'error'>('')
+  const direccionVisible = direccion ?? direccionGuardada
+
+  const guardarDireccion = async () => {
+    setDireccionEstado('guardando')
+    const { data, error } = await supabase
+      .from('venue_config')
+      .update({ direccion: direccionVisible.trim() })
+      .eq('id', 1)
+      .select('id')
+    if (error || !data || data.length === 0) {
+      setDireccionEstado('error')
+      return
+    }
+    await useVenueConfig.getState().cargar()
+    setDireccion(null)
+    setDireccionEstado('ok')
+  }
   const [fondoSubiendo, setFondoSubiendo] = useState(false)
   const [fondoError, setFondoError] = useState('')
   const inputFondo = useRef<HTMLInputElement>(null)
@@ -431,6 +454,35 @@ export default function Configuracion() {
         <p className="text-gray-400 text-xs">
           Conviene una foto vertical: se recorta al centro y se le aplica una
           capa oscura para que el texto se lea.
+        </p>
+      </div>
+
+      <div className="border-t border-white/20" />
+
+      <div className="space-y-3">
+        <p className="text-gray-400 text-sm uppercase tracking-widest">Dirección del lugar</p>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={direccionVisible}
+            onChange={e => { setDireccion(e.target.value); setDireccionEstado('') }}
+            placeholder="Calle y número, barrio"
+            className="flex-1 min-w-0 px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-terra-500 focus:border-transparent text-sm"
+          />
+          <button
+            onClick={guardarDireccion}
+            disabled={direccion === null || direccionEstado === 'guardando'}
+            className="px-4 py-3 rounded-xl bg-terra-600 hover:bg-terra-500 disabled:opacity-40 text-white text-sm font-semibold transition-colors"
+          >
+            {direccionEstado === 'guardando' ? 'Guardando...' : 'Guardar'}
+          </button>
+        </div>
+        {direccionEstado === 'ok' && <p className="text-emerald-400 text-sm">Guardada.</p>}
+        {direccionEstado === 'error' && <p className="text-red-400 text-sm">No se pudo guardar. Intentá de nuevo.</p>}
+        <p className="text-gray-400 text-xs">
+          Sale en cada entrada con un link a Google Maps, en el mail y en el
+          calendario. Si un evento es en otro lado, se le pone su dirección al
+          editarlo.
         </p>
       </div>
 

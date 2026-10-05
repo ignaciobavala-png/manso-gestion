@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams, useParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import PublicLayout from '../../components/PublicLayout'
-import { guardarTickets, tieneTickets, finDelEvento, LS_EMAIL } from '../../lib/entradasStorage'
+import { guardarTickets, tieneTickets, finDelEvento, direccionDelEvento, LS_EMAIL } from '../../lib/entradasStorage'
 import { useCoworkLanding } from '../../hooks/useSeccionPublica'
 
 interface EventCard {
@@ -30,6 +30,7 @@ interface ActiveEvent {
   ticket_cbu_pago: string | null
   background_url: string | null
   flyer_url: string | null
+  direccion: string | null
   payment_mode: PaymentMode
   mp_surcharge_pct: number
   cowork_day: boolean
@@ -41,6 +42,7 @@ type MetodoPago = 'transferencia' | 'mercadopago'
 interface VenueConfig {
   alias_pago: string | null
   cbu_pago: string | null
+  direccion: string
 }
 
 // ─── Cartelera (sin ?event=) ────────────────────────────────────────────────
@@ -227,7 +229,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
       setLoadingEvent(true)
       const { data, error } = await supabase
         .from('events')
-        .select('id, name, registrations_open, max_capacity, is_paid, regular_ticket_price, start_date, end_date, ticket_alias_pago, ticket_cbu_pago, is_private, private_token, one_ticket_per_email, require_instagram, require_phone, background_url, flyer_url, payment_mode, mp_surcharge_pct, cowork_day')
+        .select('id, name, registrations_open, max_capacity, is_paid, regular_ticket_price, start_date, end_date, ticket_alias_pago, ticket_cbu_pago, is_private, private_token, one_ticket_per_email, require_instagram, require_phone, background_url, flyer_url, direccion, payment_mode, mp_surcharge_pct, cowork_day')
         .eq(isSlug ? 'slug' : 'id', eventParam)
         .is('closed_at', null)
         .single()
@@ -265,6 +267,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
         ticket_cbu_pago: data.ticket_cbu_pago,
         background_url: data.background_url ?? null,
         flyer_url: data.flyer_url ?? null,
+        direccion: data.direccion ?? null,
         payment_mode: (data.payment_mode ?? 'transferencia') as PaymentMode,
         mp_surcharge_pct: Number(data.mp_surcharge_pct ?? 0),
         cowork_day: data.cowork_day === true,
@@ -290,7 +293,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
 
     supabase
       .from('venue_config')
-      .select('alias_pago, cbu_pago')
+      .select('alias_pago, cbu_pago, direccion')
       .single()
       .then(({ data }) => {
         if (data) setVenueConfig(data)
@@ -339,7 +342,11 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
     guardarTickets({
       eventId: activeEvent.id,
       eventName: activeEvent.name,
-      startDate: activeEvent.start_date,
+      info: {
+        start: activeEvent.start_date,
+        end: activeEvent.end_date,
+        direccion: direccionDelEvento(activeEvent.direccion, venueConfig?.direccion),
+      },
       endDate: finDelEvento(activeEvent),
       email,
       tickets,

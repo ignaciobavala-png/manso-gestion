@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAppStore } from '../store/useAppStore'
+import { useVenueConfig } from '../store/useVenueConfig'
 import { previsualizarRecargo, parsearDecimal } from '../lib/mercadopago'
 import AlertModal from './AlertModal'
 
@@ -20,6 +21,7 @@ interface Event {
   require_phone: boolean
   accepts_wildcard_qr: boolean
   cowork_day?: boolean
+  direccion?: string | null
   payment_mode?: PaymentMode
   mp_surcharge_pct?: number
 }
@@ -47,6 +49,7 @@ const toLocalDatetime = (iso: string) => {
 
 export default function EventEditor({ event, onDone }: Props) {
   const { updateEvent } = useAppStore()
+  const direccionGeneral = useVenueConfig(s => s.direccion)
 
   const [form, setForm] = useState({
     name: event.name,
@@ -54,6 +57,7 @@ export default function EventEditor({ event, onDone }: Props) {
     description: event.description ?? '',
     ticketPrice: event.is_paid ? String(event.regular_ticket_price) : '',
     startDate: event.start_date ? toLocalDatetime(event.start_date) : '',
+    direccion: event.direccion ?? '',
     aliasPago: event.ticket_alias_pago ?? '',
     cbuPago: event.ticket_cbu_pago ?? '',
     maxCapacity: event.max_capacity !== null ? String(event.max_capacity) : '',
@@ -128,6 +132,7 @@ export default function EventEditor({ event, onDone }: Props) {
         require_phone: requirePhone,
         accepts_wildcard_qr: acceptsWildcardQr,
         cowork_day: coworkDay,
+        direccion: form.direccion.trim() || null,
         payment_mode: modoPago,
         mp_surcharge_pct: surcharge,
       })
@@ -400,6 +405,19 @@ export default function EventEditor({ event, onDone }: Props) {
           onChange={(e) => setForm(prev => ({ ...prev, startDate: e.target.value }))}
           className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-terra-500 focus:border-transparent [color-scheme:dark]"
         />
+      </div>
+
+      {/* Dirección: vacía = la de Manso (Configuración) */}
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-2">Dirección</label>
+        <input
+          type="text"
+          value={form.direccion}
+          onChange={(e) => setForm(prev => ({ ...prev, direccion: e.target.value }))}
+          placeholder={direccionGeneral ? `La de siempre: ${direccionGeneral}` : 'Calle y número, barrio'}
+          className="w-full px-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-terra-500 focus:border-transparent"
+        />
+        <p className="text-gray-500 text-xs mt-1.5">Solo si este evento es en otro lugar.</p>
       </div>
 
       {/* Capacidad máxima */}

@@ -18,7 +18,7 @@ export type AlcanceMail =
   | { eventId: string; email: string }
   | { mpExternalReference: string }
 
-interface FilaReclamada {
+export interface FilaReclamada {
   id: string
   name: string
   token: string
@@ -92,26 +92,45 @@ async function reclamar(supabase: SupabaseClient, alcance: AlcanceMail): Promise
   return (data ?? []) as FilaReclamada[]
 }
 
-async function mandar(
+/** La dirección de un evento: la suya si la tiene, si no la de Manso. Es la
+ *  misma regla que direccionDelEvento en src/lib/entradasStorage.ts. */
+function direccionDelEvento(propia: string | null | undefined, general: string | null | undefined): string | null {
+  return propia?.trim() || general?.trim() || null
+}
+
+/**
+ * Manda un mail con estas entradas. Todas tienen que ser del mismo evento y
+ * el mismo email (una orden, un registro, o el grupo de un recordatorio).
+ */
+export async function mandar(
   supabase: SupabaseClient,
   filas: FilaReclamada[],
   apiKey: string,
-  baseUrl: string
+  baseUrl: string,
+  tipo: 'entrada' | 'recordatorio' = 'entrada'
 ): Promise<void> {
-  // Una orden o un registro son siempre de un mismo evento y un mismo email.
   const { email, event_id } = filas[0]
 
-  const { data: evento } = await supabase
-    .from('events')
-    .select('name, start_date')
-    .eq('id', event_id)
-    .single<{ name: string; start_date: string | null }>()
+  const [{ data: evento }, { data: venue }] = await Promise.all([
+    supabase
+      .from('events')
+      .select('name, start_date, direccion')
+      .eq('id', event_id)
+      .single<{ name: string; start_date: string | null; direccion: string | null }>(),
+    supabase
+      .from('venue_config')
+      .select('direccion')
+      .eq('id', 1)
+      .single<{ direccion: string }>(),
+  ])
 
   const qrs = await Promise.all(filas.map(f => qrPngBase64(`manso-ticket|${f.token}`)))
 
   const datos = {
     eventoNombre: evento?.name ?? 'Manso',
     eventoInicio: evento?.start_date ?? null,
+    direccion: direccionDelEvento(evento?.direccion, venue?.direccion),
+    tipo,
     urlMisEntradas: `${baseUrl}/mi-entrada`,
     entradas: filas.map((f, i) => ({ name: f.name, qrSrc: `cid:qr-${i}` })),
   }
@@ -128,7 +147,7 @@ async function mandar(
       contentType: 'image/png',
       contentId: `qr-${i}`,
     })),
-    tags: [{ name: 'tipo', value: 'entrada' }],
+    tags: [{ name: 'tipo', value: tipo }],
   })
 
   if (error) throw new Error(`resend: ${error.message}`)

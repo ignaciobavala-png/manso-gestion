@@ -1,9 +1,8 @@
 import { CircleAlert, TriangleAlert } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { supabase } from '../../lib/supabase'
 import PublicLayout from '../../components/PublicLayout'
-import { guardarTickets, finDelEvento } from '../../lib/entradasStorage'
+import { guardarTickets, infoEventos } from '../../lib/entradasStorage'
 
 // Pantalla a la que vuelve el usuario desde Mercado Pago.
 //
@@ -53,17 +52,13 @@ export default function PagoRetorno() {
     const eventId = data.event_id
 
     if (tickets.length > 0 && eventId) {
-      const { data: evento } = await supabase
-        .from('events')
-        .select('name, end_date, closed_at, start_date')
-        .eq('id', eventId)
-        .single()
+      const evento = (await infoEventos([eventId])).get(eventId)
 
       guardarTickets({
         eventId,
         eventName: evento?.name ?? 'Evento',
-        startDate: evento?.start_date ?? null,
-        endDate: finDelEvento(evento),
+        info: evento?.info ?? { start: null, end: null, direccion: null },
+        endDate: evento?.fin,
         tickets,
       })
     }
