@@ -1,4 +1,4 @@
-import { CalendarDays, Music, Check, X, Users, Lock, Paperclip } from 'lucide-react'
+import { CalendarDays, Music, Check, X, Users, Lock, Paperclip, Maximize2 } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams, useParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
@@ -29,6 +29,7 @@ interface ActiveEvent {
   ticket_alias_pago: string | null
   ticket_cbu_pago: string | null
   background_url: string | null
+  flyer_url: string | null
   payment_mode: PaymentMode
   mp_surcharge_pct: number
   cowork_day: boolean
@@ -226,7 +227,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
       setLoadingEvent(true)
       const { data, error } = await supabase
         .from('events')
-        .select('id, name, registrations_open, max_capacity, is_paid, regular_ticket_price, start_date, end_date, ticket_alias_pago, ticket_cbu_pago, is_private, private_token, one_ticket_per_email, require_instagram, require_phone, background_url, payment_mode, mp_surcharge_pct, cowork_day')
+        .select('id, name, registrations_open, max_capacity, is_paid, regular_ticket_price, start_date, end_date, ticket_alias_pago, ticket_cbu_pago, is_private, private_token, one_ticket_per_email, require_instagram, require_phone, background_url, flyer_url, payment_mode, mp_surcharge_pct, cowork_day')
         .eq(isSlug ? 'slug' : 'id', eventParam)
         .is('closed_at', null)
         .single()
@@ -263,6 +264,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
         ticket_alias_pago: data.ticket_alias_pago,
         ticket_cbu_pago: data.ticket_cbu_pago,
         background_url: data.background_url ?? null,
+        flyer_url: data.flyer_url ?? null,
         payment_mode: (data.payment_mode ?? 'transferencia') as PaymentMode,
         mp_surcharge_pct: Number(data.mp_surcharge_pct ?? 0),
         cowork_day: data.cowork_day === true,
@@ -484,16 +486,31 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
   }
 
   return (
-    <PublicLayout backgroundImage={backgroundImage}>
+    <PublicLayout backgroundImage={backgroundImage} showHeader={!activeEvent.flyer_url}>
       <div className="flex-1 flex flex-col items-center px-5 pb-10">
-        <div className="w-full max-w-sm mb-4 pt-2">
-          <button
-            onClick={() => navigate(activeEvent.cowork_day ? '/cowork' : '/registro')}
-            className="text-white/50 hover:text-white/80 transition-colors text-2xl leading-none"
-          >
-            ←
-          </button>
-        </div>
+        {activeEvent.flyer_url ? (
+          // Con flyer, el flyer ocupa el lugar del logo: quien llega por el
+          // link compartido ve a qué evento está entrando. Chico para que el
+          // formulario siga a la vista; tocándolo se abre entero.
+          <div className="relative w-full max-w-sm flex justify-center pt-12 mb-5">
+            <button
+              onClick={() => navigate(activeEvent.cowork_day ? '/cowork' : '/registro')}
+              className="absolute left-0 top-12 text-white/50 hover:text-white/80 transition-colors text-2xl leading-none"
+            >
+              ←
+            </button>
+            <FlyerAmpliable src={activeEvent.flyer_url} alt={activeEvent.name} />
+          </div>
+        ) : (
+          <div className="w-full max-w-sm mb-4 pt-2">
+            <button
+              onClick={() => navigate(activeEvent.cowork_day ? '/cowork' : '/registro')}
+              className="text-white/50 hover:text-white/80 transition-colors text-2xl leading-none"
+            >
+              ←
+            </button>
+          </div>
+        )}
 
         <div className="text-center mb-7">
           <p className="text-white/70 text-sm font-semibold uppercase mb-1">
@@ -809,12 +826,68 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
   )
 }
 
-function FormSkeleton() {
+function FlyerAmpliable({ src, alt }: { src: string; alt: string }) {
+  const [abierto, setAbierto] = useState(false)
+
+  useEffect(() => {
+    if (!abierto) return
+    const cerrarConEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setAbierto(false)
+    }
+    document.addEventListener('keydown', cerrarConEscape)
+    return () => document.removeEventListener('keydown', cerrarConEscape)
+  }, [abierto])
+
   return (
-    <PublicLayout>
+    <>
+      <button
+        type="button"
+        onClick={() => setAbierto(true)}
+        aria-label="Ver el flyer completo"
+        className="relative block active:scale-95 transition-transform"
+      >
+        <img
+          src={src}
+          alt={alt}
+          className="w-[168px] aspect-[4/5] object-cover rounded-2xl border border-white/20 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.8)]"
+        />
+        <span className="absolute bottom-2 right-2 w-7 h-7 rounded-full bg-black/60 backdrop-blur flex items-center justify-center text-white/90">
+          <Maximize2 size={13} aria-hidden />
+        </span>
+      </button>
+
+      {abierto && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={alt}
+          onClick={() => setAbierto(false)}
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex flex-col items-center justify-center px-5 animate-fade-in"
+        >
+          <button
+            type="button"
+            onClick={() => setAbierto(false)}
+            aria-label="Cerrar"
+            className="absolute top-5 right-5 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white"
+          >
+            <X size={20} aria-hidden />
+          </button>
+          <img src={src} alt={alt} className="w-full max-w-lg max-h-[80vh] object-contain rounded-2xl" />
+          <p className="text-white/50 text-xs mt-4">Tocá afuera para volver</p>
+        </div>
+      )}
+    </>
+  )
+}
+
+function FormSkeleton() {
+  // Sin logo: casi todos los eventos tienen flyer, así que se reserva su
+  // lugar y el formulario no salta cuando llega.
+  return (
+    <PublicLayout showHeader={false}>
       <div className="flex-1 flex flex-col items-center px-5 pb-10">
-        <div className="w-full max-w-sm mb-4 pt-2">
-          <div className="w-10 h-10 rounded-xl bg-white/10" />
+        <div className="w-full max-w-sm flex justify-center pt-12 mb-5">
+          <div className="w-[168px] aspect-[4/5] rounded-2xl bg-white/10" />
         </div>
         <div className="text-center mb-7">
           <div className="h-4 w-24 bg-white/10 rounded-full mx-auto mb-2" />
