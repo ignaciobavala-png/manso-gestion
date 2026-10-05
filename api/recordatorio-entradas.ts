@@ -6,6 +6,11 @@ export const config = {
   runtime: 'edge'
 }
 
+// PAUSADO (05/10/26): no está en los crons de vercel.json. Con el mail del QR
+// al sacar la entrada alcanzaba, y esto duplicaba el volumen de Resend. Para
+// prenderlo, volver a agregar en vercel.json:
+//   { "path": "/api/recordatorio-entradas", "schedule": "0,10,20 12 * * *" }
+//
 // Mail "Es hoy": la mañana del evento, a quien tenga entrada, con el QR y la
 // dirección. Lo dispara el cron de vercel.json a las 9 (12 UTC) y de nuevo
 // a las 9:10 y 9:20: un evento grande pasa los 700 mails y Resend deja

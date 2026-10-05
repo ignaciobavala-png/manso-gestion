@@ -12,10 +12,6 @@
     {
       "path": "/api/keep-alive",
       "schedule": "*/10 * * * *"
-    },
-    {
-      "path": "/api/recordatorio-entradas",
-      "schedule": "0,10,20 12 * * *"
     }
   ]
 }
