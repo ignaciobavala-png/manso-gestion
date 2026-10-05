@@ -12,6 +12,10 @@ export interface TicketGuardado {
   name: string
   event_name: string
   event_id: string
+  /** Cuándo empieza el evento. Viaja con la entrada para que el QR diga la
+   *  fecha aun sin conexión. Las guardadas antes de este campo no lo tienen
+   *  (undefined) y /mi-entrada lo completa; null es un evento sin fecha. */
+  event_start?: string | null
 }
 
 export const LS_TICKETS = (eventId: string) => `manso_tickets_${eventId}`
@@ -47,6 +51,16 @@ export function tieneTickets(eventId: string): boolean {
   return !!localStorage.getItem(LS_TICKETS(eventId))
 }
 
+/** La fecha del evento como la dice el mail de la entrada: "sábado, 10 de
+ *  octubre · 20:00 h". Hora de Argentina fija, que es donde está la puerta,
+ *  aunque el teléfono esté configurado en otra zona. */
+export function fechaEntrada(iso: string): string {
+  const f = new Date(iso)
+  const dia = f.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'America/Argentina/Buenos_Aires' })
+  const hora = f.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Argentina/Buenos_Aires' })
+  return `${dia} · ${hora} h`
+}
+
 /**
  * Acumula en vez de reemplazar: desde que se puede comprar una segunda vez
  * para el mismo evento, pisar la clave borraría del dispositivo el QR de la
@@ -56,11 +70,12 @@ export function tieneTickets(eventId: string): boolean {
 export function guardarTickets(params: {
   eventId: string
   eventName: string
+  startDate?: string | null
   endDate?: string | null
   email?: string
   tickets: { name: string; token: string }[]
 }): void {
-  const { eventId, eventName, endDate, email, tickets } = params
+  const { eventId, eventName, startDate, endDate, email, tickets } = params
   if (tickets.length === 0) return
 
   const nuevos: TicketGuardado[] = tickets.map(t => ({
@@ -68,6 +83,7 @@ export function guardarTickets(params: {
     name: t.name,
     event_name: eventName,
     event_id: eventId,
+    event_start: startDate ?? null,
   }))
 
   let previos: TicketGuardado[] = []

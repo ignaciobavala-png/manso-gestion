@@ -339,6 +339,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
     guardarTickets({
       eventId: activeEvent.id,
       eventName: activeEvent.name,
+      startDate: activeEvent.start_date,
       endDate: finDelEvento(activeEvent),
       email,
       tickets,

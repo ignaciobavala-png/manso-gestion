@@ -62,6 +62,7 @@ export default function PagoRetorno() {
       guardarTickets({
         eventId,
         eventName: evento?.name ?? 'Evento',
+        startDate: evento?.start_date ?? null,
         endDate: finDelEvento(evento),
         tickets,
       })
