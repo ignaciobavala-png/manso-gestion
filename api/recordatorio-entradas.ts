@@ -1,6 +1,6 @@
 /// <reference types="node" />
 import { adminClient, resolverBaseUrl } from './_lib/registro'
-import { mandar, type FilaReclamada } from './_lib/mailEntradas'
+import { mandar, FILTRO_VENDIDA, type FilaReclamada } from './_lib/mailEntradas'
 
 export const config = {
   runtime: 'edge'
@@ -76,14 +76,16 @@ export default async function handler(req: Request): Promise<Response> {
         }
 
         // Mismo criterio que el mail de la entrada (reclamar en
-        // mailEntradas.ts): no rechazadas, y si son de MP, pagadas.
+        // mailEntradas.ts): no rechazadas, si son de MP pagadas, y sólo las
+        // de Gestión (las de la web las avisa la web).
         const { data: pendientes, error: errPend } = await supabase
           .from('ticket_registrations')
           .select('id, name, token, email, event_id')
           .in('event_id', eventos.map(e => e.id))
           .is('recordatorio_enviado_at', null)
           .not('is_banned', 'is', true)
-          .or('payment_provider.is.null,payment_provider.neq.mercadopago,payment_verified.eq.true')
+          .eq('origen', 'gestion')
+          .or(FILTRO_VENDIDA)
           .lt('registered_at', new Date(ahora.getTime() - RECIENTE_MS).toISOString())
           // PostgREST corta en 1000 filas. Lo que no entre queda sin marcar
           // y lo levanta la corrida de las 9:10.

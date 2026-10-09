@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import { json, registrarTickets, adminClient, resolverBaseUrl, type RegistroInput } from '../_lib/registro'
+import { json, registrarTickets, adminClient, resolverBaseUrl, prorratear, type RegistroInput, type TicketResult } from '../_lib/registro'
 import { createPreference, type PreferenceItem } from '../_lib/mp'
 
 export const config = {
@@ -28,6 +28,7 @@ export default async function handler(req: Request): Promise<Response> {
 
   const input = body as RegistroInput
   const externalReference = `manso-${crypto.randomUUID()}`
+  const expiresAt = new Date(Date.now() + EXPIRA_EN_MINUTOS * 60_000)
 
   // Las filas se crean antes de ir a MP, pero como RESERVA, no como venta: hasta
   // que el pago se acredita no cuentan como vendidas (ver migración 020) y este
@@ -38,26 +39,32 @@ export default async function handler(req: Request): Promise<Response> {
     ...input,
     payment_provider: 'mercadopago',
     mp_external_reference: externalReference,
+    mp_expires_at: expiresAt.toISOString(),
   })
 
   if (!result.ok) {
     return json({ error: result.error }, result.status)
   }
 
-  const { event, tickets } = result
+  const { event, tickets, tipo } = result
 
   if (event.payment_mode !== 'mercadopago' && event.payment_mode !== 'ambos') {
     return json({ error: 'Este evento no acepta pagos con Mercado Pago' }, 409)
   }
 
-  if (!event.is_paid || event.regular_ticket_price <= 0) {
+  // Con tipos de entrada (039) el precio es el del tipo; sin tipos, el de siempre.
+  const precioBase = tipo ? tipo.precio : event.regular_ticket_price
+  if (!event.is_paid || precioBase <= 0) {
     return json({ error: 'Este evento no tiene un precio configurado' }, 409)
   }
 
   // registrarTickets ya guardó el precio base desde la DB. Acá se recalcula
-  // con el recargo, que sólo aplica al pagar con MP.
+  // con el recargo, que sólo aplica al pagar con MP. En un pack el recargo va
+  // sobre el precio del pack, y después se reparte entre sus entradas.
   const surcharge = Number(event.mp_surcharge_pct) || 0
-  const unitPrice = redondear(event.regular_ticket_price * (1 + surcharge / 100))
+  const unitPrice = redondear(precioBase * (1 + surcharge / 100))
+  const porUnidad = tipo?.entradas_por_unidad ?? 1
+  const preciosFila = prorratear(unitPrice, porUnidad)
 
   const admin = adminClient()
 
@@ -86,38 +93,54 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   const baseUrl = resolverBaseUrl(req)
-  const expiresAt = new Date(Date.now() + EXPIRA_EN_MINUTOS * 60_000)
 
-  const { error: updateError } = await admin
-    .from('ticket_registrations')
-    .update({
-      mp_external_reference: externalReference,
-      payment_provider: 'mercadopago',
-      // price_per_ticket guarda el precio realmente cobrado (con recargo), para
-      // que los reportes de ingresos cierren contra lo que pasó por MP.
-      price_per_ticket: unitPrice,
-      // Mientras esta fecha esté en el futuro la entrada ocupa cupo; después
-      // deja de contar para cualquier cosa. Es el mismo plazo que la preference:
-      // vencida la preference nadie puede pagar esa orden, así que reservarle
-      // un lugar sería regalar capacidad.
-      mp_expires_at: expiresAt.toISOString(),
-    })
-    .in('token', pendientes.map(t => t.token))
-
-  if (updateError) {
-    return json({ error: 'No se pudo preparar la orden' }, 500)
+  // Las filas de un pack llevan su parte del precio con recargo; la última
+  // absorbe el redondeo. Un update por precio distinto (a lo sumo dos).
+  const porPrecio = new Map<number, string[]>()
+  for (const t of pendientes) {
+    const precio = preciosFila[(t.pack_pos ?? 1) - 1]
+    porPrecio.set(precio, [...(porPrecio.get(precio) ?? []), t.token])
   }
 
-  const items: PreferenceItem[] = pendientes.map(t => ({
-    id: t.token,
-    title: `${event.name} — ${t.name}`,
+  for (const [precio, tokens] of porPrecio) {
+    const { error: updateError } = await admin
+      .from('ticket_registrations')
+      .update({
+        mp_external_reference: externalReference,
+        payment_provider: 'mercadopago',
+        // price_per_ticket guarda el precio realmente cobrado (con recargo), para
+        // que los reportes de ingresos cierren contra lo que pasó por MP.
+        price_per_ticket: precio,
+        // Mientras esta fecha esté en el futuro la entrada ocupa cupo; después
+        // deja de contar para cualquier cosa. Es el mismo plazo que la preference:
+        // vencida la preference nadie puede pagar esa orden, así que reservarle
+        // un lugar sería regalar capacidad.
+        mp_expires_at: expiresAt.toISOString(),
+      })
+      .in('token', tokens)
+
+    if (updateError) {
+      return json({ error: 'No se pudo preparar la orden' }, 500)
+    }
+  }
+
+  // Un ítem por unidad: una entrada suelta, o un pack entero (las N filas
+  // del pack se cobran como un solo ítem al precio del pack).
+  const unidades = agruparEnUnidades(pendientes)
+  if (!unidades) {
+    return json({ error: 'Error de consistencia en el pack' }, 500)
+  }
+
+  const items: PreferenceItem[] = unidades.map(u => ({
+    id: u[0].token,
+    title: [event.name, u[0].tipo_nombre, u[0].name].filter(Boolean).join(' — '),
     quantity: 1,
     unit_price: unitPrice,
     currency_id: 'ARS',
   }))
 
   const totalPreference = redondear(items.reduce((acc, i) => acc + i.unit_price * i.quantity, 0))
-  const totalEsperado = redondear(unitPrice * pendientes.length)
+  const totalEsperado = redondear(pendientes.reduce((acc, t) => acc + preciosFila[(t.pack_pos ?? 1) - 1], 0))
 
   // Guardarraíl: lo que MP va a cobrar tiene que ser exactamente lo que
   // queda guardado en la DB. Si esto se desalinea no falla nada visible —
@@ -158,10 +181,27 @@ export default async function handler(req: Request): Promise<Response> {
     unit_price: unitPrice,
     total: totalPreference,
     cantidad: pendientes.length,
+    unidades: unidades.length,
     expires_at: expiresAt.toISOString(),
   }, 201)
 }
 
 function redondear(n: number): number {
   return Math.round(n * 100) / 100
+}
+
+/**
+ * Agrupa las entradas en unidades de cobro. Sin pack, cada entrada es una
+ * unidad. Un pack son sus filas 1..N consecutivas; si falta alguna (no
+ * debería: todas las filas de una orden comparten estado) devuelve null.
+ */
+function agruparEnUnidades(tickets: TicketResult[]): TicketResult[][] | null {
+  const unidades: TicketResult[][] = []
+  for (const t of tickets) {
+    if (!t.pack_size || t.pack_pos === 1) unidades.push([t])
+    else if (unidades.length > 0) unidades[unidades.length - 1].push(t)
+    else return null
+  }
+  const completas = unidades.every(u => !u[0].pack_size || u.length === u[0].pack_size)
+  return completas ? unidades : null
 }

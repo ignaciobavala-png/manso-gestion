@@ -4,7 +4,9 @@ import QRCode from 'qrcode'
 import { supabase } from '../lib/supabase'
 import { useAppStore } from '../store/useAppStore'
 import Toast from './Toast'
-import { esVendida, esReservada, esMpAbandonada, etiquetaEstado } from '../lib/entradas'
+import { esVendida, esReservada, esMpAbandonada, esWebLiberada, etiquetaEstado, etiquetaTipo } from '../lib/entradas'
+import ConteoPorTipo from './ConteoPorTipo'
+import { contarPorTipo } from '../lib/conteoPorTipo'
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
 
 interface Registration {
@@ -20,10 +22,15 @@ interface Registration {
   is_banned: boolean
   instagram: string | null
   phone: string | null
-  payment_provider: 'transferencia' | 'mercadopago' | null
+  payment_provider: 'transferencia' | 'mercadopago' | 'web' | null
   mp_status: string | null
   mp_external_reference: string | null
   mp_expires_at: string | null
+  origen: 'gestion' | 'web'
+  ticket_type_id: string | null
+  ticket_type_nombre: string | null
+  pack_pos: number | null
+  pack_size: number | null
 }
 
 interface EnrichedRegistration extends Registration {
@@ -83,7 +90,7 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
     setLoading(true)
     const { data, error } = await supabase
       .from('ticket_registrations')
-      .select('id, name, email, event_id, token, registered_at, used_at, receipt_url, payment_verified, is_banned, instagram, phone, payment_provider, mp_status, mp_external_reference, mp_expires_at')
+      .select('id, name, email, event_id, token, registered_at, used_at, receipt_url, payment_verified, is_banned, instagram, phone, payment_provider, mp_status, mp_external_reference, mp_expires_at, origen, ticket_type_id, ticket_type_nombre, pack_pos, pack_size')
       .eq('event_id', evento.id)
       .order('registered_at', { ascending: false })
 
@@ -318,13 +325,19 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
   const pendientes = vendidas.filter(r => !r.used_at).length
   // Sólo las que están esperando una decisión del staff: comprobante de
   // transferencia sin verificar, o un pago de MP que MP todavía no resolvió.
+  // Las reservas de la web no: las confirma la web, no el staff.
   const porVerificar = rows.filter(r =>
     !r.is_banned && !r.used_at && !r.payment_verified &&
-    (r.receipt_url || esReservada(r))
+    (r.receipt_url || (r.payment_provider === 'mercadopago' && esReservada(r)))
   ).length
   const conComprobante = vendidas.filter(r => r.receipt_url).length
   const rechazadas = rows.filter(r => r.is_banned).length
   const sinPagar = rows.filter(esMpAbandonada).length
+  // Reservas de la web que todavía no se pagaron: ocupan cupo pero no son
+  // ventas. Las liberadas no cuentan para nada; se listan igual, como las de MP.
+  const webSinPagar = rows.filter(r => r.payment_provider === 'web' && esReservada(r)).length
+  const webLiberadas = rows.filter(esWebLiberada).length
+  const porTipo = contarPorTipo(rows)
 
   if (!evento) return null
 
@@ -438,7 +451,21 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
                     <span className="text-red-400 text-xs font-semibold">{rechazadas}</span>
                   </div>
                 )}
+                {webSinPagar > 0 && (
+                  <div className="bg-neutral-900 border border-white/20 rounded-xl px-3 py-1.5">
+                    <span className="text-gray-400 text-xs">Web sin pagar: </span>
+                    <span className="text-gray-300 text-xs font-semibold">{webSinPagar}</span>
+                  </div>
+                )}
+                {webLiberadas > 0 && (
+                  <div className="bg-neutral-900 border border-red-500/30 rounded-xl px-3 py-1.5">
+                    <span className="text-gray-400 text-xs">Web liberadas: </span>
+                    <span className="text-red-400 text-xs font-semibold">{webLiberadas}</span>
+                  </div>
+                )}
               </div>
+
+              {porTipo.length > 0 && <ConteoPorTipo filas={porTipo} className="mb-4" />}
 
               <div className="space-y-2 max-h-96 overflow-y-auto">
                 {displayRows.length === 0 && (
@@ -448,7 +475,7 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
                   const isPending = !r.used_at && !r.payment_verified
                   const estado = etiquetaEstado(r)
                   const estadoClass =
-                    estado === 'Rechazado' || estado === 'Sin pagar'
+                    estado === 'Rechazado' || estado === 'Sin pagar' || estado === 'Web: liberada'
                       ? 'bg-red-900/50 text-red-400'
                       : estado === 'Ingresó' || estado === 'Verificado'
                         ? 'bg-terra-900/50 text-terra-400'
@@ -500,6 +527,11 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
                           {r.payment_provider === 'mercadopago' && (
                             <p className="text-sky-400 text-xs mt-0.5 truncate">
                               Mercado Pago · {traducirEstadoMp(r.mp_status)}
+                            </p>
+                          )}
+                          {(etiquetaTipo(r) || r.origen === 'web') && (
+                            <p className="text-gray-300 text-xs mt-0.5 truncate">
+                              {[etiquetaTipo(r), r.origen === 'web' ? 'Vendida en la web' : null].filter(Boolean).join(' · ')}
                             </p>
                           )}
                         </div>

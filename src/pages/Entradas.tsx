@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import QrScanner, { OPCIONES_ESCANER } from '../lib/escanerQr'
 import { useAppStore } from '../store/useAppStore'
 import { supabase } from '../lib/supabase'
+import { esReservada, etiquetaTipo } from '../lib/entradas'
 import SinEventoActivo from '../components/SinEventoActivo'
 import AlertModal from '../components/AlertModal'
 import Background from '../components/Background'
@@ -26,7 +27,7 @@ export default function Entradas(): React.JSX.Element {
   const [showInvitadoInput, setShowInvitadoInput] = useState(false)
   const [invitadoName, setInvitadoName] = useState('')
   const [submittingInvitado, setSubmittingInvitado] = useState(false)
-  const [mansoTicketPending, setMansoTicketPending] = useState<{ ticketId: string; token: string; name: string; paymentVerified: boolean; paymentProvider: string | null; eventoPago: boolean; isWildcard: boolean } | null>(null)
+  const [mansoTicketPending, setMansoTicketPending] = useState<{ ticketId: string; token: string; name: string; paymentVerified: boolean; paymentProvider: string | null; eventoPago: boolean; isWildcard: boolean; tipo: string | null } | null>(null)
   const [validating, setValidating] = useState(false)
   const [alertModal, setAlertModal] = useState({
     isOpen: false,
@@ -128,7 +129,7 @@ export default function Entradas(): React.JSX.Element {
 
     const { data, error } = await supabase
       .from('ticket_registrations')
-      .select('id, name, event_id, used_at, payment_verified, is_banned, payment_provider, events(is_paid)')
+      .select('id, name, event_id, used_at, payment_verified, is_banned, payment_provider, mp_expires_at, ticket_type_nombre, pack_pos, pack_size, events(is_paid)')
       .eq('token', token)
       .single()
 
@@ -143,6 +144,23 @@ export default function Entradas(): React.JSX.Element {
       return
     }
 
+    // Vendida por la web sin pago confirmado (reserva abierta, vencida o
+    // liberada): no es una entrada. A diferencia de una transferencia sin
+    // verificar —que el staff decide en la puerta—, acá no hay nada que
+    // verificar a mano: si la web no la confirmó, no se cobró.
+    if (data.payment_provider === 'web' && !data.payment_verified) {
+      setValidating(false)
+      setAlertModal({
+        isOpen: true,
+        message: esReservada(data)
+          ? 'Entrada de la web con el pago todavía sin confirmar. No puede ingresar.'
+          : 'Entrada de la web sin pagar (la reserva venció). No puede ingresar.',
+        type: 'error'
+      })
+      return
+    }
+
+    const tipo = etiquetaTipo(data)
     const isWildcardSource = data.event_id === WILDCARD_SOURCE_EVENT_ID
 
     // Nota: NO se rechaza por event_id !== activeEvent.id en el caso general.
@@ -171,7 +189,7 @@ export default function Entradas(): React.JSX.Element {
         return
       }
 
-      setMansoTicketPending({ ticketId: data.id, token, name: data.name, paymentVerified: data.payment_verified, paymentProvider: data.payment_provider, eventoPago: eventoDelTicketEsPago(data), isWildcard: true })
+      setMansoTicketPending({ ticketId: data.id, token, name: data.name, paymentVerified: data.payment_verified, paymentProvider: data.payment_provider, eventoPago: eventoDelTicketEsPago(data), isWildcard: true, tipo })
       return
     }
 
@@ -186,7 +204,7 @@ export default function Entradas(): React.JSX.Element {
       return
     }
 
-    setMansoTicketPending({ ticketId: data.id, token, name: data.name, paymentVerified: data.payment_verified, paymentProvider: data.payment_provider, eventoPago: eventoDelTicketEsPago(data), isWildcard: false })
+    setMansoTicketPending({ ticketId: data.id, token, name: data.name, paymentVerified: data.payment_verified, paymentProvider: data.payment_provider, eventoPago: eventoDelTicketEsPago(data), isWildcard: false, tipo })
   }
 
   const handleConfirmMansoTicket = async () => {
@@ -416,6 +434,9 @@ export default function Entradas(): React.JSX.Element {
                 <div className="bg-terra-900/20 border border-terra-700 rounded-2xl p-4 text-center">
                   <p className="text-sm text-terra-500 mb-1 uppercase tracking-wider">Entrada Digital</p>
                   <p className="text-white font-semibold text-lg">{mansoTicketPending.name}</p>
+                  {mansoTicketPending.tipo && (
+                    <p className="text-white/80 text-sm mt-0.5">{mansoTicketPending.tipo}</p>
+                  )}
                   <p className="text-terra-400 text-sm mt-1">Token válido — sin uso previo</p>
                 </div>
                 <div className="flex gap-3 pt-2">

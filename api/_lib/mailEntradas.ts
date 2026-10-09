@@ -18,6 +18,14 @@ export type AlcanceMail =
   | { eventId: string; email: string }
   | { mpExternalReference: string }
 
+/**
+ * Filtro PostgREST espejo de public.entrada_vendida (039), sin la parte de
+ * is_banned (va aparte): sin provider, de transferencia, o pagada. MP y la
+ * web sin pagar quedan afuera.
+ */
+export const FILTRO_VENDIDA =
+  'payment_provider.is.null,payment_provider.not.in.(mercadopago,web),payment_verified.eq.true'
+
 export interface FilaReclamada {
   id: string
   name: string
@@ -74,6 +82,11 @@ export async function enviarMailEntradas(
  * Sólo entradas que valen: no rechazadas, y si son de MP, con el pago
  * aprobado (espejo de public.entrada_vendida). Una reserva de checkout
  * abierta no tiene que recibir un QR.
+ *
+ * Y sólo las de Gestión: las vendidas por la web (origen 'web', migración
+ * 039) reciben el mail de la web, con la identidad del festival. Sin este
+ * filtro, el registro por transferencia —que reclama por evento + email—
+ * le mandaría también las de la web a quien compró en los dos lados.
  */
 async function reclamar(supabase: SupabaseClient, alcance: AlcanceMail): Promise<FilaReclamada[]> {
   let q = supabase
@@ -81,7 +94,8 @@ async function reclamar(supabase: SupabaseClient, alcance: AlcanceMail): Promise
     .update({ qr_mail_enviado_at: new Date().toISOString() })
     .is('qr_mail_enviado_at', null)
     .not('is_banned', 'is', true)
-    .or('payment_provider.is.null,payment_provider.neq.mercadopago,payment_verified.eq.true')
+    .eq('origen', 'gestion')
+    .or(FILTRO_VENDIDA)
 
   q = 'mpExternalReference' in alcance
     ? q.eq('mp_external_reference', alcance.mpExternalReference)

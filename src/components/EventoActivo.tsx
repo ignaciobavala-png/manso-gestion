@@ -3,6 +3,8 @@ import { useState, useEffect, useRef } from 'react'
 import QRCode from 'qrcode'
 import { supabase } from '../lib/supabase'
 import { useAppStore } from '../store/useAppStore'
+import ConteoPorTipo from './ConteoPorTipo'
+import { useConteoPorTipo } from '../lib/conteoPorTipo'
 
 export default function EventoActivo() {
   const { activeEvent, refreshData, updateEventPaymentAlias } = useAppStore()
@@ -19,6 +21,7 @@ export default function EventoActivo() {
   const [cbuPago, setCbuPago] = useState('')
   const [savingAlias, setSavingAlias] = useState(false)
   const [aliasSaved, setAliasSaved] = useState(false)
+  const conteoPorTipo = useConteoPorTipo(activeEvent?.id)
 
   // Limpiar timer de capacidad al desmontar
   useEffect(() => () => { if (capacityTimerRef.current) clearTimeout(capacityTimerRef.current) }, [])
@@ -175,6 +178,9 @@ export default function EventoActivo() {
           </span>
         )}
       </div>
+
+      {/* Por tipo de entrada (039), con las vendidas por la web */}
+      <ConteoPorTipo filas={conteoPorTipo} />
 
       {/* Capacidad máxima */}
       <div className="space-y-2">

@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import { useVenueConfig } from '../store/useVenueConfig'
 import { previsualizarRecargo, parsearDecimal } from '../lib/mercadopago'
 import AlertModal from './AlertModal'
+import TiposEntradaEditor from './TiposEntradaEditor'
+import { cargarTipos, guardarTipos, precioDesde, validarTipos, type TipoDraft } from '../lib/tiposEntrada'
 
 interface Event {
   id: string
@@ -73,6 +75,20 @@ export default function EventEditor({ event, onDone }: Props) {
   const [coworkDay, setCoworkDay] = useState(event.cowork_day ?? false)
   const [slugEdited, setSlugEdited] = useState(!!event.slug)
   const [saving, setSaving] = useState(false)
+  const [tipos, setTipos] = useState<TipoDraft[]>([])
+  const [idsTiposOriginales, setIdsTiposOriginales] = useState<string[]>([])
+  const [tiposCargados, setTiposCargados] = useState(false)
+
+  useEffect(() => {
+    cargarTipos(event.id).then(t => {
+      setTipos(t)
+      setIdsTiposOriginales(t.flatMap(x => (x.id ? [x.id] : [])))
+      setTiposCargados(true)
+    })
+  }, [event.id])
+
+  // Con tipos, el precio sale de cada tipo y el campo único se esconde.
+  const conTipos = tipos.length > 0
   const [alertModal, setAlertModal] = useState({
     isOpen: false,
     message: '',
@@ -81,7 +97,7 @@ export default function EventEditor({ event, onDone }: Props) {
 
   // Qué paga el asistente y qué le queda a Manso con el recargo actual.
   const previewRecargo = previsualizarRecargo(
-    parsearDecimal(form.ticketPrice),
+    conTipos ? precioDesde(tipos) ?? 0 : parsearDecimal(form.ticketPrice),
     parsearDecimal(form.mpSurcharge)
   )
 
@@ -91,7 +107,15 @@ export default function EventEditor({ event, onDone }: Props) {
       return
     }
 
-    const price = isPaid ? parseFloat(form.ticketPrice) || 0 : 0
+    const errorTipos = validarTipos(tipos, isPaid)
+    if (errorTipos) {
+      setAlertModal({ isOpen: true, message: errorTipos, type: 'warning' })
+      return
+    }
+
+    // Con tipos, regular_ticket_price queda como "desde $X": lo siguen leyendo
+    // pantallas viejas y reportes, y no se usa para cobrar.
+    const price = !isPaid ? 0 : conTipos ? precioDesde(tipos) ?? 0 : parseFloat(form.ticketPrice) || 0
     if (isPaid && price <= 0) {
       setAlertModal({ isOpen: true, message: 'El precio debe ser mayor a 0 para una entrada paga', type: 'warning' })
       return
@@ -136,6 +160,9 @@ export default function EventEditor({ event, onDone }: Props) {
         payment_mode: modoPago,
         mp_surcharge_pct: surcharge,
       })
+      if (tiposCargados) {
+        await guardarTipos(event.id, tipos, idsTiposOriginales)
+      }
       onDone()
     } catch {
       setAlertModal({ isOpen: true, message: 'Error al guardar los cambios', type: 'error' })
@@ -303,7 +330,7 @@ export default function EventEditor({ event, onDone }: Props) {
 
       {isPaid && (
         <>
-          <div>
+          {!conTipos && <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Precio de entrada</label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">$</span>
@@ -316,7 +343,7 @@ export default function EventEditor({ event, onDone }: Props) {
                 className="w-full pl-8 pr-4 py-3 bg-neutral-900/80 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-terra-500 focus:border-transparent"
               />
             </div>
-          </div>
+          </div>}
           {/* Medio de pago */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-3">¿Cómo se paga la entrada?</label>
@@ -367,7 +394,7 @@ export default function EventEditor({ event, onDone }: Props) {
               </div>
               <p className="text-xs text-gray-400 mt-2">
                 {previewRecargo
-                  ? <>La entrada sale <span className="text-white font-medium">${previewRecargo.conRecargo}</span> y entran <span className="text-white font-medium">${previewRecargo.neto}</span> netos, descontada la comisión de Mercado Pago (~4,3%).</>
+                  ? <>{conTipos ? 'La más barata sale' : 'La entrada sale'} <span className="text-white font-medium">${previewRecargo.conRecargo}</span> y entran <span className="text-white font-medium">${previewRecargo.neto}</span> netos, descontada la comisión de Mercado Pago (~4,3%).</>
                   : <>Mercado Pago descuenta alrededor del 4,3% de cada venta. Dejalo en 0 para absorberlo, o cargá un porcentaje para trasladarlo al precio.</>}
               </p>
             </div>
@@ -395,6 +422,14 @@ export default function EventEditor({ event, onDone }: Props) {
           )}
         </>
       )}
+
+      {/* Tipos de entrada (039): etapas y packs con precio y cupo propios */}
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-3">Etapas y packs</label>
+        {tiposCargados
+          ? <TiposEntradaEditor tipos={tipos} onChange={setTipos} />
+          : <p className="text-xs text-gray-400">Cargando…</p>}
+      </div>
 
       {/* Fecha */}
       <div>

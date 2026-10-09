@@ -54,8 +54,9 @@ export default async function handler(req: Request): Promise<Response> {
   // venta y el CRM no puede reportarla como tal (ver migración 020).
   const regCounts = new Map<string, number>()
   for (const row of regIdsResult.data ?? []) {
+    // Espejo de public.entrada_vendida (039): MP y la web cuentan sólo pagadas.
     const vendida = !row.is_banned &&
-      (row.payment_provider !== 'mercadopago' || row.payment_verified)
+      ((row.payment_provider !== 'mercadopago' && row.payment_provider !== 'web') || row.payment_verified)
     if (!vendida) continue
     regCounts.set(row.event_id, (regCounts.get(row.event_id) ?? 0) + 1)
   }

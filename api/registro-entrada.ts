@@ -25,6 +25,11 @@ export default async function handler(req: Request): Promise<Response> {
   const result = await registrarTickets({
     ...input,
     payment_provider: 'transferencia',
+    // Campos de MP: los pone sólo api/mp/preferencia.ts. Si vinieran del
+    // body, una transferencia podía colgarse del external_reference de la
+    // orden de otra persona y quedar acreditada cuando esa persona pagara.
+    mp_external_reference: undefined,
+    mp_expires_at: undefined,
   })
 
   if (!result.ok) {

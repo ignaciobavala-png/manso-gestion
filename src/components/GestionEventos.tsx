@@ -5,10 +5,13 @@ import { useAppStore } from '../store/useAppStore'
 import { compressImage } from '../lib/compressImage'
 import EventCreator from './EventCreator'
 import EventEditor from './EventEditor'
+import ConteoPorTipo from './ConteoPorTipo'
+import { leerConteoPorTipo, type FilaConteoTipo } from '../lib/conteoPorTipo'
 
 export default function GestionEventos() {
   const { events, activeEvent, selectOperatingEvent, updateEventFlyer, updateEventBackground } = useAppStore()
   const [regCounts, setRegCounts] = useState<Record<string, number>>({})
+  const [porTipo, setPorTipo] = useState<Record<string, FilaConteoTipo[]>>({})
   const [showCreator, setShowCreator] = useState(false)
   const [showHistorial, setShowHistorial] = useState(false)
   const [uploadingFor, setUploadingFor] = useState<string | null>(null)
@@ -33,15 +36,19 @@ export default function GestionEventos() {
     if (events.length === 0) return
     const ids = events.map(e => e.id)
 
-    const { data } = await supabase
-      .from('event_ticket_counts')
-      .select('event_id, vendidas')
-      .in('event_id', ids)
+    const [{ data }, tipos] = await Promise.all([
+      supabase
+        .from('event_ticket_counts')
+        .select('event_id, vendidas')
+        .in('event_id', ids),
+      leerConteoPorTipo(ids),
+    ])
 
     const counts: Record<string, number> = {}
     ids.forEach(id => { counts[id] = 0 })
     ;(data ?? []).forEach(row => { counts[row.event_id] = row.vendidas })
     setRegCounts(counts)
+    setPorTipo(tipos)
   }, [events])
 
   useEffect(() => { loadCounts() }, [loadCounts])
@@ -262,6 +269,7 @@ export default function GestionEventos() {
                       {regs} {regs === 1 ? 'registro' : 'registros'}
                       {e.max_capacity !== null && ` / ${e.max_capacity}`}
                     </p>
+                    {porTipo[e.id] && <ConteoPorTipo filas={porTipo[e.id]} className="mt-2 max-w-xs" />}
                   </div>
 
                   <div className="flex gap-2 flex-wrap">

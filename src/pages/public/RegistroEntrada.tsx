@@ -39,6 +39,28 @@ interface ActiveEvent {
 type PaymentMode = 'transferencia' | 'mercadopago' | 'ambos'
 type MetodoPago = 'transferencia' | 'mercadopago'
 
+/** Lo que devuelve web_tipos_entrada (migración 039). */
+interface TipoPublico {
+  id: string
+  nombre: string
+  descripcion: string | null
+  precio: number
+  entradas_por_unidad: number
+  max_por_compra: number | null
+  estado_efectivo: 'en_venta' | 'proximamente' | 'agotado' | 'finalizado'
+  disponibles_unidades: number | null
+}
+
+const ETIQUETA_ESTADO: Record<TipoPublico['estado_efectivo'], string> = {
+  en_venta: '',
+  proximamente: 'Próximamente',
+  agotado: 'Agotado',
+  finalizado: 'Finalizado',
+}
+
+/** Tope del selector de cantidad cuando el tipo no tiene uno propio. */
+const CANTIDAD_MAX_SIN_TOPE = 10
+
 interface VenueConfig {
   alias_pago: string | null
   cbu_pago: string | null
@@ -196,6 +218,13 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
   const [metodoPago, setMetodoPago] = useState<MetodoPago>('transferencia')
+  // Tipos de entrada (039). Vacío = evento de un solo precio, como siempre.
+  const [tipos, setTipos] = useState<TipoPublico[]>([])
+  const [tipoId, setTipoId] = useState<string | null>(null)
+  const [cantidad, setCantidad] = useState(1)
+  // order_ref de la compra con tipo: el mismo mientras el pedido no cambie,
+  // así un reintento (doble click, red caída) no duplica entradas.
+  const orderRef = useRef<{ firma: string; ref: string } | null>(null)
   const submittingRef = useRef(false)
   // Misma nota que la landing del cowork: se edita en un solo lugar.
   const coworkLanding = useCoworkLanding()
@@ -279,6 +308,11 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
         setMetodoPago('mercadopago')
       }
 
+      const { data: tiposData } = await supabase.rpc('web_tipos_entrada', { p_event_id: data.id })
+      const lista = ((tiposData ?? []) as TipoPublico[]).map(t => ({ ...t, precio: Number(t.precio) }))
+      setTipos(lista)
+      setTipoId(lista.find(t => t.estado_efectivo === 'en_venta')?.id ?? null)
+
       if (data.max_capacity !== null) {
         const { data: countData } = await supabase
           .rpc('get_event_registration_count', { p_event_id: data.id })
@@ -301,7 +335,17 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
   }, [eventParam, permitirOtra])
 
   const attendeeCount = attendeeNames.filter(n => n.trim().length > 0).length
-  const basePrice = activeEvent?.regular_ticket_price ?? 0
+  const conTipos = tipos.length > 0
+  const tipoSel = tipos.find(t => t.id === tipoId) ?? null
+  const esPack = (tipoSel?.entradas_por_unidad ?? 1) > 1
+  const cantidadMax = tipoSel
+    ? Math.max(1, Math.min(
+        tipoSel.max_por_compra ?? CANTIDAD_MAX_SIN_TOPE,
+        tipoSel.disponibles_unidades ?? CANTIDAD_MAX_SIN_TOPE,
+      ))
+    : 1
+  // Con tipos, el precio es el del tipo (por unidad: un pack es una unidad).
+  const basePrice = conTipos ? tipoSel?.precio ?? 0 : activeEvent?.regular_ticket_price ?? 0
   const surcharge = activeEvent?.mp_surcharge_pct ?? 0
 
   // El recargo sólo aplica al pagar con MP. Este cálculo es espejo del que
@@ -310,7 +354,13 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
   const ticketPrice = metodoPago === 'mercadopago' && surcharge > 0
     ? Math.round(basePrice * (1 + surcharge / 100) * 100) / 100
     : basePrice
-  const totalAmount = attendeeCount * ticketPrice
+  const unidades = conTipos ? cantidad : attendeeCount
+  /** QR que salen de esta compra: un pack x3 son 3. */
+  const totalEntradas = conTipos ? cantidad * (tipoSel?.entradas_por_unidad ?? 1) : attendeeCount
+  const totalAmount = unidades * ticketPrice
+  const nombresFaltantes = conTipos
+    ? attendeeNames.slice(0, esPack ? 1 : cantidad).some(n => !n.trim())
+    : attendeeCount === 0
 
   const aceptaMp = activeEvent?.payment_mode === 'mercadopago' || activeEvent?.payment_mode === 'ambos'
   const aceptaTransferencia = activeEvent?.payment_mode === 'transferencia' || activeEvent?.payment_mode === 'ambos'
@@ -324,6 +374,32 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
       next[index] = value
       return next
     })
+  }
+
+  /** Un pack pide un nombre; un tipo común, uno por entrada. */
+  const ajustarNombres = (n: number) =>
+    setAttendeeNames(prev => Array.from({ length: n }, (_, i) => prev[i] ?? ''))
+
+  const elegirTipo = (t: TipoPublico) => {
+    setTipoId(t.id)
+    setCantidad(1)
+    ajustarNombres(1)
+  }
+
+  const cambiarCantidad = (n: number) => {
+    const c = Math.max(1, Math.min(cantidadMax, n))
+    setCantidad(c)
+    if (!esPack) ajustarNombres(c)
+  }
+
+  /** Campos extra del body cuando el evento tiene tipos. */
+  const camposTipo = (validNames: string[]) => {
+    if (!conTipos || !tipoSel) return {}
+    const firma = JSON.stringify([tipoSel.id, cantidad, email.trim().toLowerCase(), validNames])
+    if (orderRef.current?.firma !== firma) {
+      orderRef.current = { firma, ref: crypto.randomUUID() }
+    }
+    return { ticket_type_id: tipoSel.id, cantidad, order_ref: orderRef.current.ref }
   }
 
   const addAttendee = () => {
@@ -368,6 +444,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          ...camposTipo(validNames),
           attendees: validNames.map(name => ({ name })),
           email: email.trim(),
           event_id: activeEvent.id,
@@ -406,6 +483,11 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
     if (!activeEvent) return
     if (submittingRef.current) return
 
+    if (conTipos && tipoSel?.estado_efectivo !== 'en_venta') {
+      setError('Elegí un tipo de entrada')
+      return
+    }
+
     if (pagandoConMp) {
       handleMercadoPago()
       return
@@ -427,6 +509,7 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          ...camposTipo(validNames),
           attendees: validNames.map(name => ({ name })),
           email: email.trim(),
           event_id: activeEvent.id,
@@ -532,9 +615,11 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
           <h2 className="text-3xl font-bold text-white">{activeEvent.name}</h2>
           {activeEvent.is_paid && activeEvent.regular_ticket_price > 0 && (
             <div className="mt-2 space-y-1">
-              <p className="text-terra-400 text-sm font-medium">
-                Entrada general · ${ticketPrice.toLocaleString('es-AR')}
-              </p>
+              {!conTipos && (
+                <p className="text-terra-400 text-sm font-medium">
+                  Entrada general · ${ticketPrice.toLocaleString('es-AR')}
+                </p>
+              )}
               {!pagandoConMp && (
                 <div className="inline-block bg-white/5 border border-white/20 rounded-xl px-5 py-2.5">
                   <span className="text-white font-bold text-sm">Alias: </span>
@@ -578,10 +663,58 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
                 />
               </div>
 
-              <div className="space-y-3">
-                <label className="text-white/70 text-xs font-medium block">Nombres de los asistentes</label>
+              {conTipos && (
+                <div className="space-y-2">
+                  <label className="text-white/70 text-xs font-medium block">Tipo de entrada</label>
+                  {tipos.map(t => {
+                    const disponible = t.estado_efectivo === 'en_venta'
+                    const elegido = t.id === tipoId
+                    return (
+                      <button
+                        key={t.id}
+                        type="button"
+                        disabled={!disponible}
+                        onClick={() => elegirTipo(t)}
+                        className={`w-full text-left rounded-2xl px-4 py-3 border transition-colors ${
+                          elegido
+                            ? 'bg-terra-600/30 border-terra-400 text-white'
+                            : 'bg-white/5 border-white/25 text-gray-200 hover:bg-white/10'
+                        } disabled:opacity-40 disabled:hover:bg-white/5`}
+                      >
+                        <span className="flex items-baseline justify-between gap-3">
+                          <span className="text-sm font-semibold">{t.nombre}</span>
+                          <span className="text-sm font-medium whitespace-nowrap">
+                            {disponible ? `$${t.precio.toLocaleString('es-AR')}` : ETIQUETA_ESTADO[t.estado_efectivo]}
+                          </span>
+                        </span>
+                        {t.descripcion && <span className="block text-xs text-gray-400 mt-0.5">{t.descripcion}</span>}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
 
-                {attendeeNames.map((nameValue, i) => (
+              {conTipos && tipoSel && cantidadMax > 1 && (
+                <div className="flex items-center justify-between">
+                  <label className="text-white/70 text-xs font-medium">{esPack ? 'Cantidad de packs' : 'Cantidad'}</label>
+                  <div className="flex items-center gap-3">
+                    <button type="button" onClick={() => cambiarCantidad(cantidad - 1)} disabled={cantidad <= 1}
+                      aria-label="Menos"
+                      className="w-9 h-9 rounded-xl bg-white/10 text-white text-lg disabled:opacity-30">−</button>
+                    <span className="text-white font-semibold w-6 text-center">{cantidad}</span>
+                    <button type="button" onClick={() => cambiarCantidad(cantidad + 1)} disabled={cantidad >= cantidadMax}
+                      aria-label="Más"
+                      className="w-9 h-9 rounded-xl bg-white/10 text-white text-lg disabled:opacity-30">+</button>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-3">
+                <label className="text-white/70 text-xs font-medium block">
+                  {conTipos && esPack ? 'A nombre de' : 'Nombres de los asistentes'}
+                </label>
+
+                {(conTipos ? attendeeNames.slice(0, esPack ? 1 : cantidad) : attendeeNames).map((nameValue, i) => (
                   <div key={i} className="flex items-center gap-2">
                     <input
                       type="text"
@@ -589,10 +722,10 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
                       onChange={e => setAttendeeName(i, e.target.value)}
                       required
                       autoComplete="name"
-                      placeholder={`Asistente ${i + 1}`}
+                      placeholder={conTipos && esPack ? 'Nombre y apellido' : `Asistente ${i + 1}`}
                       className="flex-1 bg-white/15 border border-white/25 rounded-2xl px-4 py-3.5 text-white placeholder-gray-400 focus:outline-none focus:border-terra-400 transition-colors text-sm"
                     />
-                    {attendeeNames.length > 1 && (
+                    {!conTipos && attendeeNames.length > 1 && (
                       <button
                         type="button"
                         onClick={() => removeAttendee(i)}
@@ -604,9 +737,14 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
                     )}
                   </div>
                 ))}
+                {conTipos && esPack && tipoSel && (
+                  <p className="text-gray-400 text-xs">
+                    Te llegan {tipoSel.entradas_por_unidad * cantidad} QR a este nombre, uno por persona.
+                  </p>
+                )}
               </div>
 
-              {!activeEvent.one_ticket_per_email && (
+              {!conTipos && !activeEvent.one_ticket_per_email && (
                 <button
                   type="button"
                   onClick={addAttendee}
@@ -691,11 +829,11 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
                     </div>
                   )}
 
-                  {attendeeCount > 0 && ticketPrice > 0 && (
+                  {unidades > 0 && ticketPrice > 0 && (
                     <div className="bg-terra-950/40 border border-terra-800/40 rounded-2xl p-4 space-y-2">
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-300">Entradas</span>
-                        <span className="text-white font-medium">{attendeeCount} × ${ticketPrice.toLocaleString('es-AR')}</span>
+                        <span className="text-gray-300">{conTipos && tipoSel ? tipoSel.nombre : 'Entradas'}</span>
+                        <span className="text-white font-medium">{unidades} × ${ticketPrice.toLocaleString('es-AR')}</span>
                       </div>
                       <div className="border-t border-terra-800/30 pt-2 flex justify-between">
                         <span className="text-white font-semibold">Total a pagar</span>
@@ -812,15 +950,15 @@ function EventoForm({ eventParam, isSlug = false, privateToken, permitirOtra = f
               ) : (
                 <button
                   type="submit"
-                  disabled={submitting || !email.trim() || attendeeCount === 0 || (requiereComprobante && !receiptUrl) || (activeEvent.require_instagram && !instagram.trim()) || (activeEvent.require_phone && !phone.trim())}
+                  disabled={submitting || !email.trim() || nombresFaltantes || (conTipos && tipoSel?.estado_efectivo !== 'en_venta') || (requiereComprobante && !receiptUrl) || (activeEvent.require_instagram && !instagram.trim()) || (activeEvent.require_phone && !phone.trim())}
                   className="w-full bg-terra-600 hover:bg-terra-500 disabled:bg-white/10 disabled:text-gray-400 text-white font-semibold py-4 rounded-2xl transition-all active:scale-95 text-sm"
                 >
                   {submitting
                     ? (pagandoConMp ? 'Redirigiendo a Mercado Pago...' : 'Generando entradas...')
                     : pagandoConMp
                       ? `Pagar $${totalAmount.toLocaleString('es-AR')} con Mercado Pago →`
-                      : attendeeCount > 1
-                        ? `Reservar ${attendeeCount} entradas →`
+                      : totalEntradas > 1
+                        ? `Reservar ${totalEntradas} entradas →`
                         : 'Quiero mi entrada →'}
                 </button>
               )}

@@ -3,6 +3,8 @@ import QRCode from 'qrcode'
 import { useAppStore } from '../store/useAppStore'
 import { previsualizarRecargo, parsearDecimal } from '../lib/mercadopago'
 import AlertModal from '../components/AlertModal'
+import TiposEntradaEditor from './TiposEntradaEditor'
+import { guardarTipos, precioDesde, validarTipos, type TipoDraft } from '../lib/tiposEntrada'
 
 interface Props {
   onCreated?: () => void
@@ -36,6 +38,10 @@ export default function EventCreator({ onCreated, coworkPorDefecto = false }: Pr
   const [qrCodeUrl, setQrCodeUrl] = useState('')
   const [createdEventName, setCreatedEventName] = useState('')
   const [saving, setSaving] = useState(false)
+  const [tipos, setTipos] = useState<TipoDraft[]>([])
+  const [avisoTipos, setAvisoTipos] = useState('')
+  // Con tipos, el precio sale de cada tipo y el campo único se esconde.
+  const conTipos = tipos.length > 0
   const [alertModal, setAlertModal] = useState({
     isOpen: false,
     message: '',
@@ -44,7 +50,7 @@ export default function EventCreator({ onCreated, coworkPorDefecto = false }: Pr
 
   // Qué paga el asistente y qué le queda a Manso con el recargo actual.
   const previewRecargo = previsualizarRecargo(
-    parsearDecimal(form.ticketPrice),
+    conTipos ? precioDesde(tipos) ?? 0 : parsearDecimal(form.ticketPrice),
     parsearDecimal(form.mpSurcharge)
   )
 
@@ -63,9 +69,17 @@ export default function EventCreator({ onCreated, coworkPorDefecto = false }: Pr
       return
     }
 
+    setAvisoTipos('')
+    const errorTipos = validarTipos(tipos, isPaid)
+    if (errorTipos) {
+      setAlertModal({ isOpen: true, message: errorTipos, type: 'warning' })
+      return
+    }
+
     setSaving(true)
     try {
-      const price = isPaid ? parseFloat(form.ticketPrice) || 0 : 0
+      // Con tipos, regular_ticket_price queda como "desde $X" de referencia.
+      const price = !isPaid ? 0 : conTipos ? precioDesde(tipos) ?? 0 : parseFloat(form.ticketPrice) || 0
       if (isPaid && price <= 0) {
         setAlertModal({ isOpen: true, message: 'El precio debe ser mayor a 0 para una entrada paga', type: 'warning' })
         setSaving(false)
@@ -98,6 +112,18 @@ export default function EventCreator({ onCreated, coworkPorDefecto = false }: Pr
         slug: finalSlug || null,
       })
 
+      // Los tipos necesitan el id del evento, por eso van después. Si fallan,
+      // el evento ya existe: se avisa y se cargan desde Editar.
+      if (tipos.length > 0) {
+        try {
+          await guardarTipos(event.id, tipos, [])
+        } catch (err) {
+          // Va en la pantalla del QR (que es la que queda a la vista), no en
+          // el AlertModal, que sólo se monta en el formulario.
+          setAvisoTipos('El evento se creó, pero no se pudieron guardar las etapas y packs. Cargalos desde Editar. (' + (err as Error).message + ')')
+        }
+      }
+
       const baseUrl = event.slug
         ? `${window.location.origin}/registro/${event.slug}`
         : `${window.location.origin}/registro?event=${event.id}`
@@ -113,6 +139,7 @@ export default function EventCreator({ onCreated, coworkPorDefecto = false }: Pr
       setQrCodeUrl(url)
       setCreatedEventName(form.name.trim())
       setForm({ name: '', slug: '', description: '', ticketPrice: '', startDate: '', aliasPago: '', cbuPago: '', mpSurcharge: '0' })
+      setTipos([])
       setSlugEdited(false)
       setCoworkDay(coworkPorDefecto)
     } catch (error) {
@@ -147,6 +174,9 @@ export default function EventCreator({ onCreated, coworkPorDefecto = false }: Pr
             <p className="text-terra-400 font-semibold text-lg">{createdEventName}</p>
             <p className="text-sm text-gray-400">Evento en operación — compartí este QR para el registro público</p>
           </div>
+          {avisoTipos && (
+            <p className="text-sm text-orange-400 text-center">{avisoTipos}</p>
+          )}
         </div>
         <button
           onClick={downloadQR}
@@ -324,7 +354,7 @@ export default function EventCreator({ onCreated, coworkPorDefecto = false }: Pr
       </div>
       {isPaid && (
         <>
-          <div>
+          {!conTipos && <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Precio de entrada</label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">$</span>
@@ -339,7 +369,7 @@ export default function EventCreator({ onCreated, coworkPorDefecto = false }: Pr
               />
             </div>
             <p className="text-sm text-gray-400 mt-1">Se aplica igual para regular e invitado.</p>
-          </div>
+          </div>}
 
           {/* Medio de pago */}
           <div>
@@ -391,7 +421,7 @@ export default function EventCreator({ onCreated, coworkPorDefecto = false }: Pr
               </div>
               <p className="text-xs text-gray-400 mt-2">
                 {previewRecargo
-                  ? <>La entrada sale <span className="text-white font-medium">${previewRecargo.conRecargo}</span> y entran <span className="text-white font-medium">${previewRecargo.neto}</span> netos, descontada la comisión de Mercado Pago (~4,3%).</>
+                  ? <>{conTipos ? 'La más barata sale' : 'La entrada sale'} <span className="text-white font-medium">${previewRecargo.conRecargo}</span> y entran <span className="text-white font-medium">${previewRecargo.neto}</span> netos, descontada la comisión de Mercado Pago (~4,3%).</>
                   : <>Mercado Pago descuenta alrededor del 4,3% de cada venta. Dejalo en 0 para absorberlo, o cargá un porcentaje para trasladarlo al precio.</>}
               </p>
             </div>
@@ -420,6 +450,13 @@ export default function EventCreator({ onCreated, coworkPorDefecto = false }: Pr
           </div>
         </>
       )}
+
+      {/* Tipos de entrada (039): etapas y packs con precio y cupo propios */}
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-3">Etapas y packs</label>
+        <TiposEntradaEditor tipos={tipos} onChange={setTipos} />
+      </div>
+
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-2">Fecha y hora *</label>
         <input
