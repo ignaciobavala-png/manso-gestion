@@ -6,7 +6,7 @@ import { supabase } from '../../lib/supabase'
 import PublicLayout from '../../components/PublicLayout'
 import CarnetMiembro, { type Carnet } from '../../components/CarnetMiembro'
 import { guardarCredencial } from '../../lib/credencialCowork'
-import { fechaEntrada, infoEventos, urlMaps, descargarCalendario, type InfoEvento, LS_END } from '../../lib/entradasStorage'
+import { fechaEntrada, infoEventos, urlMaps, descargarCalendario, guardarTickets, type InfoEvento, LS_END, LS_TICKETS } from '../../lib/entradasStorage'
 
 interface TicketData {
   token: string
@@ -17,6 +17,64 @@ interface TicketData {
   event_end?: string | null
   event_address?: string | null
   isFinished?: boolean
+  /** Último estado conocido (get_tickets_por_token). undefined = nunca se
+   *  consultó; se guarda para que el aviso se vea también sin conexión. */
+  estado?: EstadoEntrada
+}
+
+type EstadoEntrada = 'valida' | 'usada' | 'anulada' | 'pendiente'
+
+interface FilaPorToken {
+  token: string
+  name: string
+  event_id: string
+  estado: EstadoEntrada
+}
+
+/** Tope de get_tickets_por_token: más que esto lo ignora la función. */
+const MAX_TOKENS = 50
+
+/**
+ * Las entradas de estos tokens, con su estado. Es la única consulta de
+ * entradas que hace esta pantalla: quien pregunta ya tiene el QR, así que no
+ * se entera de nada nuevo. Por email no se muestra nada; se manda al mail
+ * (api/reenviar-entradas.ts, migración 041).
+ */
+async function entradasPorToken(tokens: string[]): Promise<FilaPorToken[] | null> {
+  if (tokens.length === 0) return []
+  const { data, error } = await supabase.rpc('get_tickets_por_token', { p_tokens: tokens.slice(0, MAX_TOKENS) })
+  if (error) return null
+  return (data as FilaPorToken[] | null) ?? []
+}
+
+/** Los tokens de /mi-entrada#t=a,b,c (el botón de los mails). Van en el
+ *  fragmento y no en la query para que nunca lleguen al servidor ni a sus
+ *  logs (ver urlMisEntradas en api/_lib/mailEntradas.ts). */
+function tokensDelLink(): string[] {
+  const t = new URLSearchParams(window.location.hash.slice(1)).get('t')
+  if (!t) return []
+  return t.split(',').map(s => s.trim()).filter(s => /^[A-Za-z0-9-]{8,80}$/.test(s)).slice(0, MAX_TOKENS)
+}
+
+/** Guarda en el dispositivo las entradas del link del mail. Sólo las que
+ *  valen o ya se usaron: una sin pagar o anulada no tiene nada que mostrar. */
+async function cargarDelLink(tokens: string[]): Promise<void> {
+  const filas = (await entradasPorToken(tokens))?.filter(f => f.estado === 'valida' || f.estado === 'usada') ?? []
+  if (filas.length === 0) return
+  const eventos = await infoEventos([...new Set(filas.map(f => f.event_id))])
+  const porEvento = new Map<string, FilaPorToken[]>()
+  for (const f of filas) porEvento.set(f.event_id, [...(porEvento.get(f.event_id) ?? []), f])
+  for (const [eventId, delEvento] of porEvento) {
+    const ev = eventos.get(eventId)
+    if (!ev) continue
+    guardarTickets({
+      eventId,
+      eventName: ev.name,
+      info: ev.info,
+      endDate: ev.fin,
+      tickets: delEvento.map(f => ({ name: f.name, token: f.token })),
+    })
+  }
 }
 
 /** Las entradas de un mismo evento. Se agrupan para poder ofrecer "Comprar
@@ -46,22 +104,6 @@ function GlowBorder({ children, className = '' }: { children: React.ReactNode; c
   )
 }
 
-function getTicketsForEvent(eventId: string): TicketData[] {
-  try {
-    const raw = localStorage.getItem(`manso_tickets_${eventId}`)
-    if (raw) {
-      const parsed = JSON.parse(raw)
-      return Array.isArray(parsed) ? parsed : []
-    }
-    const oldRaw = localStorage.getItem(`manso_ticket_${eventId}`)
-    if (oldRaw) {
-      const single = JSON.parse(oldRaw) as TicketData
-      return [single]
-    }
-  } catch { /* ignorar entradas corruptas */ }
-  return []
-}
-
 /** La entrada con la fecha y el lugar del evento puestos. Sin info (el
  *  evento no se pudo leer) quedan undefined, para completarse más adelante. */
 function conInfo(t: TicketData, info: InfoEvento | undefined): TicketData {
@@ -69,20 +111,13 @@ function conInfo(t: TicketData, info: InfoEvento | undefined): TicketData {
   return { ...t, event_start: info.start, event_end: info.end, event_address: info.direccion }
 }
 
-function saveTicketsToStorage(eventId: string, tickets: TicketData[], eventEndDate?: string) {
-  localStorage.setItem(`manso_tickets_${eventId}`, JSON.stringify(tickets))
-  localStorage.setItem(`manso_tickets_ts_${eventId}`, Date.now().toString())
-  if (eventEndDate) localStorage.setItem(`manso_tickets_end_${eventId}`, eventEndDate)
-}
-
 /** El carnet de cowork de esa persona, si es miembro.
  *
- *  Acá la identidad es el mail, igual que para las entradas: con un mail,
- *  get_my_tickets ya devuelve los QR de los shows de alguien, que valen plata.
- *  Un carnet no es más sensible que eso, así que el criterio es el mismo y
- *  nadie necesita una cuenta. Encontrarlo deja además la credencial guardada
- *  en este navegador, que es lo que hace que los QR de las salas lo
- *  reconozcan: el que perdió su link lo recupera solo. */
+ *  Acá la identidad sigue siendo el mail. Las entradas dejaron de funcionar
+ *  así (041: por email se reenvían al mail, no se muestran); el carnet
+ *  todavía no, pendiente de decidir (docs/COWORK.md). Encontrarlo deja además
+ *  la credencial guardada en este navegador, que es lo que hace que los QR de
+ *  las salas lo reconozcan: el que perdió su link lo recupera solo. */
 type CarnetConToken = Carnet & { token: string }
 
 async function buscarCarnet(mail: string): Promise<CarnetConToken | null> {
@@ -156,6 +191,8 @@ function getAllStoredGroups(): EventoGuardado[] {
 function TicketCard({ ticket, isFinished = false }: { ticket: TicketData; isFinished?: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [downloading, setDownloading] = useState(false)
+  // Anulada (Rechazar QR) o sin pago: el lector la rechaza, que no parezca válida.
+  const noVale = ticket.estado === 'anulada' || ticket.estado === 'pendiente'
 
   useEffect(() => {
     if (!canvasRef.current) return
@@ -254,14 +291,20 @@ function TicketCard({ ticket, isFinished = false }: { ticket: TicketData; isFini
           </a>
         )}
 
-        <div className={`rounded-2xl p-3 shadow-2xl ${isFinished ? 'bg-white/80' : 'bg-white'}`}>
-          <canvas ref={canvasRef} className={`block ${isFinished ? 'opacity-60' : ''}`} style={{ width: 200, height: 200 }} />
+        <div className={`rounded-2xl p-3 shadow-2xl ${isFinished || noVale ? 'bg-white/80' : 'bg-white'}`}>
+          <canvas ref={canvasRef} className={`block ${isFinished || noVale ? 'opacity-60' : ''}`} style={{ width: 200, height: 200 }} />
         </div>
 
         <p className="text-white font-bold text-lg mt-4">{ticket.name}</p>
-        <p className="text-gray-400 text-xs mt-1">
-          {isFinished ? 'Este evento ya finalizó.' : 'Mostrá este QR en la puerta de ingreso.'}
-        </p>
+        {ticket.estado === 'anulada' ? (
+          <p className="text-red-400 text-xs mt-1">Esta entrada fue anulada: no sirve para entrar.</p>
+        ) : ticket.estado === 'pendiente' ? (
+          <p className="text-amber-300 text-xs mt-1">El pago de esta entrada todavía no se confirmó.</p>
+        ) : (
+          <p className="text-gray-400 text-xs mt-1">
+            {isFinished ? 'Este evento ya finalizó.' : 'Mostrá este QR en la puerta de ingreso.'}
+          </p>
+        )}
       </div>
 
       <div className="border-t border-white/5 px-6 py-3 flex gap-2">
@@ -298,12 +341,25 @@ export default function MiEntrada() {
   const [email, setEmail] = useState('')
   const [searching, setSearching] = useState(false)
   const [searchError, setSearchError] = useState('')
+  /** Lo que respondió el reenvío por mail; se ve en las dos pantallas. */
+  const [avisoMail, setAvisoMail] = useState('')
   const [carnet, setCarnet] = useState<CarnetConToken | null>(null)
 
   useEffect(() => {
     let cancelado = false
 
     async function cargar() {
+      // Link del mail: se guardan esas entradas antes de pintar, y después
+      // se saca el #t= de la barra para que los tokens no queden en el
+      // historial. Guardar es idempotente (dedupe por token), así que una
+      // segunda corrida del efecto no duplica nada.
+      const delLink = tokensDelLink()
+      if (delLink.length > 0) {
+        await cargarDelLink(delLink)
+        window.history.replaceState(window.history.state, '', window.location.pathname + window.location.search)
+        if (cancelado) return
+      }
+
       // Primero se pinta lo que hay en el dispositivo, sin esperar a la red:
       // el QR tiene que aparecer aunque la conexión en la puerta sea mala.
       const guardados = getAllStoredGroups()
@@ -348,40 +404,30 @@ export default function MiEntrada() {
         if (c) setCarnet(c)
       }
 
-      const { data: activo } = await supabase.from('active_event').select('id').single()
-      if (cancelado || !activo?.id) return
-
-      const eventId = activo.id
-      const storedEmail = localStorage.getItem('manso_email')
-      if (!storedEmail) return
-
-      const [rpcResult, eventos] = await Promise.all([
-        supabase.rpc('get_my_tickets', { p_email: storedEmail }),
-        infoEventos([eventId]),
-      ])
-      const eventData = eventos.get(eventId)
-      if (cancelado) return
-
-      const rows = (rpcResult.data as { token: string; name: string; event_id: string }[] | null)
-        ?.filter(r => r.event_id === eventId) ?? null
-
-      if (rpcResult.error || !rows || rows.length === 0) return
-
-      // Nunca reducir tickets: si la DB devuelve menos que localStorage, es dato rancho
-      const currentLocal = getTicketsForEvent(eventId)
-      if (rows.length < currentLocal.length) return
-
-      const eventName = eventData?.name ?? 'Evento'
-      const freshTickets: TicketData[] = rows.map(r => conInfo({
-        token: r.token,
-        name: r.name,
-        event_name: eventName,
-        event_id: r.event_id,
-      }, eventData?.info))
-
-      saveTicketsToStorage(eventId, freshTickets, eventData?.fin ?? undefined)
-      const actualizados = getAllStoredGroups()
-      setGrupos(actualizados.length > 0 ? actualizados : null)
+      // Estado al día de las entradas que este dispositivo ya tiene, por sus
+      // tokens: si Ana rechazó una, que el QR no se muestre como válido.
+      // Antes esto traía todo lo del manso_email guardado; ya no se pregunta
+      // por email. Sólo se actualiza: nunca se borra ni se agrega nada.
+      const vigentes = getAllStoredGroups().filter(g => !g.isFinished)
+      const filas = await entradasPorToken(vigentes.flatMap(g => g.tickets.map(t => t.token)))
+      if (cancelado || !filas) return
+      const estados = new Map(filas.map(f => [f.token, f.estado]))
+      let cambios = 0
+      for (const g of vigentes) {
+        const tickets = g.tickets.map(t => {
+          const estado = estados.get(t.token)
+          if (!estado || estado === t.estado) return t
+          cambios++
+          return { ...t, estado }
+        })
+        if (tickets.some((t, i) => t !== g.tickets[i])) {
+          localStorage.setItem(LS_TICKETS(g.eventId), JSON.stringify(tickets))
+        }
+      }
+      if (cambios > 0) {
+        const actualizados = getAllStoredGroups()
+        setGrupos(actualizados.length > 0 ? actualizados : null)
+      }
     }
 
     cargar()
@@ -392,56 +438,33 @@ export default function MiEntrada() {
     if (!email.trim()) return
     setSearching(true)
     setSearchError('')
+    setAvisoMail('')
 
+    // Las entradas no se muestran: se mandan al mail. La respuesta es la
+    // misma haya o no, así esto no sirve para averiguar si alguien compró.
     const mail = email.trim().toLowerCase()
-    const [{ data: rawData, error }, suCarnet] = await Promise.all([
-      supabase.rpc('get_my_tickets', { p_email: mail }),
+    const [res, suCarnet] = await Promise.all([
+      fetch('/api/reenviar-entradas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: mail }),
+      }).catch(() => null),
       buscarCarnet(mail),
     ])
-    const data = rawData as { token: string; name: string; event_id: string }[] | null
-
-    if (error) {
-      setSearchError('Error al buscar. Intentá de nuevo.')
-      setSearching(false)
-      return
-    }
-
-    // Alcanza con ser una de las dos cosas: hay coworkers que nunca fueron a
-    // un show, y gente con entradas que no tiene nada que ver con el cowork.
-    if ((!data || data.length === 0) && !suCarnet) {
-      setSearchError('No encontramos entradas ni carnet para ese email.')
-      setSearching(false)
-      return
-    }
-
-    localStorage.setItem('manso_email', mail)
-    if (suCarnet) setCarnet(suCarnet)
-
-    if (!data || data.length === 0) {
-      setSearching(false)
-      setShowEmailSearch(false)
-      return
-    }
-
-    const eventIds = [...new Set(data.map(r => r.event_id))]
-    const eventos = await infoEventos(eventIds)
-
-    const ticketsByEvent = new Map<string, TicketData[]>()
-    for (const row of data) {
-      const ev = eventos.get(row.event_id)
-      const ticket = conInfo({ token: row.token, name: row.name, event_name: ev?.name ?? 'Evento', event_id: row.event_id }, ev?.info)
-      const existing = ticketsByEvent.get(row.event_id) ?? []
-      existing.push(ticket)
-      ticketsByEvent.set(row.event_id, existing)
-    }
-
-    for (const [eid, tix] of ticketsByEvent) {
-      saveTicketsToStorage(eid, tix, eventos.get(eid)?.fin ?? undefined)
-    }
+    let respuesta: { mensaje?: string; error?: string } = {}
+    try { respuesta = res ? await res.json() : {} } catch { /* respuesta vacía */ }
     setSearching(false)
-    setShowEmailSearch(false)
-    const encontrados = getAllStoredGroups()
-    setGrupos(encontrados.length > 0 ? encontrados : null)
+
+    if (!res?.ok) {
+      setSearchError(respuesta.error ?? 'No pudimos procesar el pedido. Probá de nuevo.')
+      return
+    }
+
+    if (suCarnet) {
+      localStorage.setItem('manso_email', mail)
+      setCarnet(suCarnet)
+    }
+    setAvisoMail(respuesta.mensaje ?? 'Si hay entradas con ese mail, te llegan en unos minutos.')
   }
 
   if (loading) {
@@ -495,8 +518,8 @@ export default function MiEntrada() {
             <h2 className="text-xl font-bold text-white">No hay nada guardado acá</h2>
             <p className="text-gray-400 text-sm mt-2 max-w-xs">
               Las entradas se guardan solo en el dispositivo donde las
-              registraste. Con tu email traemos las tuyas y, si sos del cowork,
-              también tu carnet.
+              registraste. Con tu email te las volvemos a mandar por mail y, si
+              sos del cowork, te mostramos tu carnet.
             </p>
           </div>
 
@@ -514,7 +537,7 @@ export default function MiEntrada() {
                 onClick={() => setShowEmailSearch(true)}
                 className="w-full bg-neutral-900/80 hover:bg-neutral-800 text-white/55 hover:text-white/80 font-semibold py-4 rounded-2xl transition-all active:scale-95 text-sm"
               >
-                Buscar por email
+                Recuperar por email
               </button>
             </div>
           ) : (
@@ -523,7 +546,7 @@ export default function MiEntrada() {
                 type="email"
                 placeholder="tu@email.com"
                 value={email}
-                onChange={e => { setEmail(e.target.value); setSearchError('') }}
+                onChange={e => { setEmail(e.target.value); setSearchError(''); setAvisoMail('') }}
                 className="w-full bg-neutral-900 border border-white/20 rounded-2xl px-4 py-4 text-white text-sm placeholder-gray-600 outline-none focus:border-white/30 transition-all"
               />
               <GlowBorder>
@@ -532,14 +555,17 @@ export default function MiEntrada() {
                   disabled={searching || !email.trim()}
                   className="relative w-full bg-neutral-900 hover:bg-neutral-800 disabled:opacity-40 text-white font-semibold py-4 rounded-2xl transition-all active:scale-95 text-sm"
                 >
-                  {searching ? 'Buscando...' : 'Buscar'}
+                  {searching ? 'Enviando...' : 'Mandármelas por mail'}
                 </button>
               </GlowBorder>
               {searchError && (
                 <p className="text-red-400 text-sm">{searchError}</p>
               )}
+              {avisoMail && (
+                <p className="text-emerald-300 text-sm">{avisoMail} Revisá también la carpeta de spam.</p>
+              )}
               <button
-                onClick={() => { setShowEmailSearch(false); setEmail(''); setSearchError('') }}
+                onClick={() => { setShowEmailSearch(false); setEmail(''); setSearchError(''); setAvisoMail('') }}
                 className="text-white/40 hover:text-white/70 text-sm transition-all"
               >
                 ← Volver
@@ -562,6 +588,14 @@ export default function MiEntrada() {
               <span className="text-gray-400 text-sm font-medium">{totalTickets} entradas</span>
             )}
           </div>
+
+          {/* Si el mail era de alguien del cowork, la pantalla salta al
+              carnet: el aviso del reenvío tiene que seguir a la vista. */}
+          {avisoMail && (
+            <p className="bg-emerald-950/60 border border-emerald-700/40 rounded-2xl px-4 py-3 text-center text-emerald-300 text-sm">
+              {avisoMail} Revisá también la carpeta de spam.
+            </p>
+          )}
 
           {carnet && (
             <div>

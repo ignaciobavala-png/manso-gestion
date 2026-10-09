@@ -113,6 +113,23 @@ function direccionDelEvento(propia: string | null | undefined, general: string |
 }
 
 /**
+ * El botón "Ver en la app" lleva los tokens de este mail: abierto en otro
+ * celular, /mi-entrada las carga sin pedir el email. Son los mismos tokens
+ * de los QR adjuntos, así que el link no expone nada que el mail no tuviera.
+ *
+ * Van en el fragmento (#t=), no en la query: lo que sigue al # el navegador
+ * no lo manda nunca al servidor, así que los tokens no quedan en los logs de
+ * requests de Vercel cada vez que alguien abre el link.
+ */
+export function urlMisEntradas(baseUrl: string, tokens: string[]): string {
+  return `${baseUrl}/mi-entrada#t=${tokens.map(encodeURIComponent).join(',')}`
+}
+
+/** 'reenvio' es el mismo mail que 'entrada', pedido desde "Buscar por email";
+ *  va aparte sólo en el tag de Resend. */
+export type TipoMail = 'entrada' | 'recordatorio' | 'reenvio'
+
+/**
  * Manda un mail con estas entradas. Todas tienen que ser del mismo evento y
  * el mismo email (una orden, un registro, o el grupo de un recordatorio).
  */
@@ -121,7 +138,7 @@ export async function mandar(
   filas: FilaReclamada[],
   apiKey: string,
   baseUrl: string,
-  tipo: 'entrada' | 'recordatorio' = 'entrada'
+  tipo: TipoMail = 'entrada'
 ): Promise<void> {
   const { email, event_id } = filas[0]
 
@@ -145,7 +162,7 @@ export async function mandar(
     eventoInicio: evento?.start_date ?? null,
     direccion: direccionDelEvento(evento?.direccion, venue?.direccion),
     tipo,
-    urlMisEntradas: `${baseUrl}/mi-entrada`,
+    urlMisEntradas: urlMisEntradas(baseUrl, filas.map(f => f.token)),
     entradas: filas.map((f, i) => ({ name: f.name, qrSrc: `cid:qr-${i}` })),
   }
 

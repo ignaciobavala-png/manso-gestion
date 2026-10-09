@@ -141,7 +141,8 @@ Con `pack_pos`/`pack_size` la web arma "Pack x3 · 2/3" sin otra consulta.
 ### `web_confirmar(p_order_ref text)`
 
 Marca la orden como pagada. Desde ese momento los QR valen en la puerta y
-aparecen en "Mis entradas" de Gestión (búsqueda por email).
+se pueden recuperar desde "Mis entradas" de Gestión: el pedido por email se
+las reenvía al mail (041), con el mismo QR.
 
 Devuelve `jsonb`:
 
@@ -213,12 +214,16 @@ Gestión, la web nunca se enteraría y no mandaría el mail.
 
 ## Pendientes conocidos
 
-- **`get_my_tickets(p_email)` es público y devuelve los QR de cualquier email.**
-  Lo usa "Mis entradas" para recuperar entradas por email; cualquiera que
-  escriba el email de otra persona se lleva sus QR (y con la 039 eso incluye
-  las entradas pagadas de la web). Se arregla mandando un link al mail en vez
-  de mostrar los QR en pantalla (ver la skill `identidad-sin-cuentas-token-y-mail`
-  en brain-data). Anotado el 09/10/2026; no se arregló en la 039.
+- ~~`get_my_tickets(p_email)` es público y devuelve los QR de cualquier email.~~
+  Resuelto en la 041/042: "Mis entradas" ya no muestra QR por email; los
+  reenvía al mail (`api/reenviar-entradas.ts`) y el dispositivo pregunta por
+  sus tokens (`get_tickets_por_token`). Los mails traen "Ver en la app" con
+  `/mi-entrada#t=<tokens>`: en el fragmento y no en la query, para que los
+  tokens nunca lleguen al servidor ni a los logs de Vercel. La 042 le saca el
+  EXECUTE público.
+- **El carnet del cowork por email** (`cowork_carnet_por_email`) todavía
+  devuelve el token de la credencial a quien escriba el mail. Mismo problema,
+  pendiente de decidir (ver docs/COWORK.md).
 - **INSERT público por anon en `ticket_registrations`:** lo cierra la
   migración 040, que se aplica después de deployar el código que inserta con
   service role (ver el encabezado de la 040).

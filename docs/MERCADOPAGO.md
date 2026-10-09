@@ -37,8 +37,8 @@ Ahora:
   de sostener el cupo mientras dura el checkout.
 - `POST /api/mp/preferencia` **no devuelve los tokens**. `GET /api/mp/estado` los
   devuelve sólo con el pago acreditado. El QR nace en `PagoRetorno.tsx`.
-- `get_my_tickets` (el "buscar por email" de `/mi-entrada`) filtra lo no pagado,
-  así que tampoco se puede recuperar el QR por ahí.
+- El reenvío por email de `/mi-entrada` (`api/reenviar-entradas.ts`, 041) manda
+  sólo lo pagado, así que tampoco se puede recuperar el QR por ahí.
 - La reserva vence a los **30 minutos** (`EXPIRA_EN_MINUTOS` en
   `api/mp/preferencia.ts`, se guarda en `ticket_registrations.mp_expires_at`).
   Vencida, deja de ocupar cupo.
@@ -65,7 +65,7 @@ traídas a memoria:
 
 Todo lo que cuenta pasa por `public.entrada_vendida()` /
 `public.entrada_reservada()`: el trigger de capacidad, `get_event_registration_count`,
-`get_my_tickets` y la vista `public.event_ticket_counts` (la fuente de los números
+`get_tickets_por_token`, el reenvío por email y la vista `public.event_ticket_counts` (la fuente de los números
 del panel). La regla copiada a mano en cada pantalla es lo que hacía que
 "Rechazar QR" descontara en una vista y no en otra.
 

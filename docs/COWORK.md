@@ -205,8 +205,11 @@ para el Cineclub: la sección se prende cuando esté lista, sin exponer nada a m
 - **La identidad es el mail, y eso es deliberado.** No hay cuentas en gestión:
   `/mi-entrada` muestra entradas y carnet a quien escriba el mail, y eso incluye
   el QR de la credencial. Es el mismo criterio que ya regía para las entradas
-  —`get_my_tickets` devuelve por mail los QR de shows, que valen plata—, así que
-  sostener un estándar más alto sólo para el cowork sería incoherente. La
+  —`get_my_tickets` devolvía por mail los QR de shows, que valen plata—, así que
+  sostener un estándar más alto sólo para el cowork sería incoherente.
+  **Ojo (09/10/2026):** esa premisa ya no rige. Desde la 041 las entradas no se
+  muestran por mail, se reenvían al mail; el carnet quedó como el único camino
+  que entrega una credencial a quien escriba un email. Pendiente de decidir. La
   excepción es `cowork_ocupar_sala_por_email` (032), que ocupa la sala pero no
   devuelve el token: esa la llama un QR pegado en una pared, donde el que
   escanea puede ser cualquiera que pase.

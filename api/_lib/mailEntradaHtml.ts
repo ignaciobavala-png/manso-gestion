@@ -19,10 +19,11 @@ export interface DatosMail {
   eventoInicio: string | null
   /** Ya resuelta (la del evento o la de Manso). null = no se muestra. */
   direccion: string | null
-  /** 'entrada' al emitirla; 'recordatorio' es el mail "Es hoy" del día del evento. */
-  tipo?: 'entrada' | 'recordatorio'
+  /** 'entrada' al emitirla (y al reenviarla); 'recordatorio' es el mail "Es
+   *  hoy" del día del evento. 'reenvio' se ve igual que 'entrada'. */
+  tipo?: 'entrada' | 'recordatorio' | 'reenvio'
   entradas: EntradaMail[]
-  /** Link a /mi-entrada del deploy. */
+  /** Link a /mi-entrada del deploy, con los tokens de este mail (#t=…). */
   urlMisEntradas: string
 }
 
@@ -133,7 +134,7 @@ export function htmlMailEntradas(d: DatosMail): string {
     </td></tr>
 
     <tr><td style="border-top:1px solid ${C.linea};padding:20px 4px 0 4px;">
-      <p style="margin:0;font-family:${FUENTE};font-size:12px;line-height:1.6;color:${C.gris};">No necesitás internet en la puerta: con mostrar este mail o una captura alcanza. Si perdés el mail, en la app podés recuperar tus entradas con este mismo email.</p>
+      <p style="margin:0;font-family:${FUENTE};font-size:12px;line-height:1.6;color:${C.gris};">No necesitás internet en la puerta: con mostrar este mail o una captura alcanza. Si perdés el mail, desde la app te lo volvemos a mandar a esta misma dirección.</p>
     </td></tr>
 
   </table>
