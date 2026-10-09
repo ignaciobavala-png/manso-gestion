@@ -12,7 +12,7 @@ const PAGES: { label: string; description: string; path: string; Icon: LucideIco
   },
   {
     label: 'Lo mío',
-    description: 'tus entradas y tu carnet',
+    description: 'mis entradas y mi carnet',
     path: '/mi-entrada',
     Icon: Smartphone,
   },
