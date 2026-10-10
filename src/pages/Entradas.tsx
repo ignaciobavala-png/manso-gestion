@@ -27,7 +27,7 @@ export default function Entradas(): React.JSX.Element {
   const [showInvitadoInput, setShowInvitadoInput] = useState(false)
   const [invitadoName, setInvitadoName] = useState('')
   const [submittingInvitado, setSubmittingInvitado] = useState(false)
-  const [mansoTicketPending, setMansoTicketPending] = useState<{ ticketId: string; token: string; name: string; paymentVerified: boolean; paymentProvider: string | null; eventoPago: boolean; isWildcard: boolean; tipo: string | null } | null>(null)
+  const [mansoTicketPending, setMansoTicketPending] = useState<{ ticketId: string; token: string; name: string; paymentVerified: boolean; paymentProvider: string | null; eventoPago: boolean; isWildcard: boolean; tipo: string | null; evento: string | null } | null>(null)
   const [validating, setValidating] = useState(false)
   const [alertModal, setAlertModal] = useState({
     isOpen: false,
@@ -114,9 +114,26 @@ export default function Entradas(): React.JSX.Element {
   // así que el evento en operación puede no ser el que vendió esa entrada.
   // Con activeEvent, una entrada impaga de un evento pago escaneada durante un
   // evento gratuito no mostraba ningún aviso.
-  const eventoDelTicketEsPago = (row: { events?: { is_paid?: boolean } | { is_paid?: boolean }[] | null }) => {
-    const ev = Array.isArray(row.events) ? row.events[0] : row.events
-    return ev?.is_paid === true
+  type EventoTicket = { is_paid?: boolean; name?: string; start_date?: string | null; end_date?: string | null }
+  const eventoDelTicket = (row: { events?: EventoTicket | EventoTicket[] | null }) =>
+    (Array.isArray(row.events) ? row.events[0] : row.events) ?? null
+  const eventoDelTicketEsPago = (row: { events?: EventoTicket | EventoTicket[] | null }) =>
+    eventoDelTicket(row)?.is_paid === true
+
+  // Como no se compara contra activeEvent (ver nota en handleValidateMansoTicket),
+  // lo que sí se exige es que el evento del ticket sea de esta noche: si no,
+  // una entrada de la semana que viene entra hoy y queda quemada para su fecha.
+  // La ventana cubre puerta temprana y el cierre de madrugada; dos eventos
+  // simultáneos caen los dos adentro.
+  const HORAS_ANTES_DEL_INICIO = 6
+  const HORAS_DESPUES_DEL_FIN = 14
+  const esDeEstaNoche = (ev: EventoTicket | null) => {
+    if (!ev?.start_date) return true
+    const inicio = new Date(ev.start_date).getTime()
+    const fin = new Date(ev.end_date ?? ev.start_date).getTime()
+    const ahora = Date.now()
+    return ahora >= inicio - HORAS_ANTES_DEL_INICIO * 3_600_000 &&
+      ahora <= fin + HORAS_DESPUES_DEL_FIN * 3_600_000
   }
 
   const handleValidateMansoTicket = async (rawData: string) => {
@@ -129,7 +146,7 @@ export default function Entradas(): React.JSX.Element {
 
     const { data, error } = await supabase
       .from('ticket_registrations')
-      .select('id, name, event_id, used_at, payment_verified, is_banned, payment_provider, mp_expires_at, ticket_type_nombre, pack_pos, pack_size, events(is_paid)')
+      .select('id, name, event_id, used_at, payment_verified, is_banned, payment_provider, mp_expires_at, ticket_type_nombre, pack_pos, pack_size, events(is_paid, name, start_date, end_date)')
       .eq('token', token)
       .single()
 
@@ -189,12 +206,24 @@ export default function Entradas(): React.JSX.Element {
         return
       }
 
-      setMansoTicketPending({ ticketId: data.id, token, name: data.name, paymentVerified: data.payment_verified, paymentProvider: data.payment_provider, eventoPago: eventoDelTicketEsPago(data), isWildcard: true, tipo })
+      setMansoTicketPending({ ticketId: data.id, token, name: data.name, paymentVerified: data.payment_verified, paymentProvider: data.payment_provider, eventoPago: eventoDelTicketEsPago(data), isWildcard: true, tipo, evento: null })
       return
     }
 
     // Ticket normal (del evento activo o de cualquier otro evento no-comodín)
     setValidating(false)
+    const evento = eventoDelTicket(data)
+    if (!isWildcardSource && !esDeEstaNoche(evento)) {
+      const fecha = evento?.start_date
+        ? new Date(evento.start_date).toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'numeric' })
+        : ''
+      setAlertModal({
+        isOpen: true,
+        message: `Esta entrada es para «${evento?.name ?? 'otro evento'}»${fecha ? ` (${fecha})` : ''}, no para esta noche. No puede ingresar.`,
+        type: 'error'
+      })
+      return
+    }
     if (data.used_at) {
       setAlertModal({
         isOpen: true,
@@ -204,7 +233,7 @@ export default function Entradas(): React.JSX.Element {
       return
     }
 
-    setMansoTicketPending({ ticketId: data.id, token, name: data.name, paymentVerified: data.payment_verified, paymentProvider: data.payment_provider, eventoPago: eventoDelTicketEsPago(data), isWildcard: false, tipo })
+    setMansoTicketPending({ ticketId: data.id, token, name: data.name, paymentVerified: data.payment_verified, paymentProvider: data.payment_provider, eventoPago: eventoDelTicketEsPago(data), isWildcard: false, tipo, evento: evento?.name ?? null })
   }
 
   const handleConfirmMansoTicket = async () => {
@@ -434,6 +463,9 @@ export default function Entradas(): React.JSX.Element {
                 <div className="bg-terra-900/20 border border-terra-700 rounded-2xl p-4 text-center">
                   <p className="text-sm text-terra-500 mb-1 uppercase tracking-wider">Entrada Digital</p>
                   <p className="text-white font-semibold text-lg">{mansoTicketPending.name}</p>
+                  {mansoTicketPending.evento && (
+                    <p className="text-white/80 text-sm mt-0.5">{mansoTicketPending.evento}</p>
+                  )}
                   {mansoTicketPending.tipo && (
                     <p className="text-white/80 text-sm mt-0.5">{mansoTicketPending.tipo}</p>
                   )}
