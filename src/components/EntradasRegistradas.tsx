@@ -84,6 +84,8 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
   const [toast, setToast] = useState({ isOpen: false, message: '', type: 'info' as 'info' | 'success' | 'warning', name: '' })
   const [search, setSearch] = useState('')
   const [sortAlpha, setSortAlpha] = useState(false)
+  // Tocar "Ingresaron" o "Pendientes" filtra la lista a esas entradas (pedido de Ana).
+  const [filtro, setFiltro] = useState<'ingresaron' | 'pendientes' | null>(null)
 
   const loadRegistrations = useCallback(async () => {
     if (!evento) return
@@ -309,12 +311,21 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
   }, [])
 
   const q = search.toLowerCase().trim()
+  // Mismo criterio que los contadores: si no, el chip dice 3 y la lista muestra otra cosa.
+  const base = filtro === 'ingresaron'
+    ? rows.filter(r => esVendida(r) && r.used_at)
+    : filtro === 'pendientes'
+      ? rows.filter(r => esVendida(r) && !r.used_at)
+      : rows
   const displayRows = (q
-    ? rows.filter(r => r.name.toLowerCase().includes(q) || r.email.toLowerCase().includes(q) || r.instagram?.toLowerCase().includes(q) || r.phone?.includes(q))
-    : [...rows]
+    ? base.filter(r => r.name.toLowerCase().includes(q) || r.email.toLowerCase().includes(q) || r.instagram?.toLowerCase().includes(q) || r.phone?.includes(q))
+    : [...base]
   ).sort((a, b) => sortAlpha
     ? a.name.localeCompare(b.name, 'es')
-    : 0
+    // Los que ingresaron, del último en entrar al primero.
+    : filtro === 'ingresaron'
+      ? (b.used_at ?? '').localeCompare(a.used_at ?? '')
+      : 0
   )
 
   // Todos los totales se calculan sobre las entradas que cuentan como vendidas
@@ -417,14 +428,26 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
                   <span className="text-gray-400 text-xs">Vendidas: </span>
                   <span className="text-white text-xs font-semibold">{vendidas.length}</span>
                 </div>
-                <div className="bg-neutral-900 border border-white/20 rounded-xl px-3 py-1.5">
+                <button
+                  onClick={() => setFiltro(f => f === 'ingresaron' ? null : 'ingresaron')}
+                  aria-pressed={filtro === 'ingresaron'}
+                  className={`border rounded-xl px-3 py-1.5 transition-colors ${
+                    filtro === 'ingresaron' ? 'bg-olive-900/40 border-olive-400/60' : 'bg-neutral-900 border-white/20 hover:border-white/40'
+                  }`}
+                >
                   <span className="text-gray-400 text-xs">Ingresaron: </span>
                   <span className="text-olive-300 text-xs font-semibold">{ingresados}</span>
-                </div>
-                <div className="bg-neutral-900 border border-white/20 rounded-xl px-3 py-1.5">
+                </button>
+                <button
+                  onClick={() => setFiltro(f => f === 'pendientes' ? null : 'pendientes')}
+                  aria-pressed={filtro === 'pendientes'}
+                  className={`border rounded-xl px-3 py-1.5 transition-colors ${
+                    filtro === 'pendientes' ? 'bg-amber-900/30 border-amber-400/60' : 'bg-neutral-900 border-white/20 hover:border-white/40'
+                  }`}
+                >
                   <span className="text-gray-400 text-xs">Pendientes: </span>
                   <span className="text-amber-400 text-xs font-semibold">{pendientes}</span>
-                </div>
+                </button>
                 {porVerificar > 0 && (
                   <div className="bg-neutral-900 border border-orange-500/40 rounded-xl px-3 py-1.5">
                     <span className="text-gray-400 text-xs">Por verificar: </span>
@@ -469,7 +492,9 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
 
               <div className="space-y-2 max-h-96 overflow-y-auto">
                 {displayRows.length === 0 && (
-                  <p className="text-center text-gray-400 py-8 text-sm">Sin resultados para "{search}"</p>
+                  <p className="text-center text-gray-400 py-8 text-sm">
+                    {q ? `Sin resultados para "${search}"` : filtro === 'ingresaron' ? 'Todavía no ingresó nadie.' : 'No quedan pendientes.'}
+                  </p>
                 )}
                 {displayRows.map(r => {
                   const isPending = !r.used_at && !r.payment_verified
