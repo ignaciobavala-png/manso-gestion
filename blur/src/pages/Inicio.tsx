@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom'
 import { ConFestival } from '../components/Estado'
 import { Rotulo } from '../components/Mock'
 import { fechaCorta } from '../lib/festival'
-import { SECCIONES } from '../components/Shell'
 
 export default function Inicio() {
   return (
@@ -45,19 +44,6 @@ export default function Inicio() {
                 </p>
               </section>
             )}
-
-            <section className="mt-10 grid grid-cols-2 gap-px bg-linea">
-              {SECCIONES.slice(1).map((s) => (
-                <Link
-                  key={s.to}
-                  to={s.to}
-                  className="bg-fondo p-4 transition-colors hover:bg-superficie hover:text-acento"
-                >
-                  <span className="font-mono text-[10px] tracking-[0.2em] text-apagado">{s.n}</span>
-                  <span className="titulo mt-6 block text-2xl">{s.nombre}</span>
-                </Link>
-              ))}
-            </section>
           </>
         )
       }}

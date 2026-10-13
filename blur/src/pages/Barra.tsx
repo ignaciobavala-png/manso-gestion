@@ -68,7 +68,7 @@ export default function Barra() {
       ))}
 
       {total > 0 && (
-        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-texto bg-fondo p-4">
+        <div className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))] z-30 border-t border-texto bg-fondo p-4">
           <div className="mx-auto flex max-w-3xl items-center justify-between gap-4">
             <div>
               <Rotulo>Carrito</Rotulo>
