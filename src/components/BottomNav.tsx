@@ -1,4 +1,4 @@
-import { LayoutDashboard, Globe, Laptop, Users, TrendingUp, Clapperboard, Beer, Ticket, LogOut, type LucideIcon } from 'lucide-react'
+import { LayoutDashboard, Globe, Laptop, Users, TrendingUp, Clapperboard, Beer, Ticket, Camera, LogOut, type LucideIcon } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useSecciones, enPanel } from '../hooks/useSeccionPublica'
@@ -20,6 +20,9 @@ export default function BottomNav() {
       : []),
     ...(enPanel(secciones.cowork) && (role === 'control' || role === 'owner')
       ? [{ path: '/admin/cowork', label: 'Cowork', Icon: Laptop }]
+      : []),
+    ...(role === 'control' || role === 'owner'
+      ? [{ path: '/admin/fotos', label: 'Fotos', Icon: Camera }]
       : []),
     ...(role === 'owner'
       ? [

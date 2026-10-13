@@ -21,6 +21,7 @@ import CarnetCowork from './pages/public/Carnet'
 import Sala from './pages/public/Sala'
 import Llegada from './pages/public/Llegada'
 import Cartel from './pages/admin/Cartel'
+import FotosBlur from './pages/admin/FotosBlur'
 import CoworkAdmin from './pages/admin/Cowork'
 import { importarConRecarga } from './lib/importarConRecarga'
 
@@ -112,6 +113,14 @@ function App() {
               element={
                 <ProtectedRoute requiredRole="control">
                   <Cartel />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="fotos"
+              element={
+                <ProtectedRoute requiredRole="control">
+                  <FotosBlur />
                 </ProtectedRoute>
               }
             />

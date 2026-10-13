@@ -1,0 +1,77 @@
+@import 'tailwindcss';
+
+/* BLUR — paleta y tipografía de /blur en manso-club (festival_config):
+   fondo marrón tostado, texto crema, acento naranja, resalte oliva.
+   Criterio de manso-design: esquinas filosas, un solo acento por pantalla,
+   mono para datos, grano encima de todo. */
+@theme {
+  --font-sans: 'Archivo', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-mono: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --color-fondo: #1c1410;
+  --color-superficie: #261b15;
+  --color-linea: #3d2d24;
+  --color-texto: #fffcdc;
+  --color-apagado: #a7a38d;
+  --color-acento: #e2532b;
+  --color-resalte: #b9b23e;
+
+  --ease-hard: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+html {
+  background: var(--color-fondo);
+  color: var(--color-texto);
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  margin: 0;
+  min-height: 100svh;
+  background: var(--color-fondo);
+}
+
+/* Grano: siempre presente, no intercepta toques. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.07;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+*:focus-visible {
+  outline: 1px solid var(--color-acento);
+  outline-offset: 2px;
+}
+
+.rotulo {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--color-apagado);
+}
+
+.titulo {
+  font-weight: 900;
+  font-stretch: 125%;
+  letter-spacing: -0.04em;
+  line-height: 0.88;
+  text-transform: uppercase;
+}
+
+@keyframes entra {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.entra { animation: entra 700ms var(--ease-hard) both; }
+
+@keyframes pulso {
+  50% { opacity: 0.35; }
+}
+.pulso { animation: pulso 1.6s ease-in-out infinite; }
