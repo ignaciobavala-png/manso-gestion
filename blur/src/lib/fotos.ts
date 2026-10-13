@@ -6,10 +6,11 @@
  *
  * Anon no tiene SELECT: no se pide `return=representation` ni se usa upsert.
  *
+ * Dentro del proyecto de Gestión en Vercel se reusan VITE_SUPABASE_URL / _ANON_KEY.
  * Sin `VITE_ANALOGICA_SUBIR=1` no sale nada de la red (modo maqueta).
  */
-const URL_BASE = import.meta.env.VITE_GESTION_URL as string | undefined
-const KEY = import.meta.env.VITE_GESTION_ANON_KEY as string | undefined
+const URL_BASE = (import.meta.env.VITE_GESTION_URL ?? import.meta.env.VITE_SUPABASE_URL) as string | undefined
+const KEY = (import.meta.env.VITE_GESTION_ANON_KEY ?? import.meta.env.VITE_SUPABASE_ANON_KEY) as string | undefined
 
 export const SUBIDA_REAL = import.meta.env.VITE_ANALOGICA_SUBIR === '1' && !!URL_BASE && !!KEY
 

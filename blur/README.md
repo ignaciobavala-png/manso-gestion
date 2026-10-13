@@ -1,12 +1,17 @@
 # BLUR — web app del festival
 
-App independiente (futuro `blur.mansoclub.com.ar`) que vive en `blur/` dentro del
-repo de Manso Gestión. Tiene su propio `package.json`, su propio build y su propio
-`vercel.json`: en Vercel se despliega como un proyecto aparte con **Root Directory = `blur`**.
+App independiente en `blur/` dentro del repo de Manso Gestión: su propio `package.json`
+y su propio build, pero **se publica dentro del proyecto de Vercel de Gestión** bajo `/blur/`
+(el build raíz corre `pnpm run build:blur` y copia el resultado a `dist/blur`; `vercel.json`
+reescribe `/blur/*` a su `index.html`). Cuando tenga dominio propio (`blur.mansoclub.com.ar`)
+se agrega al mismo proyecto y se redirige su raíz a `/blur/`.
 
 ```
-cd blur && pnpm install && pnpm dev   # http://localhost:5174
+cd blur && pnpm install && pnpm dev   # http://localhost:5174/blur/
 ```
+
+Variables en Vercel (proyecto de Gestión): `VITE_MANSOCLUB_URL`, `VITE_MANSOCLUB_ANON_KEY`,
+`VITE_ANALOGICA_SUBIR=1`. La URL y la clave de Gestión se reusan de `VITE_SUPABASE_*`.
 
 ## Estado
 Line up, escenarios y home leen manso-club (solo lectura). Barra, Mapa y Transporte
