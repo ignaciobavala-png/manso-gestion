@@ -26,6 +26,7 @@ import { importarConRecarga } from './lib/importarConRecarga'
 
 // Stats arrastra recharts (~300 KB con d3) y solo la abre el owner: va en
 // su propio chunk para que no lo baje el que entra a buscar su QR.
+const Contabilidad = lazy(() => importarConRecarga(() => import('./pages/admin/Contabilidad')))
 const Stats = lazy(() => importarConRecarga(() => import('./pages/admin/Stats')))
 
 function App() {
@@ -87,6 +88,16 @@ function App() {
                 <ProtectedRoute requiredRole="owner">
                   <Suspense fallback={<p className="text-gray-400 text-sm text-center py-10">Cargando…</p>}>
                     <Stats />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="contabilidad"
+              element={
+                <ProtectedRoute requiredRole="owner">
+                  <Suspense fallback={<p className="text-gray-400 text-sm text-center py-10">Cargando…</p>}>
+                    <Contabilidad />
                   </Suspense>
                 </ProtectedRoute>
               }

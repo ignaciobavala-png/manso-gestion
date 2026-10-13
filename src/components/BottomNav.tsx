@@ -1,4 +1,4 @@
-import { LayoutDashboard, Globe, Laptop, Users, TrendingUp, Clapperboard, Beer, Ticket, LogOut, type LucideIcon } from 'lucide-react'
+import { LayoutDashboard, Globe, Laptop, Users, TrendingUp, Calculator, Clapperboard, Beer, Ticket, LogOut, type LucideIcon } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useSecciones, enPanel } from '../hooks/useSeccionPublica'
@@ -25,6 +25,7 @@ export default function BottomNav() {
       ? [
           { path: '/admin/comunidad', label: 'Comunidad', Icon: Users },
           { path: '/admin/stats', label: 'Stats', Icon: TrendingUp },
+          { path: '/admin/contabilidad', label: 'Contab.', Icon: Calculator },
         ]
       : []),
     ...(enPanel(secciones.cineclub) && role === 'owner'
