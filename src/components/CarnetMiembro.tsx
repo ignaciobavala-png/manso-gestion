@@ -132,7 +132,7 @@ export default function CarnetMiembro({ carnet, token }: { carnet: Carnet; token
       >
       <div
         ref={tarjetaRef}
-        className="relative border border-white/20 bg-gradient-to-br from-manso-black to-manso-carbon overflow-hidden transition-transform duration-150 ease-out motion-reduce:transition-none"
+        className="relative rounded-2xl border border-white/20 bg-gradient-to-br from-manso-black to-manso-carbon overflow-hidden transition-transform duration-150 ease-out motion-reduce:transition-none"
         style={{ transformStyle: 'preserve-3d' }}
       >
         <div className="carnet-reflejo" aria-hidden />
