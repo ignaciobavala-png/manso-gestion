@@ -7,6 +7,8 @@ interface Evento {
   id: string
   name: string
   start_date: string | null
+  /** false = evento gratuito: sus entradas no se cobraron por ningún medio. */
+  is_paid: boolean
 }
 
 interface Fila {
@@ -24,6 +26,7 @@ interface Resumen {
   mp: number
   transferencia: number
   web: number
+  gratis: number
   mpNeto: number
   mpComision: number
 }
@@ -49,16 +52,22 @@ async function traerTodas(): Promise<Fila[]> {
   return todas
 }
 
-const vacio = (): Resumen => ({ total: 0, mp: 0, transferencia: 0, web: 0, mpNeto: 0, mpComision: 0 })
+const vacio = (): Resumen => ({ total: 0, mp: 0, transferencia: 0, web: 0, gratis: 0, mpNeto: 0, mpComision: 0 })
 
-function resumir(filas: Fila[]): Resumen {
+function resumir(filas: Fila[], gratuito: boolean): Resumen {
   const r = vacio()
   for (const f of filas) {
     // Misma regla de "vendida" que el resto del panel (lib/entradas.ts):
     // MP y web sólo cuentan con el pago acreditado, rechazadas no cuentan.
     if (!esVendida(f)) continue
     r.total++
-    if (f.payment_provider === 'mercadopago') {
+    // Un evento gratuito guarda sus entradas como 'transferencia' (o sin
+    // medio, las históricas) porque no tiene medio de pago que elegir: mirar
+    // el medio las contaba como transferencias que nadie hizo. Lo que manda
+    // es si el evento era gratis.
+    if (gratuito) {
+      r.gratis++
+    } else if (f.payment_provider === 'mercadopago') {
       r.mp++
       r.mpNeto += f.mp_net_amount ?? 0
       r.mpComision += f.mp_fee_amount ?? 0
@@ -110,6 +119,7 @@ function sumar(a: Resumen, b: Resumen): Resumen {
     mp: a.mp + b.mp,
     transferencia: a.transferencia + b.transferencia,
     web: a.web + b.web,
+    gratis: a.gratis + b.gratis,
     mpNeto: a.mpNeto + b.mpNeto,
     mpComision: a.mpComision + b.mpComision,
   }
@@ -127,7 +137,7 @@ export default function Contabilidad() {
 
   useEffect(() => {
     Promise.all([
-      supabase.from('events').select('id, name, start_date').order('start_date', { ascending: false }),
+      supabase.from('events').select('id, name, start_date, is_paid').order('start_date', { ascending: false }),
       traerTodas(),
     ])
       .then(([ev, regs]) => {
@@ -147,8 +157,15 @@ export default function Contabilidad() {
       else grupos.set(f.event_id, [f])
     }
     const porMes = new Map<string, Mes>()
+    let totales = vacio()
+    const conocidos = new Set(eventos.map(e => e.id))
+    for (const [id, g] of grupos) {
+      // Filas de un evento que no está en la lista: se cuentan como pagas.
+      if (!conocidos.has(id)) totales = sumar(totales, resumir(g, false))
+    }
     for (const e of eventos) {
-      const r = resumir(grupos.get(e.id) ?? [])
+      const r = resumir(grupos.get(e.id) ?? [], e.is_paid === false)
+      totales = sumar(totales, r)
       if (r.total === 0) continue
       const clave = claveMes(e.start_date)
       const mes = porMes.get(clave) ?? { clave, titulo: tituloMes(clave), r: vacio(), eventos: [] }
@@ -163,7 +180,7 @@ export default function Contabilidad() {
       if (b.clave === 'sin-fecha') return -1
       return b.clave.localeCompare(a.clave)
     })
-    return { meses, totales: resumir(filas) }
+    return { meses, totales }
   }, [eventos, filas])
 
   if (loading) return <p className="text-gray-400 text-sm text-center py-10">Cargando…</p>
@@ -177,14 +194,15 @@ export default function Contabilidad() {
       <header>
         <h1 className="text-xl sm:text-2xl font-semibold text-white">Contabilidad</h1>
         <p className="text-sm text-gray-400 mt-1">
-          Entradas vendidas por evento, según cómo pagaron. Mercado Pago cuenta sólo con el pago acreditado.
+          Entradas por evento, según cómo pagaron. Los eventos gratuitos van aparte. Mercado Pago cuenta sólo con el pago acreditado.
         </p>
       </header>
 
-      <section className="grid grid-cols-3 gap-2 sm:gap-3">
+      <section className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
         <Tarjeta titulo="Total" valor={totales.total} />
         <Tarjeta titulo="Mercado Pago" valor={totales.mp} />
         <Tarjeta titulo="Transferencia" valor={totales.transferencia} />
+        <Tarjeta titulo="Gratis" valor={totales.gratis} />
       </section>
 
       {meses.length === 0 && (
@@ -207,6 +225,7 @@ export default function Contabilidad() {
                   <p className="text-xs text-gray-300 mt-0.5">
                     MP {mes.r.mp} · Transf. {mes.r.transferencia}
                     {mes.r.web > 0 && ` · Web ${mes.r.web}`}
+                    {mes.r.gratis > 0 && ` · Gratis ${mes.r.gratis}`}
                   </p>
                 </div>
                 <p className="text-white text-xl font-semibold tabular-nums shrink-0">{mes.r.total}</p>
@@ -247,6 +266,7 @@ export default function Contabilidad() {
                               <Dato etiqueta="Mercado Pago" valor={String(r.mp)} />
                               <Dato etiqueta="Transferencia" valor={String(r.transferencia)} />
                               {r.web > 0 && <Dato etiqueta="Web" valor={String(r.web)} />}
+                              {r.gratis > 0 && <Dato etiqueta="Gratis" valor={String(r.gratis)} />}
                             </dl>
                             {r.mp > 0 && (
                               <p className="mt-3 text-xs text-gray-400 break-words">
