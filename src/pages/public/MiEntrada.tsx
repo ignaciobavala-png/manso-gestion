@@ -5,6 +5,7 @@ import QRCode from 'qrcode'
 import { supabase } from '../../lib/supabase'
 import PublicLayout from '../../components/PublicLayout'
 import CarnetMiembro, { type Carnet } from '../../components/CarnetMiembro'
+import InstalarApp from '../../components/InstalarApp'
 import { guardarCredencial } from '../../lib/credencialCowork'
 import { fechaEntrada, infoEventos, urlMaps, descargarCalendario, guardarTickets, type InfoEvento, LS_END, LS_TICKETS } from '../../lib/entradasStorage'
 
@@ -646,6 +647,8 @@ export default function MiEntrada() {
               </p>
             </div>
           )}
+
+          {totalTickets > 0 && <InstalarApp />}
 
           {totalTickets === 0 && (
             <button
