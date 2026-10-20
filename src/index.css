@@ -188,3 +188,43 @@ body {
   scrollbar-width: none;
   &::-webkit-scrollbar { display: none; }
 }
+
+/* ---------- CARNET CON REFLEJO ----------
+   Dos capas cónicas: la de afuera la gira el puntero (--ang), la de adentro
+   gira sola y despacio para que el carnet no esté muerto cuando nadie lo toca.
+   `mix-blend-mode: screen` sobre el fondo oscuro: suma luz, no tapa. */
+.carnet-reflejo {
+  position: absolute;
+  inset: -50%;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  opacity: 0.55;
+  transform: rotate(var(--ang, 0deg));
+  transition: transform 0.15s ease-out;
+}
+
+.carnet-reflejo::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: conic-gradient(
+    from 0deg at 50% 50%,
+    transparent,
+    rgba(188, 41, 21, 0.45),
+    transparent 30%,
+    rgba(134, 130, 41, 0.4),
+    transparent 60%,
+    rgba(255, 252, 220, 0.2),
+    transparent
+  );
+  animation: carnet-giro 24s linear infinite;
+}
+
+@keyframes carnet-giro {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .carnet-reflejo::before { animation: none; }
+  .carnet-reflejo { transition: none; }
+}

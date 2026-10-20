@@ -1,3 +1,4 @@
+import Cargando from '../components/Cargando'
 import { Check, Users, User } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import QrScanner, { OPCIONES_ESCANER } from '../lib/escanerQr'
@@ -53,7 +54,7 @@ export default function Entradas(): React.JSX.Element {
       <Background>
         <div className="max-w-4xl mx-auto px-4 py-8">
           <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-terra-500"></div>
+            <Cargando />
           </div>
         </div>
       </Background>
@@ -442,7 +443,7 @@ export default function Entradas(): React.JSX.Element {
             {/* Estado: validando ticket */}
             {validating && (
               <div className="flex flex-col items-center justify-center py-8 gap-3">
-                <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-terra-500" />
+                <Cargando />
                 <p className="text-gray-400 text-sm">Validando ticket...</p>
               </div>
             )}

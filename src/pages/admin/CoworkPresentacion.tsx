@@ -1,3 +1,4 @@
+import Cargando from '../../components/Cargando'
 import { ChevronUp, ChevronDown, X, Check } from 'lucide-react'
 import Icono from '../../components/Icono'
 import { useEffect, useRef, useState } from 'react'
@@ -130,7 +131,7 @@ export default function CoworkPresentacion() {
   if (!cargado) {
     return (
       <div className="flex justify-center py-16">
-        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-terra-400" />
+        <Cargando />
       </div>
     )
   }

@@ -1,3 +1,4 @@
+import Cargando from '../../components/Cargando'
 import { ArrowLeft, Check, CircleAlert } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -152,7 +153,7 @@ export default function Carta() {
     return (
       <PublicLayout>
         <div className="flex-1 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-terra-400" />
+          <Cargando />
         </div>
       </PublicLayout>
     )

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type PointerEvent } from 'react'
 import { DoorOpen, QrCode } from 'lucide-react'
 import QRCode from 'qrcode'
 import { qrDeCredencial } from '../lib/credencialCowork'
@@ -61,7 +61,46 @@ function Dato({ etiqueta, children }: { etiqueta: string; children: React.ReactN
 
 export default function CarnetMiembro({ carnet, token }: { carnet: Carnet; token: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const tarjetaRef = useRef<HTMLDivElement>(null)
   const [verQr, setVerQr] = useState(false)
+
+  // El reflejo y la inclinación siguen al puntero (mouse o dedo). Se escribe
+  // directo en el estilo y no en el estado: cambia en cada movimiento y un
+  // re-render por pixel sería tirar el carnet entero al piso.
+  const inclinar = (x: number, y: number) => {
+    const t = tarjetaRef.current
+    if (!t) return
+    t.style.transform = `rotateY(${x * 14}deg) rotateX(${-y * 14}deg)`
+    t.style.setProperty('--ang', `${x * 360 + 180}deg`)
+  }
+
+  const alMover = (e: PointerEvent<HTMLDivElement>) => {
+    const r = e.currentTarget.getBoundingClientRect()
+    inclinar((e.clientX - r.left) / r.width - 0.5, (e.clientY - r.top) / r.height - 0.5)
+  }
+
+  const alSoltar = () => {
+    const t = tarjetaRef.current
+    if (!t) return
+    t.style.transform = ''
+    t.style.setProperty('--ang', '0deg')
+  }
+
+  // En Android el giroscopio mueve el reflejo sin tocar nada. En iOS pide un
+  // permiso con prompt: no lo pedimos por un adorno, ahí queda el puntero.
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const D = window.DeviceOrientationEvent as unknown as { requestPermission?: unknown } | undefined
+    if (!D || typeof D.requestPermission === 'function') return
+    const alOrientar = (e: DeviceOrientationEvent) => {
+      if (e.gamma === null || e.beta === null) return
+      const x = Math.max(-1, Math.min(1, e.gamma / 45)) / 2
+      const y = Math.max(-1, Math.min(1, (e.beta - 45) / 45)) / 2
+      inclinar(x, y)
+    }
+    window.addEventListener('deviceorientation', alOrientar)
+    return () => window.removeEventListener('deviceorientation', alOrientar)
+  }, [])
 
   useEffect(() => {
     if (!verQr || !canvasRef.current) return
@@ -85,8 +124,30 @@ export default function CarnetMiembro({ carnet, token }: { carnet: Carnet; token
 
   return (
     <div>
-      <div className="rounded-2xl border border-white/20 bg-neutral-900 overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-3 border-b border-white/10">
+      <div
+        style={{ perspective: 900 }}
+        onPointerMove={alMover}
+        onPointerLeave={alSoltar}
+        onPointerCancel={alSoltar}
+      >
+      <div
+        ref={tarjetaRef}
+        className="relative border border-white/20 bg-gradient-to-br from-manso-black to-manso-carbon overflow-hidden transition-transform duration-150 ease-out motion-reduce:transition-none"
+        style={{ transformStyle: 'preserve-3d' }}
+      >
+        <div className="carnet-reflejo" aria-hidden />
+
+        {/* El número del socio como pieza gráfica: calado, grande, cortado
+            por el borde. Es el mismo dato que dice "Socio N" arriba. */}
+        <span
+          className="absolute -right-3 -bottom-8 text-[150px] leading-none font-black tracking-[-0.08em] text-transparent pointer-events-none select-none"
+          style={{ WebkitTextStroke: '1px rgba(255, 252, 220, 0.2)' }}
+          aria-hidden
+        >
+          {String(carnet.numero).padStart(3, '0')}
+        </span>
+
+        <div className="relative flex items-center justify-between px-5 py-3 border-b border-white/10">
           <span className="text-gray-400 text-[11px] uppercase tracking-[0.25em]">
             Manso · Cowork
           </span>
@@ -95,7 +156,7 @@ export default function CarnetMiembro({ carnet, token }: { carnet: Carnet; token
           </span>
         </div>
 
-        <div className="p-5">
+        <div className="relative p-5">
           <div className="flex items-center gap-4">
             {carnet.foto_url ? (
               <img
@@ -138,6 +199,7 @@ export default function CarnetMiembro({ carnet, token }: { carnet: Carnet; token
             <Dato etiqueta="Visitas">{carnet.visitas_totales}</Dato>
           </dl>
         </div>
+      </div>
       </div>
 
       {carnet.sala_actual && carnet.sala_hasta && (

@@ -1,3 +1,4 @@
+import Cargando from '../../components/Cargando'
 import { ArrowLeft, Clapperboard, Check, Share2 } from 'lucide-react'
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, Navigate } from 'react-router-dom'
@@ -216,7 +217,7 @@ export default function Cineclub() {
     return (
       <PublicLayout>
         <div className="flex-1 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-terra-400" />
+          <Cargando />
         </div>
       </PublicLayout>
     )

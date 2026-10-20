@@ -1,3 +1,4 @@
+import Cargando from '../../components/Cargando'
 import { CircleAlert, TriangleAlert } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
@@ -142,7 +143,7 @@ export default function PagoRetorno() {
 
           {estado === 'consultando' && (
             <>
-              <div className="mx-auto animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-terra-400" />
+              <Cargando className="mx-auto" />
               <h2 className="text-white font-bold text-xl">Confirmando tu pago</h2>
               <p className="text-gray-400 text-sm">
                 Estamos verificando con Mercado Pago. No cierres esta pantalla.

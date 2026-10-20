@@ -1,3 +1,4 @@
+import Cargando from '../../components/Cargando'
 import { CalendarDays, Music, Check, X, Users, Lock, Paperclip, Maximize2 } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams, useParams } from 'react-router-dom'
@@ -113,7 +114,7 @@ function Cartelera() {
     return (
       <PublicLayout>
         <div className="flex-1 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-terra-400" />
+          <Cargando />
         </div>
       </PublicLayout>
     )

@@ -1,3 +1,4 @@
+import Cargando from '../components/Cargando'
 import { Banknote, CreditCard, Smartphone, Beer } from 'lucide-react'
 import { useState } from 'react'
 import { useAppStore } from '../store/useAppStore'
@@ -44,7 +45,7 @@ export default function Barra() {
       <Background>
         <div className="max-w-6xl mx-auto px-4 py-8">
           <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-terra-500"></div>
+            <Cargando />
           </div>
         </div>
       </Background>
