@@ -29,7 +29,7 @@ const esc = (s: string) =>
 const fecha = (iso: string) =>
   new Date(iso).toLocaleString('es-AR', {
     timeZone: 'America/Argentina/Buenos_Aires',
-    weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit',
+    weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', hour12: false,
   })
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
