@@ -6,7 +6,18 @@
   "installCommand": "pnpm install",
   "framework": "vite",
   "rewrites": [
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    {
+      "source": "/registro",
+      "destination": "/api/og"
+    },
+    {
+      "source": "/registro/:slug",
+      "destination": "/api/og?slug=:slug"
+    },
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
+    }
   ],
   "crons": [
     {
