@@ -50,7 +50,8 @@ interface AppState {
   addEvent: (event: Omit<Event, 'id' | 'created_at' | 'updated_at' | 'closed_at' | 'private_token'>) => Promise<Event>
   setActiveEventStatus: (eventId: string, isActive: boolean) => Promise<void>
   selectOperatingEvent: (eventId: string) => Promise<void>
-  closeEvent: (eventId: string) => Promise<void>
+  closeEvent: (eventId: string, opts?: { exigirOperando?: boolean }) => Promise<void>
+  reopenEvent: (eventId: string) => Promise<void>
   deleteEvent: (eventId: string) => Promise<void>
   updateEvent: (eventId: string, updates: Partial<Omit<Event, 'id' | 'created_at' | 'updated_at' | 'private_token'>>) => Promise<void>
   updateEventFlyer: (eventId: string, flyerUrl: string) => Promise<void>
@@ -441,8 +442,21 @@ export const useAppStore = create<AppState>((set, get) => ({
   // - is_active: true = evento operando AHORA (barra abierta, control en vivo). NO usar para visibilidad.
   // - closed_at: null = evento vigente (visible en listas). Fecha = evento terminado (va al historial).
   // - registrations_open: controla si el público puede registrarse.
-  closeEvent: async (eventId) => {
+  closeEvent: async (eventId, opts) => {
     try {
+      // La pestaña puede tener datos viejos: lo que manda es lo que dice la base.
+      const { data: config } = await supabase
+        .from('venue_config')
+        .select('current_event_id')
+        .eq('id', 1)
+        .single()
+      const eraElOperando = config?.current_event_id === eventId
+
+      if (opts?.exigirOperando && !eraElOperando) {
+        await get().refreshData()
+        throw new Error('Este evento ya no es el que se está operando. Se actualizaron los datos: revisá y volvé a intentar.')
+      }
+
       // Cerrar el evento
       const { error } = await supabase
         .from('events')
@@ -451,15 +465,48 @@ export const useAppStore = create<AppState>((set, get) => ({
 
       if (error) throw error
 
-      // Limpiar el evento en operación en venue_config
-      await supabase
-        .from('venue_config')
-        .update({ current_event_id: null })
-        .eq('id', 1)
+      // Limpiar el evento en operación solo si era el que se cerró
+      if (eraElOperando) {
+        await supabase
+          .from('venue_config')
+          .update({ current_event_id: null })
+          .eq('id', 1)
+      }
 
       await get().refreshData()
     } catch (error) {
       console.error('Error closing event:', error)
+      throw error
+    }
+  },
+
+  // Deshace un cierre. Si no hay otro evento en operación pasa a operar este;
+  // si ya hay uno, no lo pisa: queda vigente y se elige con "Operar".
+  reopenEvent: async (eventId) => {
+    try {
+      const { error } = await supabase
+        .from('events')
+        .update({ closed_at: null })
+        .eq('id', eventId)
+
+      if (error) throw error
+
+      const { data: config } = await supabase
+        .from('venue_config')
+        .select('current_event_id')
+        .eq('id', 1)
+        .single()
+
+      if (!config?.current_event_id) {
+        await supabase
+          .from('venue_config')
+          .update({ current_event_id: eventId })
+          .eq('id', 1)
+      }
+
+      await get().refreshData()
+    } catch (error) {
+      console.error('Error reopening event:', error)
       throw error
     }
   },

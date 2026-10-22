@@ -32,6 +32,8 @@ export default function Home() {
   const [stockValues, setStockValues] = useState<Record<string, number>>({})
   const [showCloseConfirm, setShowCloseConfirm] = useState(false)
   const [closing, setClosing] = useState(false)
+  // El panel de confirmación no tiene que sobrevivir a un cambio de evento.
+  useEffect(() => { setShowCloseConfirm(false) }, [activeEvent?.id])
   const [alertModal, setAlertModal] = useState({
     isOpen: false,
     message: '',
@@ -70,7 +72,7 @@ export default function Home() {
     if (!activeEvent) return
     setClosing(true)
     try {
-      await closeEvent(activeEvent.id)
+      await closeEvent(activeEvent.id, { exigirOperando: true })
       setShowCloseConfirm(false)
     } catch (error) {
       setAlertModal({

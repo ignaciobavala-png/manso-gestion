@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { useAppStore } from '../store/useAppStore'
 
 export default function RegistroEventos() {
-  const { events, sales, ticketSales, deleteEvent } = useAppStore()
+  const { events, sales, ticketSales, deleteEvent, reopenEvent } = useAppStore()
   const [isExpanded, setIsExpanded] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [reopeningId, setReopeningId] = useState<string | null>(null)
+  const [reopenError, setReopenError] = useState<string | null>(null)
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('es-AR', {
@@ -33,6 +35,19 @@ export default function RegistroEventos() {
       setDeleteError(msg)
     } finally {
       setDeleting(false)
+    }
+  }
+
+  const handleReopen = async (eventId: string) => {
+    setReopeningId(eventId)
+    setReopenError(null)
+    try {
+      await reopenEvent(eventId)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : (err as { message?: string })?.message ?? 'No se pudo reabrir el evento.'
+      setReopenError(msg)
+    } finally {
+      setReopeningId(null)
     }
   }
 
@@ -93,6 +108,18 @@ export default function RegistroEventos() {
                     <p className="text-sm text-gray-400">{eventTickets.length} tickets</p>
                   </div>
                 </div>
+
+                {/* Reabrir */}
+                {reopenError && reopeningId === null && (
+                  <p className="text-sm text-red-400 text-center bg-red-900/40 rounded-lg px-2 py-1">{reopenError}</p>
+                )}
+                <button
+                  onClick={() => handleReopen(event.id)}
+                  disabled={reopeningId !== null}
+                  className="w-full py-2 text-sm bg-terra-700 hover:bg-terra-600 disabled:opacity-50 text-white font-medium rounded-xl transition-colors"
+                >
+                  {reopeningId === event.id ? 'Reabriendo...' : 'Reabrir evento'}
+                </button>
 
                 {/* Eliminar */}
                 {!isConfirming ? (
