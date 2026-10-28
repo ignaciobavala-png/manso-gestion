@@ -482,7 +482,7 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
                 )}
                 {webLiberadas > 0 && (
                   <div className="bg-neutral-900 border border-red-500/30 rounded-xl px-3 py-1.5">
-                    <span className="text-gray-400 text-xs">Web liberadas: </span>
+                    <span className="text-gray-400 text-xs">Reservas vencidas: </span>
                     <span className="text-red-400 text-xs font-semibold">{webLiberadas}</span>
                   </div>
                 )}
@@ -500,7 +500,7 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
                   const isPending = !r.used_at && !r.payment_verified
                   const estado = etiquetaEstado(r)
                   const estadoClass =
-                    estado === 'Rechazado' || estado === 'Sin pagar' || estado === 'Web: liberada'
+                    estado === 'Rechazado' || estado === 'Sin pagar' || estado === 'Reserva vencida'
                       ? 'bg-red-900/50 text-red-400'
                       : estado === 'Ingresó' || estado === 'Verificado'
                         ? 'bg-terra-900/50 text-terra-400'
@@ -593,7 +593,9 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
                           </button>
                         )}
 
-                        {!r.used_at && (
+                        {/* Una compra de la web sin pago confirmado (reserva abierta o
+                            vencida) no es una entrada: no hay QR que dar ni que rechazar. */}
+                        {!r.used_at && !(r.payment_provider === 'web' && !r.payment_verified && !r.is_banned) && (
                           r.is_banned ? (
                             <button
                               onClick={() => handleUnban(r.id)}
@@ -613,7 +615,7 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
                           )
                         )}
 
-                        {!r.used_at && !r.is_banned && (
+                        {!r.used_at && !r.is_banned && !(r.payment_provider === 'web' && !r.payment_verified) && (
                           <button
                             onClick={() => handleDownloadQr(r.token, r.name)}
                             disabled={downloadingId === r.token}

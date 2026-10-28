@@ -68,7 +68,7 @@ export function etiquetaEstado(r: EstadoEntrada & { used_at?: string | null }): 
   if (r.is_banned) return 'Rechazado'
   if (r.used_at) return 'Ingresó'
   if (esMpAbandonada(r)) return 'Sin pagar'
-  if (esWebLiberada(r)) return 'Web: liberada'
+  if (esWebLiberada(r)) return 'Reserva vencida'
   if (esReservada(r)) return r.payment_provider === 'web' ? 'Web: sin pagar' : 'Pagando...'
   if (r.payment_verified) return 'Verificado'
   return 'Pendiente'

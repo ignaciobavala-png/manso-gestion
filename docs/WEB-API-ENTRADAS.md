@@ -178,6 +178,22 @@ Devuelve `jsonb`: `{ "liberadas": 3 }`.
   `order_ref` (`orden_liberada`). Si después llega el pago, `web_confirmar`
   la confirma igual (ver pago tardío).
 
+### Edición de tipos desde el panel de la web (043)
+
+Ana edita los tipos también desde el panel de manso-club (tarjeta "Entradas").
+No hay una segunda copia: el panel llama a estas funciones, que son **sólo
+`service_role`** (la web verifica que quien edita es admin antes de llamarlas).
+
+| Función | Qué hace |
+|---|---|
+| `web_tipos_admin(p_event_id)` | Todos los tipos, también los inactivos, con `cupo` y `ocupadas` (vendidas + reservadas). |
+| `web_guardar_tipo(p_event_id, p_id, p_nombre, p_descripcion, p_precio, p_entradas_por_unidad, p_cupo, p_max_por_compra, p_estado, p_activo)` | `p_id` NULL crea el tipo (queda al final); si no, lo actualiza. Deja el precio más bajo de los activos en `events.regular_ticket_price`. Devuelve el id. |
+| `web_ordenar_tipos(p_event_id, p_ids uuid[])` | Reordena; los ids que falten quedan al final. |
+| `web_borrar_tipo(p_event_id, p_id)` | Borra un tipo. Con entradas vendidas o reservadas da `tipo_con_ventas`: se desactiva en vez de borrarlo. |
+
+Errores nuevos (mismo formato `codigo: mensaje`): `datos_invalidos`,
+`evento_inexistente`, `tipo_inexistente`, `tipo_con_ventas`.
+
 ## Flujos de la web
 
 **Mercado Pago (o cualquier pasarela con vencimiento):**
