@@ -9,7 +9,7 @@ import { Sobre } from '../components/analogica/Sobre'
 import { Tira } from '../components/analogica/Tira'
 import { FOTOS_POR_PERSONA } from '../lib/mock'
 import { FILTROS, aplicarFiltro, colorLatente, filtroPorId, marcoNegativo } from '../lib/filtros'
-import { RolloCompleto, SUBIDA_REAL, numeroRollo, subirFoto } from '../lib/fotos'
+import { ContactoInvalido, RolloCompleto, SUBIDA_REAL, dejarContacto, numeroRollo, subirFoto } from '../lib/fotos'
 import { clic, vibrar } from '../lib/sonido'
 import { useBlur } from '../lib/store'
 
@@ -355,9 +355,77 @@ function Entrega() {
       <Link to="/analogica/revelado" className="enlace mt-6">
         Ver el revelado
       </Link>
+      <ContactoRollo />
       <div className="mt-6">
         <Tira frames={tira} sacadas={Math.min(fotosSacadas, FOTOS_POR_PERSONA)} />
       </div>
     </Pagina>
+  )
+}
+
+/**
+ * Al entregar el rollo la persona puede dejar su mail para recibir sus fotos.
+ * Es opcional y se dice: sin mail, después del festival las encuentra en
+ * Revelado desde el mismo teléfono. El mail no se guarda en el teléfono (solo
+ * la marca de que ya lo dejó) y lo único que lo usa es la organización.
+ */
+function ContactoRollo() {
+  const { contactoDejado, marcarContacto } = useBlur()
+  const [mail, setMail] = useState('')
+  const [enviando, setEnviando] = useState(false)
+  const [error, setError] = useState('')
+
+  if (contactoDejado) {
+    return (
+      <p role="status" className="entra mt-10 border-t border-linea pt-6 font-mono text-[11px] uppercase tracking-[0.14em] text-apagado">
+        Anotado. Te mandamos tus fotos cuando estén reveladas.
+      </p>
+    )
+  }
+
+  const enviar = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setEnviando(true)
+    try {
+      await dejarContacto(mail)
+      marcarContacto()
+    } catch (err) {
+      setError(err instanceof ContactoInvalido ? 'Ese mail no parece válido.' : 'No pudimos guardarlo. Probá de nuevo.')
+    }
+    setEnviando(false)
+  }
+
+  return (
+    <form onSubmit={(e) => void enviar(e)} className="entra mt-10 border-t border-linea pt-6" style={{ animationDelay: '1700ms' }}>
+      <p className="rotulo">Tus fotos</p>
+      <p className="mt-4 max-w-[30ch] text-sm">¿Querés que te las mandemos cuando estén reveladas?</p>
+      <label htmlFor="mail-rollo" className="sr-only">
+        Tu mail
+      </label>
+      <input
+        id="mail-rollo"
+        type="email"
+        required
+        autoComplete="email"
+        inputMode="email"
+        value={mail}
+        onChange={(e) => setMail(e.target.value)}
+        placeholder="tu@mail.com"
+        className="mt-4 w-full border-2 border-texto bg-transparent px-3 py-3 font-mono text-sm placeholder:text-apagado"
+      />
+      <button className="btn mt-3" disabled={enviando}>
+        {enviando ? 'Guardando…' : 'Dejar mi mail'}
+      </button>
+      <p className="mt-3 max-w-[34ch] text-xs text-apagado">
+        Lo usamos solo para mandarte las fotos de tu rollo. Es opcional: si no lo dejás, después del festival las
+        encontrás en Revelado, desde este mismo teléfono.
+      </p>
+      {error && (
+        <p role="alert" className="mt-3 text-sm text-acento">
+          {error}
+        </p>
+      )}
+    </form>
   )
 }

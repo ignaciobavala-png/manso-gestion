@@ -17,7 +17,7 @@ export const SUBIDA_REAL = import.meta.env.VITE_ANALOGICA_SUBIR === '1' && !!URL
 export class RolloCompleto extends Error {}
 
 /** Id anónimo por teléfono. No identifica a nadie; solo agrupa el rollo. */
-function dispositivo(): string {
+export function idDispositivo(): string {
   try {
     let id = localStorage.getItem('blur-dispositivo')
     if (!id) {
@@ -34,10 +34,12 @@ function dispositivo(): string {
 /**
  * Número de rollo para mostrar (sobre de entrega): los primeros 6 hex del id de
  * dispositivo módulo 10000. Es decorativo y puede repetirse entre dos teléfonos;
- * el identificador real sigue siendo el id de dispositivo.
+ * el identificador real sigue siendo el id de dispositivo. La base calcula el
+ * mismo número (columna `numero` de blur_rollos, migración 046): si cambia la
+ * fórmula, cambia en los dos lados.
  */
 export function numeroRollo(): string {
-  const n = parseInt(dispositivo().replace(/-/g, '').slice(0, 6), 16) % 10000
+  const n = parseInt(idDispositivo().replace(/-/g, '').slice(0, 6), 16) % 10000
   return String(n).padStart(4, '0')
 }
 
@@ -48,7 +50,7 @@ export async function subirFoto(blob: Blob, filtro: string): Promise<void> {
   }
 
   const id = crypto.randomUUID()
-  const disp = dispositivo()
+  const disp = idDispositivo()
   const path = `${disp}/${id}.jpg`
   const auth = { apikey: KEY!, Authorization: `Bearer ${KEY}` }
 
@@ -69,4 +71,27 @@ export async function subirFoto(blob: Blob, filtro: string): Promise<void> {
     body: blob,
   })
   if (!archivo.ok) throw new Error(`No se pudo subir la foto (${archivo.status})`)
+}
+
+export class ContactoInvalido extends Error {}
+
+/**
+ * La persona deja su mail para que la organización le mande sus fotos. Va por
+ * una función de la base (046) que lo guarda y no devuelve nada: ni el token
+ * del link personal ni más datos del rollo.
+ */
+export async function dejarContacto(email: string): Promise<void> {
+  if (!SUBIDA_REAL) {
+    await new Promise((r) => setTimeout(r, 250))
+    return
+  }
+  const res = await fetch(`${URL_BASE}/rest/v1/rpc/blur_rollo_dejar_contacto`, {
+    method: 'POST',
+    headers: { apikey: KEY!, Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ p_dispositivo: idDispositivo(), p_contacto: email }),
+  })
+  if (res.ok) return
+  const texto = await res.text()
+  if (texto.includes('contacto_invalido')) throw new ContactoInvalido()
+  throw new Error(`No se pudo guardar el contacto (${res.status})`)
 }

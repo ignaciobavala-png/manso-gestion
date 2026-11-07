@@ -42,22 +42,37 @@ organización se muestran literales (sin mayúsculas forzadas).
 - Revisión: `/admin/fotos` en Gestión (roles control/owner): publicar, descargar, borrar.
 - El tope es por id de dispositivo guardado en el navegador: borrar datos del navegador da otro rollo.
 - Una subida que registra la fila pero falla el archivo igual cuenta contra las 10.
-- Revisión en 3 estados (migración `045_blur_fotos_descartada.sql`, **escrita, sin aplicar**): sin revisar /
-  para publicar (`publicada`) / revisada y no se publica (`descartada`). Sin la 045 el panel
-  `/admin/fotos` de esta rama falla al leer `descartada`: aplicar la migración antes de desplegarlo.
-- **Revelado** (`/analogica/revelado`): hoy es solo la pantalla de espera (hoja de contactos latente del
-  rollo de la persona + estado). Las fotos **no se muestran hasta después del festival**. Opcional:
-  `VITE_REVELADO_DESDE` (fecha ISO) activa la cuenta regresiva; no abre nada por sí sola.
-- Para abrir el revelado falta la lectura pública de las publicadas: el bucket es privado y `anon` no
-  tiene SELECT en `blur_fotos`. Hace falta una función `SECURITY DEFINER` que devuelva solo las
-  `publicada = true` y URLs firmadas (o copiarlas a un bucket público al publicar). Sin eso, la marca
-  `publicada` no tiene consumidor público.
+- Revisión en 3 estados (migración `045_blur_fotos_descartada.sql`, **aplicada en producción de Gestión
+  el 07/11/2026**): sin revisar / para publicar (`publicada`) / revisada y no se publica (`descartada`).
+- **Rollos y links personales** (migración `046_blur_rollos.sql`, **aplicada el 07/11/2026**): cada teléfono
+  es una cámara con un token propio (tabla `blur_rollos`, solo staff: `anon` no la lee). Link para mandarle a
+  la persona: `/blur/rollo/<token>`; ahí ve sus fotos (todas menos las descartadas) y las guarda juntas (hoja
+  de compartir del teléfono, o `.zip`). Panel: pestaña **Rollos** de `/admin/fotos` (copiar link, mail
+  armado con `mailto:`, marcar enviado). Es `mailto`, no se envía solo: el envío automático con Resend
+  (patrón de `api/reenviar-entradas.ts`) no está hecho.
+- Al entregar el rollo la app pide el mail (opcional) con `blur_rollo_dejar_contacto()`: guarda el mail y
+  no devuelve el token. El mail no se guarda en el teléfono, solo la marca de que ya lo dejó.
+- **Revelado público** (`/analogica/revelado`): cerrado hasta que el servidor lo abre. Se abre con la
+  variable de Vercel **`BLUR_REVELADO_DESDE`** (fecha ISO, ej. `2026-12-20T12:00:00-03:00`); sin definir, o
+  inválida, queda cerrado. Abierto muestra solo las `publicada`. Después de esa fecha, cada persona también
+  ve su rollo desde su teléfono (`/rollo`). Con el revelado cerrado, el link `/rollo/<token>` que manda la
+  org sí funciona: cuándo mandarlo lo decide la org.
+- Cómo se sirven las fotos: funciones de servidor con la clave de servicio, no URLs del bucket.
+  `api/blur-reveladas.ts` y `api/blur-rollo.ts` devuelven la lista; `api/blur-foto.ts?i=<id>` entrega cada
+  imagen y valida cada pedido (publicada / token / dispositivo; las descartadas no salen por ninguna
+  puerta). **No se usan URLs firmadas del bucket porque el path (`<dispositivo>/<id>.jpg`) las delata**: una
+  foto publicada habría bastado para sacar el id del dispositivo y pedir el rollo entero.
+- Solo `vercel dev` o un deploy ejecutan `api/`: con `pnpm dev` de Vite esas rutas no existen y el
+  revelado se ve cerrado (a propósito).
 
 ## Pendientes
-1. Borrar desde `/admin/fotos` la foto de prueba (9 bytes) que quedó en el bucket.
+1. Borrar desde `/admin/fotos` (filtro "No se publican", botón Borrar) las 2 fotos de prueba del 07/11/2026
+   17:20 y 17:25 (película noche): ya están descartadas, pero Supabase no deja borrar archivos por SQL.
+   La foto de prueba de 9 bytes de octubre ya no figura en la base.
 2. Cargar en manso-club los horarios, los escenarios que faltan y las charlas.
 3. Reemplazar los MOCK (Barra, Mapa) por datos reales.
-4. Mostrar las fotos `publicada` en alguna pantalla pública (galería).
+4. Definir `BLUR_REVELADO_DESDE` en Vercel cuando se quiera abrir el revelado, y decidir si los mails se
+   mandan solos (Resend) en vez de `mailto:`. Publicar fotos de asistentes pide términos claros al sacar la foto.
 5. Decidir cuándo mergear a `master` (publica `/blur/` en el dominio real de Gestión) y si se
    separa a un proyecto de Vercel propio con `blur.mansoclub.com.ar` (sumaría una regla para que
    la raíz del subdominio caiga en `/blur/`).

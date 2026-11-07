@@ -29,6 +29,9 @@ interface State {
   /** El rollo permite cambiar la película una sola vez. */
   cambioUsado: boolean
   tira: Frame[]
+  /** Ya dejó su mail al entregar el rollo (el mail en sí no se guarda en el teléfono). */
+  contactoDejado: boolean
+  marcarContacto: () => void
   cargarPelicula: (id: string) => void
   cambiarPelicula: (id: string) => void
   cargar: (monto: number) => void
@@ -49,6 +52,8 @@ export const useBlur = create<State>()(
       pelicula: null,
       cambioUsado: false,
       tira: [],
+      contactoDejado: false,
+      marcarContacto: () => set({ contactoDejado: true }),
       cargarPelicula: (id) => set({ pelicula: id }),
       cambiarPelicula: (id) => set((s) => (s.cambioUsado ? s : { pelicula: id, cambioUsado: true })),
       cargar: (monto) => set((s) => ({ saldo: s.saldo + monto })),
@@ -87,6 +92,7 @@ export const useBlur = create<State>()(
         pelicula: s.pelicula,
         cambioUsado: s.cambioUsado,
         tira: s.tira,
+        contactoDejado: s.contactoDejado,
       }),
     },
   ),
