@@ -31,6 +31,7 @@ const CarnetCowork = pagina(() => import('./pages/public/Carnet'))
 const Sala = pagina(() => import('./pages/public/Sala'))
 const Llegada = pagina(() => import('./pages/public/Llegada'))
 const Cartel = pagina(() => import('./pages/admin/Cartel'))
+const FotosBlur = pagina(() => import('./pages/admin/FotosBlur'))
 const CoworkAdmin = pagina(() => import('./pages/admin/Cowork'))
 
 // Stats arrastra recharts (~300 KB con d3) y solo la abre el owner: va en
@@ -133,6 +134,14 @@ function App() {
               element={
                 <ProtectedRoute requiredRole="control">
                   <Cartel />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="fotos"
+              element={
+                <ProtectedRoute requiredRole="control">
+                  <FotosBlur />
                 </ProtectedRoute>
               }
             />

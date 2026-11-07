@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "keep-alive": "node scripts/keep-alive-cron.js",
     "keep-alive:continuous": "node scripts/keep-alive-cron.js --continuous",
-    "keep-alive:interval": "node scripts/keep-alive-cron.js --continuous --interval=5"
+    "keep-alive:interval": "node scripts/keep-alive-cron.js --continuous --interval=5",
+    "build:blur": "pnpm --dir blur install --frozen-lockfile && pnpm --dir blur run build && rm -rf dist/blur && cp -r blur/dist dist/blur"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.103.0",

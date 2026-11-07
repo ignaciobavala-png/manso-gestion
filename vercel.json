@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "pnpm run build",
+  "buildCommand": "pnpm run build && pnpm run build:blur",
   "outputDirectory": "dist",
   "devCommand": "pnpm run dev",
   "installCommand": "pnpm install",
@@ -13,6 +13,10 @@
     {
       "source": "/registro/:slug",
       "destination": "/api/og?slug=:slug"
+    },
+    {
+      "source": "/blur/:path*",
+      "destination": "/blur/index.html"
     },
     {
       "source": "/((?!api/).*)",
