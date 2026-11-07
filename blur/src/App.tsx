@@ -5,7 +5,7 @@ import Lineup from './pages/Lineup'
 import Escenarios from './pages/Escenarios'
 import Barra from './pages/Barra'
 import Mapa from './pages/Mapa'
-import Transporte from './pages/Transporte'
+import Lanchas from './pages/Lanchas'
 import Analogica from './pages/Analogica'
 
 export default function App() {
@@ -17,7 +17,7 @@ export default function App() {
         <Route path="escenarios" element={<Escenarios />} />
         <Route path="barra" element={<Barra />} />
         <Route path="mapa" element={<Mapa />} />
-        <Route path="transporte" element={<Transporte />} />
+        <Route path="lanchas" element={<Lanchas />} />
         <Route path="analogica" element={<Analogica />} />
         <Route path="*" element={<Inicio />} />
       </Route>

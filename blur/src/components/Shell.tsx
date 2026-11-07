@@ -9,7 +9,7 @@ export const SECCIONES: { to: string; nombre: string; desc: string; tema: Tema }
   { to: '/escenarios', nombre: 'Escenarios', desc: 'Los spots y sus artistas', tema: 'gris' },
   { to: '/barra', nombre: 'Barra', desc: 'Pedí y retirá con QR', tema: 'naranja' },
   { to: '/mapa', nombre: 'Mapa', desc: 'Dónde está todo', tema: 'gris' },
-  { to: '/transporte', nombre: 'Transporte', desc: 'Salidas y lugares', tema: 'verde' },
+  { to: '/lanchas', nombre: 'Lanchas', desc: 'Salidas y regreso', tema: 'verde' },
   { to: '/analogica', nombre: 'Analógica', desc: 'Tu rollo de 10 fotos', tema: 'verde' },
 ]
 

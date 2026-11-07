@@ -34,11 +34,15 @@ export interface Artista {
 }
 export interface Spot { id: string; titulo: string; descripcion: string | null; fotos: string[]; orden: number }
 
+/** Un viaje en lancha. Horas "HH:MM" (24 h) o null = a confirmar; regreso < salida = pasada la medianoche. */
+export interface Lancha { id: string; nombre: string; salida: string | null; regreso: string | null; nota: string; orden: number }
+
 export interface Festival {
   config: Config | null
   escenarios: Escenario[]
   artistas: Artista[]
   spots: Spot[]
+  lanchas: Lancha[]
 }
 
 async function leer<T>(tabla: string, query: string): Promise<T[]> {
@@ -58,8 +62,9 @@ export function cargarFestival(): Promise<Festival> {
     leer<Escenario>('festival_escenarios', 'select=id,nombre,orden&activo=eq.true&order=orden'),
     leer<Artista>('festival_artistas', 'select=id,slug,nombre,escenario_id,b2b,pais,origen,foto_url,dia,horario,orden&activo=eq.true&order=orden'),
     leer<Spot>('festival_spots', 'select=id,titulo,descripcion,fotos,orden&activo=eq.true&order=orden'),
+    leer<Lancha>('festival_lanchas', 'select=id,nombre,salida,regreso,nota,orden&activo=eq.true&order=orden'),
   ])
-    .then(([c, escenarios, artistas, spots]) => {
+    .then(([c, escenarios, artistas, spots, lanchas]) => {
       const config = c[0] ?? null
       // Con el line-up apagado en el panel no se muestra, igual que en manso-club.
       const verLineup = config?.lineup_visible ?? false
@@ -68,6 +73,7 @@ export function cargarFestival(): Promise<Festival> {
         escenarios,
         artistas: verLineup ? artistas : [],
         spots,
+        lanchas,
       }
     })
     .catch((e) => {

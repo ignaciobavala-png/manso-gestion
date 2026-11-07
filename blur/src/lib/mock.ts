@@ -59,19 +59,4 @@ export const PUNTOS: Punto[] = [
   { id: 'm15', tipo: 'medico', nombre: 'Médico', x: 24, y: 58 },
 ]
 
-export interface Salida {
-  id: string
-  destino: string
-  /** Minutos desde "ahora" — en la maqueta los horarios corren solos. */
-  enMin: number
-  cupo: number
-}
-
-export const SALIDAS: Salida[] = [
-  { id: 's1', destino: 'Terminal · Ida y vuelta', enMin: 22, cupo: 8 },
-  { id: 's2', destino: 'Terminal · Ida y vuelta', enMin: 75, cupo: 24 },
-  { id: 's3', destino: 'Terminal · Ida y vuelta', enMin: 140, cupo: 40 },
-  { id: 's4', destino: 'Terminal · Última vuelta', enMin: 260, cupo: 40 },
-]
-
 export const FOTOS_POR_PERSONA = 10

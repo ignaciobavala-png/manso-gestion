@@ -13,15 +13,11 @@ interface State {
   saldo: number
   carrito: Record<string, number>
   pedidos: Pedido[]
-  reservas: string[]
-  avisos: string[]
   fotosSacadas: number
   cargar: (monto: number) => void
   sumar: (id: string, delta: number) => void
   totalCarrito: () => number
   confirmar: () => Pedido | null
-  reservar: (id: string) => void
-  avisar: (id: string) => void
   fotoSacada: () => void
   rolloLleno: () => void
 }
@@ -32,8 +28,6 @@ export const useBlur = create<State>()(
       saldo: 0,
       carrito: {},
       pedidos: [],
-      reservas: [],
-      avisos: [],
       fotosSacadas: 0,
       cargar: (monto) => set((s) => ({ saldo: s.saldo + monto })),
       sumar: (id, delta) =>
@@ -57,14 +51,6 @@ export const useBlur = create<State>()(
         set((s) => ({ saldo: s.saldo - total, carrito: {}, pedidos: [pedido, ...s.pedidos] }))
         return pedido
       },
-      reservar: (id) =>
-        set((s) => ({
-          reservas: s.reservas.includes(id) ? s.reservas.filter((r) => r !== id) : [...s.reservas, id],
-        })),
-      avisar: (id) =>
-        set((s) => ({
-          avisos: s.avisos.includes(id) ? s.avisos.filter((r) => r !== id) : [...s.avisos, id],
-        })),
       fotoSacada: () => set((s) => ({ fotosSacadas: s.fotosSacadas + 1 })),
       rolloLleno: () => set({ fotosSacadas: FOTOS_POR_PERSONA }),
     }),
@@ -74,8 +60,6 @@ export const useBlur = create<State>()(
       partialize: (s) => ({
         saldo: s.saldo,
         pedidos: s.pedidos,
-        reservas: s.reservas,
-        avisos: s.avisos,
         fotosSacadas: s.fotosSacadas,
       }),
     },

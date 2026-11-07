@@ -26,7 +26,7 @@ reusan de `VITE_SUPABASE_*`. Local: `blur/.env.local` (ver `.env.example`). Camb
 | Escenarios | **Real**: escenarios y spots | Faltan El Beso y Bello Horizonte; descripciones |
 | Barra | Maqueta (MOCK): saldo, carta, carrito, QR de retiro | Saldo/pedidos en backend, lector en barra |
 | Mapa | Maqueta (MOCK): croquis SVG, filtros, leyenda, descarga | Plano real |
-| Transporte | Maqueta (MOCK): cuenta regresiva, reserva, aviso | Horarios y cupos reales, push |
+| Lanchas | **Real**: horarios de salida y regreso que carga Ana en el panel de manso-club (Festival → Transporte, tabla `festival_lanchas`) | Reservas y avisos (se sacaron) |
 | Analógica | **Real**: rollo de 10, 7 películas, sube a Gestión | — |
 
 Navegación: barra inferior fija (como el panel de Gestión). Los textos cargados por la
@@ -44,7 +44,7 @@ organización se muestran literales (sin mayúsculas forzadas).
 ## Pendientes
 1. Borrar desde `/admin/fotos` la foto de prueba (9 bytes) que quedó en el bucket.
 2. Cargar en manso-club los horarios, los escenarios que faltan y las charlas.
-3. Reemplazar los MOCK (Barra, Mapa, Transporte) por datos reales.
+3. Reemplazar los MOCK (Barra, Mapa) por datos reales.
 4. Mostrar las fotos `publicada` en alguna pantalla pública (galería).
 5. Decidir cuándo mergear a `master` (publica `/blur/` en el dominio real de Gestión) y si se
    separa a un proyecto de Vercel propio con `blur.mansoclub.com.ar` (sumaría una regla para que
