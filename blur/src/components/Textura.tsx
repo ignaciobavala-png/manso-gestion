@@ -32,14 +32,15 @@ const MARCADO = {
   pasto: trazos(pastoSvg),
 }
 
-export function Textura({ tipo }: { tipo: 'llamas' | 'pasto' }) {
+/** `suave`: más transparente, para fondos donde el contenido principal es otro (el mapa). */
+export function Textura({ tipo, suave = false }: { tipo: 'llamas' | 'pasto'; suave?: boolean }) {
   return (
     <svg
       aria-hidden
       focusable="false"
       viewBox={VIEWBOX}
       fill="currentColor"
-      className={`textura-viva ${tipo}`}
+      className={`textura-viva ${tipo}${suave ? ' suave' : ''}`}
       dangerouslySetInnerHTML={{ __html: MARCADO[tipo] }}
     />
   )

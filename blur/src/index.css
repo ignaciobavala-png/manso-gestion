@@ -178,6 +178,7 @@ body[data-tema='naranja'] { background: #f65200; }
 }
 .textura-viva.llamas { color: #f65200; opacity: 0.4; }
 .textura-viva.pasto { color: #eaeaea; opacity: 0.22; }
+.textura-viva.pasto.suave { opacity: 0.13; }
 
 .textura-viva path {
   transform-box: fill-box;

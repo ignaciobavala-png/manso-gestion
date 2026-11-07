@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { MapaIsla } from '../components/MapaIsla'
 import { Mock, Pagina, Rotulo, Titulo } from '../components/Mock'
+import { Textura } from '../components/Textura'
 import { Selector, VISTAS_MAPA } from '../components/Selector'
 import { useFestival } from '../lib/festival'
 import { ID_LLEGADA, PUNTOS, TIPOS_PUNTO, type TipoPunto } from '../lib/mapa'
@@ -30,6 +31,8 @@ export default function Mapa() {
     sel && 'data' in festival ? festival.data.spots.find((s) => sinTildes(s.titulo) === sinTildes(sel.nombre)) : undefined
 
   return (
+    <div className="textura">
+      <Textura tipo="pasto" suave />
     <Pagina>
       <Selector items={VISTAS_MAPA} />
       <Rotulo>Locación</Rotulo>
@@ -63,7 +66,7 @@ export default function Mapa() {
       <div className="mt-4">
         <MapaIsla puntos={visibles} seleccionado={seleccionado} onSelect={setSeleccionado} destino={destino}>
           {meta && (
-            <div data-ignora className="absolute left-3 top-3 z-20 flex max-w-[calc(100%-5.5rem)] items-center gap-2 bg-[#1a1a1a] py-1.5 pl-3 pr-1 font-mono text-[11px] uppercase tracking-[0.08em] text-[#ffa7fe]">
+            <div data-ignora className="absolute left-[6.5rem] top-3 z-20 flex max-w-[calc(100%-11.5rem)] items-center gap-2 bg-[#1a1a1a] py-1.5 pl-3 pr-1 font-mono text-[11px] uppercase tracking-[0.08em] text-[#ffa7fe]">
               <span className="truncate">Destino: {meta.nombre}</span>
               <button type="button" onClick={() => setDestino(null)} aria-label="Quitar destino" className="h-7 w-7 shrink-0 text-base text-[#fffcdc]">×</button>
             </div>
@@ -99,5 +102,6 @@ export default function Mapa() {
         </p>
       </div>
     </Pagina>
+    </div>
   )
 }

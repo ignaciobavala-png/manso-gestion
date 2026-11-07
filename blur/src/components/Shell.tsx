@@ -21,7 +21,7 @@ const TEMAS: Record<string, Tema> = {
   '/lineup': 'verde',
   '/lineup/escenarios': 'gris',
   '/barra': 'naranja',
-  '/mapa': 'gris',
+  '/mapa': 'verde',
   '/mapa/lanchas': 'verde',
   '/analogica': 'verde',
 }
@@ -78,12 +78,18 @@ export default function Shell() {
                 to={to}
                 end={to === '/'}
                 className={({ isActive }) =>
-                  `flex h-12 items-center justify-center whitespace-nowrap px-1 font-mono text-[11px] font-bold uppercase tracking-[0.02em] ${
-                    isActive ? 'chevron gap-1 text-[#f65200]' : 'text-[#fffcdc]/75'
+                  `flex h-12 items-center justify-center gap-0.5 whitespace-nowrap px-0.5 font-mono text-[10px] font-bold uppercase tracking-[0.01em] min-[380px]:gap-1 min-[380px]:px-1 min-[380px]:text-[11px] min-[380px]:tracking-[0.02em] ${
+                    isActive ? 'text-[#f65200]' : 'text-[#fffcdc]/75'
                   }`
                 }
               >
-                {nombre}
+                {({ isActive }) => (
+                  <>
+                    {/* El chevron ocupa lugar siempre (invisible si no está activa): si no, el texto salta al tocar. */}
+                    <span aria-hidden className={`chevron ${isActive ? 'opacity-100' : 'opacity-0'}`} />
+                    {nombre}
+                  </>
+                )}
               </NavLink>
             </li>
           ))}

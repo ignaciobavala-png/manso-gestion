@@ -1,8 +1,11 @@
 /**
- * DATOS DE MAQUETA del mapa. La forma de la isla, los muelles y la posición de cada
- * punto son un dibujo de EJEMPLO: la organización va a pasar el dibujo real y ahí se
- * cambian `ISLA`, `COSTA`, `MUELLES` y `PUNTOS`. La interfaz (MapaIsla) no depende
- * de esta geometría: solo lee estos datos.
+ * DATOS DE MAQUETA del mapa. La forma de la isla, los senderos, los muelles y la posición
+ * de cada punto son un dibujo de EJEMPLO. Cuando la organización pase el dibujo real hay
+ * dos caminos:
+ *   · Si viene como imagen (PNG, WebP o SVG): poner su URL en `IMAGEN_BASE` y reubicar
+ *     `PUNTOS`. La imagen reemplaza todo el dibujo de abajo, que queda sin usarse.
+ *   · Si se redibuja en código: cambiar `ISLA`, `COSTA`, `SENDEROS`, `MUELLES` y `PUNTOS`.
+ * La interfaz (MapaIsla) no depende de esta geometría: solo lee estos datos.
  *
  * Coordenadas en unidades de mapa, de 0 a MAPA_W × 0 a MAPA_H (origen arriba a la izquierda).
  * El lugar es una isla frente al muelle de San Fernando (Tigre), a unos dos minutos en lancha.
@@ -28,7 +31,37 @@ export const COSTA: Pt[] = [
 /** El claro donde pasa la fiesta. */
 export const CLARO: Pt[] = [[690, 440], [790, 430], [850, 490], [830, 560], [740, 580], [680, 520]]
 
-export const GALPON: Pt[] = [[880, 300], [980, 290], [985, 325], [885, 335]]
+/** Imagen que reemplaza el dibujo (mismo alto/ancho que el mapa: MAPA_W × MAPA_H). */
+export const IMAGEN_BASE: string | null = null
+
+/** Caminos de la isla: parten del muelle y llegan a cada zona. */
+export const SENDEROS: Pt[][] = [
+  [[527, 583], [600, 570], [690, 550], [765, 545]],
+  [[765, 545], [760, 500], [740, 470]],
+  [[765, 545], [800, 600], [800, 650]],
+  [[765, 545], [850, 555], [950, 560], [1020, 560]],
+  [[740, 470], [720, 420], [690, 385], [650, 365]],
+  [[760, 500], [830, 440], [880, 405], [930, 370], [960, 345]],
+  [[950, 560], [985, 470]],
+  [[600, 570], [645, 565]],
+  [[690, 440], [625, 470]],
+]
+
+/** Construcciones: el galpón, las carpas y la cúpula del claro. */
+export const EDIFICIOS: { puntos: Pt[]; relleno: string }[] = [
+  { puntos: [[880, 300], [980, 290], [985, 325], [885, 335]], relleno: '#9c9c92' },
+  { puntos: [[700, 448], [734, 446], [736, 468], [702, 470]], relleno: '#fffcdc' },
+  { puntos: [[800, 505], [818, 505], [818, 520], [800, 520]], relleno: '#f65200' },
+]
+export const CUPULA = { x: 772, y: 452, r: 13 }
+
+/** Nombres de zona sobre el dibujo, como los de barrio en un mapa de juego. */
+export const ETIQUETAS: { texto: string; x: number; y: number; rot?: number; tam?: number; sobre?: 'agua' | 'tierra' }[] = [
+  { texto: 'EL CLARO', x: 756, y: 612, tam: 22 },
+  { texto: 'LA ISLA', x: 800, y: 235, tam: 30 },
+  { texto: 'SAN FERNANDO', x: 120, y: 520, rot: -90, tam: 30, sobre: 'tierra' },
+  { texto: '2 MIN EN LANCHA', x: 420, y: 482, tam: 15, sobre: 'agua' },
+]
 
 export const MUELLES: Pt[][] = [
   [[262, 512], [345, 516], [345, 526], [262, 530]], // San Fernando

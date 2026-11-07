@@ -1,15 +1,16 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
-  CLARO, COSTA, GALPON, ID_LLEGADA, ISLA, MAPA_H, MAPA_W, MUELLES, RUTA_LANCHAS, TIPOS_PUNTO,
-  type Pt, type Punto,
+  CLARO, COSTA, CUPULA, EDIFICIOS, ETIQUETAS, ID_LLEGADA, IMAGEN_BASE, ISLA, MAPA_H, MAPA_W, MUELLES,
+  PUNTOS, RUTA_LANCHAS, SENDEROS, TIPOS_PUNTO, type Pt, type Punto,
 } from '../lib/mapa'
 
 /**
  * Mapa recorrible de la isla: se arrastra con el dedo, se acerca con pellizco (o rueda),
  * los puntos son tocables y "Ir acá" marca un destino con una ruta punteada.
  *
- * Referencia de interfaz: el mapa de pausa de un videojuego (plano estilizado de bloques de
- * color, grilla fina, marcadores con ícono, destino marcado), sin nada más que eso.
+ * Referencia visual: el mapa 2D de un GTA clásico (Vice City): dibujo plano de bloques de color,
+ * costa con contorno grueso, caminos con borde, nombres de zona, marcadores con ícono, destino
+ * marcado y un radar redondo. Con los colores de la página; no se usa nada del juego.
  *
  * La geometría sale de lib/mapa.ts. Este componente no sabe cómo es la isla: cuando llegue el
  * dibujo real se cambian esos datos y esto sigue igual.
@@ -23,89 +24,144 @@ function azar(semilla: number) {
   return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296)
 }
 
-/** Malla de triángulos con vértices corridos al azar: da el aspecto "low-poly" al recortarla con el contorno. */
-function triangulos(x0: number, y0: number, x1: number, y1: number, celda: number, semilla: number, colores: string[]) {
-  const r = azar(semilla)
-  const cols = Math.ceil((x1 - x0) / celda) + 1
-  const filas = Math.ceil((y1 - y0) / celda) + 1
-  const P: Pt[][] = []
-  for (let j = 0; j < filas; j++) {
-    P[j] = []
-    for (let i = 0; i < cols; i++) {
-      const dx = i > 0 && i < cols - 1 ? (r() - 0.5) * celda * 0.7 : 0
-      const dy = j > 0 && j < filas - 1 ? (r() - 0.5) * celda * 0.7 : 0
-      P[j][i] = [x0 + i * celda + dx, y0 + j * celda + dy]
-    }
+function dentro(p: Pt, poly: Pt[]) {
+  let en = false
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [xi, yi] = poly[i], [xj, yj] = poly[j]
+    if (yi > p[1] !== yj > p[1] && p[0] < ((xj - xi) * (p[1] - yi)) / (yj - yi) + xi) en = !en
   }
-  const out: { puntos: string; relleno: string }[] = []
-  const tri = (a: Pt, b: Pt, c: Pt) =>
-    out.push({ puntos: pts([a, b, c]), relleno: colores[Math.floor(r() * colores.length)] })
-  for (let j = 0; j < filas - 1; j++) {
-    for (let i = 0; i < cols - 1; i++) {
-      const a = P[j][i], b = P[j][i + 1], c = P[j + 1][i], d = P[j + 1][i + 1]
-      if (r() < 0.5) { tri(a, b, c); tri(b, d, c) } else { tri(a, b, d); tri(a, d, c) }
-    }
-  }
-  return out
+  return en
 }
 
-const VERDES = ['#003009', '#06380f', '#0c4417', '#005b15', '#0a3d12']
-const OLIVAS = ['#1d4a20', '#285628', '#31622e', '#245224']
+function distSegmento(p: Pt, a: Pt, b: Pt) {
+  const dx = b[0] - a[0], dy = b[1] - a[1]
+  const t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / (dx * dx + dy * dy || 1)))
+  return Math.hypot(p[0] - (a[0] + t * dx), p[1] - (a[1] + t * dy))
+}
 
-/** El dibujo. Memoizado y sin props: mover o acercar el mapa no lo vuelve a renderizar. */
-const Arte = memo(function Arte() {
-  const isla = useMemo(() => triangulos(480, 240, 1140, 780, 46, 7, VERDES), [])
-  const costa = useMemo(() => triangulos(0, 0, 330, 1000, 50, 3, OLIVAS), [])
-  const olas = useMemo(() => {
-    const r = azar(11)
-    return Array.from({ length: 70 }, () => `M ${(r() * MAPA_W).toFixed(0)} ${(r() * MAPA_H).toFixed(0)} q 10 -6 20 0 t 20 0`)
-  }, [])
-  const grilla = useMemo(() => {
-    let d = ''
-    for (let x = 100; x < MAPA_W; x += 100) d += `M ${x} 0 V ${MAPA_H} `
-    for (let y = 100; y < MAPA_H; y += 100) d += `M 0 ${y} H ${MAPA_W} `
-    return d
-  }, [])
+/**
+ * Manchas de monte: racimos de círculos en zonas libres (fuera del claro, de los caminos y de
+ * los puntos). Con semilla fija, así que el monte no cambia entre cargas.
+ */
+function monte(zona: Pt[], limiteX: number, semilla: number, cuantos: number) {
+  const r = azar(semilla)
+  const xs = zona.map((p) => p[0]), ys = zona.map((p) => p[1])
+  const [x0, x1, y0, y1] = [Math.min(...xs), Math.min(Math.max(...xs), limiteX), Math.min(...ys), Math.max(...ys)]
+  const libre = (p: Pt) =>
+    dentro(p, zona) &&
+    !dentro(p, CLARO) &&
+    SENDEROS.every((s) => s.slice(1).every((q, k) => distSegmento(p, s[k], q) > 34)) &&
+    PUNTOS.every((q) => Math.hypot(p[0] - q.x, p[1] - q.y) > 44)
+  const manchas: { x: number; y: number; r: number }[][] = []
+  for (let n = 0, intentos = 0; n < cuantos && intentos < 4000; intentos++) {
+    const c: Pt = [x0 + r() * (x1 - x0), y0 + r() * (y1 - y0)]
+    if (!libre(c)) continue
+    const racimo = Array.from({ length: 3 + Math.floor(r() * 3) }, () => ({
+      x: c[0] + (r() - 0.5) * 40, y: c[1] + (r() - 0.5) * 30, r: 13 + r() * 13,
+    })).filter((q) => dentro([q.x, q.y], zona))
+    if (racimo.length) { manchas.push(racimo); n++ }
+  }
+  return manchas
+}
+
+const tierra = '#e6d9a6'
+const tinta = '#1a1a1a'
+const camino = (pl: Pt[]) => 'M ' + pl.map((p) => p.join(' ')).join(' L ')
+
+/**
+ * El dibujo, plano como un mapa de juego: agua verde oscuro con olas, tierra gris claro con
+ * contorno grueso y sombra, monte, caminos con borde, construcciones y nombres de zona.
+ * Memoizado: mover o acercar el mapa no lo vuelve a renderizar. `id` evita ids repetidos
+ * cuando se dibuja también en el radar.
+ */
+const Arte = memo(function Arte({ id }: { id: string }) {
+  const montes = useMemo(() => [...monte(ISLA, 1200, 5, 30), ...monte(COSTA, 215, 9, 14)], [])
   const linea = { vectorEffect: 'non-scaling-stroke' as const }
+
+  if (IMAGEN_BASE) {
+    return (
+      <svg width={MAPA_W} height={MAPA_H} viewBox={`0 0 ${MAPA_W} ${MAPA_H}`} style={{ display: 'block' }} aria-hidden>
+        <image href={IMAGEN_BASE} width={MAPA_W} height={MAPA_H} preserveAspectRatio="none" />
+      </svg>
+    )
+  }
 
   return (
     <svg width={MAPA_W} height={MAPA_H} viewBox={`0 0 ${MAPA_W} ${MAPA_H}`} style={{ display: 'block' }} aria-hidden>
       <defs>
-        <clipPath id="clip-isla"><polygon points={pts(ISLA)} /></clipPath>
-        <clipPath id="clip-costa"><polygon points={pts(COSTA)} /></clipPath>
+        <pattern id={`olas-${id}`} width="46" height="22" patternUnits="userSpaceOnUse">
+          <path d="M0 11 q 11.5 -7 23 0 t 23 0" fill="none" stroke="#fffcdc" strokeOpacity=".16" strokeWidth="1.6" />
+        </pattern>
+        <clipPath id={`isla-${id}`}><polygon points={pts(ISLA)} /></clipPath>
+        <clipPath id={`costa-${id}`}><polygon points={pts(COSTA)} /></clipPath>
       </defs>
 
-      <rect width={MAPA_W} height={MAPA_H} fill="#dcdcd2" />
-      <path d={grilla} stroke="#1a1a1a" strokeOpacity=".07" strokeWidth="1" fill="none" {...linea} />
-      {olas.map((d, i) => (
-        <path key={i} d={d} stroke="#1a1a1a" strokeOpacity=".12" strokeWidth="1.2" fill="none" {...linea} />
-      ))}
+      <rect width={MAPA_W} height={MAPA_H} fill="#003009" />
+      <rect width={MAPA_W} height={MAPA_H} fill={`url(#olas-${id})`} />
 
-      {/* Espuma de la orilla, debajo de la tierra. */}
-      <polygon points={pts(ISLA)} fill="#f2f2ea" stroke="#f2f2ea" strokeWidth="16" strokeLinejoin="round" />
-      <polygon points={pts(COSTA)} fill="#f2f2ea" stroke="#f2f2ea" strokeWidth="16" strokeLinejoin="round" />
-
-      <g clipPath="url(#clip-costa)">
-        {costa.map((t, i) => <polygon key={i} points={t.puntos} fill={t.relleno} stroke={t.relleno} strokeWidth=".6" />)}
+      {/* Sombra desplazada de la tierra, como el relieve de un mapa impreso. */}
+      <g transform="translate(10 12)" fill="#000" fillOpacity=".4">
+        <polygon points={pts(ISLA)} />
+        <polygon points={pts(COSTA)} />
       </g>
-      <g clipPath="url(#clip-isla)">
-        {isla.map((t, i) => <polygon key={i} points={t.puntos} fill={t.relleno} stroke={t.relleno} strokeWidth=".6" />)}
-      </g>
-      <polygon points={pts(ISLA)} fill="none" stroke="#1a1a1a" strokeOpacity=".4" strokeWidth="1.5" {...linea} />
-      <polygon points={pts(COSTA)} fill="none" stroke="#1a1a1a" strokeOpacity=".4" strokeWidth="1.5" {...linea} />
 
-      <polygon points={pts(CLARO)} fill="#e8dca9" stroke="#fffcdc" strokeOpacity=".8" strokeWidth="2" strokeLinejoin="round" {...linea} />
-      <polygon points={pts(GALPON)} fill="#bdbdb2" stroke="#1a1a1a" strokeOpacity=".4" strokeWidth="1" {...linea} />
-      {MUELLES.map((m, i) => <polygon key={i} points={pts(m)} fill="#1a1a1a" />)}
+      <polygon points={pts(COSTA)} fill="#d4c68f" />
+      <polygon points={pts(ISLA)} fill={tierra} />
+
+      {/* Monte, recortado al contorno: nunca se sale al agua. */}
+      <g clipPath={`url(#isla-${id})`}>{montes.slice(0, 30).map((m, i) => <Mancha key={i} m={m} />)}</g>
+      <g clipPath={`url(#costa-${id})`}>{montes.slice(30).map((m, i) => <Mancha key={i} m={m} />)}</g>
+
+      <polygon points={pts(CLARO)} fill="#fffcdc" stroke={tinta} strokeWidth="2" strokeLinejoin="round" {...linea} />
+
+      {/* Caminos: borde oscuro y relleno naranja. Primero todos los bordes, así se funden en los cruces. */}
+      <g fill="none" strokeLinecap="round" strokeLinejoin="round">
+        {SENDEROS.map((s, i) => <path key={`b${i}`} d={camino(s)} stroke={tinta} strokeWidth="13" />)}
+        {SENDEROS.map((s, i) => <path key={`r${i}`} d={camino(s)} stroke="#f65200" strokeWidth="7" />)}
+      </g>
+
+      {EDIFICIOS.map((e, i) => <polygon key={i} points={pts(e.puntos)} fill={e.relleno} stroke={tinta} strokeWidth="2" {...linea} />)}
+      <circle cx={CUPULA.x} cy={CUPULA.y} r={CUPULA.r} fill="#fffcdc" stroke={tinta} strokeWidth="2" {...linea} />
+      {MUELLES.map((m, i) => <polygon key={i} points={pts(m)} fill={tinta} />)}
+
+      {/* Contorno grueso de la costa, por encima de todo lo de tierra. */}
+      <polygon points={pts(ISLA)} fill="none" stroke={tinta} strokeWidth="3.5" strokeLinejoin="round" {...linea} />
+      <polygon points={pts(COSTA)} fill="none" stroke={tinta} strokeWidth="3.5" strokeLinejoin="round" {...linea} />
 
       {/* Las lanchas, de muelle a muelle. */}
-      <path d={RUTA_LANCHAS} fill="none" stroke="#f65200" strokeWidth="3" strokeDasharray="8 8" strokeLinecap="round" {...linea} />
+      <path d={RUTA_LANCHAS} fill="none" stroke="#f65200" strokeWidth="4" strokeDasharray="9 9" strokeLinecap="round" {...linea} />
 
-      <text x="120" y="520" textAnchor="middle" transform="rotate(-90 120 520)" fill="#fffcdc" fillOpacity=".6"
-        fontFamily="Space Mono, monospace" fontSize="30" letterSpacing="12">SAN FERNANDO</text>
+      {ETIQUETAS.map((e) => (
+        <text
+          key={e.texto} x={e.x} y={e.y} textAnchor="middle"
+          transform={e.rot ? `rotate(${e.rot} ${e.x} ${e.y})` : undefined}
+          fill={e.sobre === 'agua' ? '#fffcdc' : tinta} fillOpacity={e.sobre === 'agua' ? 0.75 : 0.5}
+          fontFamily="Space Mono, monospace" fontWeight="700" fontSize={e.tam ?? 20} letterSpacing={e.tam && e.tam > 25 ? 12 : 6}
+        >
+          {e.texto}
+        </text>
+      ))}
+
+      {/* Brújula y marca, en el agua. */}
+      <g transform="translate(1290 120)" aria-hidden>
+        <circle r="46" fill="none" stroke="#fffcdc" strokeOpacity=".7" strokeWidth="2.5" />
+        <path d="M0 -38 L9 0 L0 8 L-9 0 Z" fill="#f65200" />
+        <path d="M0 38 L9 0 L0 -8 L-9 0 Z" fill="#fffcdc" fillOpacity=".7" />
+        <text y="-56" textAnchor="middle" fill="#fffcdc" fontFamily="Space Mono, monospace" fontWeight="700" fontSize="22">N</text>
+      </g>
+      <image href={`${import.meta.env.BASE_URL}marca/logo_1_b.svg`} x="1130" y="870" width="220" height="38" opacity=".9" />
     </svg>
   )
 })
+
+/** Un racimo de círculos de monte: contorno más oscuro, como las manchas de verde de un mapa de juego. */
+function Mancha({ m }: { m: { x: number; y: number; r: number }[] }) {
+  return (
+    <g fill="#005b15" stroke="#003009" strokeWidth="3">
+      {m.map((c, i) => <circle key={i} cx={c.x} cy={c.y} r={c.r} />)}
+    </g>
+  )
+}
 
 interface Vista { s: number; x: number; y: number }
 
@@ -251,12 +307,16 @@ export function MapaIsla({ puntos, seleccionado, onSelect, destino, children }: 
           transformOrigin: '0 0', transform: `translate(${vista.x}px, ${vista.y}px) scale(${vista.s})`,
         }}
       >
-        <Arte />
+        <Arte id="p" />
         {hayRuta && llegada && meta && (
           <svg width={MAPA_W} height={MAPA_H} style={{ position: 'absolute', left: 0, top: 0, pointerEvents: 'none' }} aria-hidden>
             <line
               x1={llegada.x} y1={llegada.y} x2={meta.x} y2={meta.y}
-              stroke="#ffa7fe" strokeWidth="4" strokeDasharray="10 9" strokeLinecap="round"
+              stroke="#1a1a1a" strokeWidth="9" strokeLinecap="round" vectorEffect="non-scaling-stroke"
+            />
+            <line
+              x1={llegada.x} y1={llegada.y} x2={meta.x} y2={meta.y}
+              stroke="#ffa7fe" strokeWidth="5" strokeDasharray="10 9" strokeLinecap="round"
               vectorEffect="non-scaling-stroke" className="mapa-ruta"
             />
           </svg>
@@ -295,6 +355,8 @@ export function MapaIsla({ puntos, seleccionado, onSelect, destino, children }: 
           )
         })}
 
+      <Radar vista={vista} tam={tam} puntos={puntos} />
+
       <div data-ignora className="absolute right-3 top-3 z-20 flex flex-col gap-1.5">
         <button type="button" className={CTL} onClick={() => zoomBoton(1.5)} aria-label="Acercar">+</button>
         <button type="button" className={CTL} onClick={() => zoomBoton(1 / 1.5)} aria-label="Alejar">−</button>
@@ -302,6 +364,42 @@ export function MapaIsla({ puntos, seleccionado, onSelect, destino, children }: 
       </div>
 
       {children}
+    </div>
+  )
+}
+
+const RADAR = 92 // px
+const RADAR_ESCALA = 0.16 // px por unidad de mapa: muestra unas 570 unidades de ancho
+
+/**
+ * Radar redondo: la misma isla, a escala fija, centrada en lo que se está mirando. Se mueve
+ * con el mapa y marca el centro, como el minimapa de un juego. Es solo una guía: no se toca.
+ */
+function Radar({ vista, tam, puntos }: { vista: Vista; tam: { w: number; h: number }; puntos: Punto[] }) {
+  if (!tam.w) return null
+  const cx = (tam.w / 2 - vista.x) / vista.s
+  const cy = (tam.h / 2 - vista.y) / vista.s
+  const k = RADAR_ESCALA
+  const origen = (x: number, y: number) => ({ left: RADAR / 2 + (x - cx) * k, top: RADAR / 2 + (y - cy) * k })
+  return (
+    <div
+      data-ignora aria-hidden
+      style={{ width: RADAR, height: RADAR }}
+      className="pointer-events-none absolute bottom-auto left-3 top-3 z-20 overflow-hidden rounded-full border-[3px] border-[#1a1a1a] bg-[#003009] shadow-[0_0_0_2px_#fffcdc]"
+    >
+      <div
+        style={{
+          position: 'absolute', width: MAPA_W, height: MAPA_H, transformOrigin: '0 0',
+          transform: `translate(${RADAR / 2 - cx * k}px, ${RADAR / 2 - cy * k}px) scale(${k})`,
+        }}
+      >
+        <Arte id="r" />
+      </div>
+      {puntos.filter((p) => p.tipo === 'escenario').map((p) => (
+        <span key={p.id} style={origen(p.x, p.y)} className="absolute h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#f65200] ring-1 ring-[#1a1a1a]" />
+      ))}
+      {/* El centro: hacia dónde se está mirando. */}
+      <span className="absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rotate-45 border-2 border-[#1a1a1a] bg-[#fffcdc]" />
     </div>
   )
 }

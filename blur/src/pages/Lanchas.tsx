@@ -1,5 +1,6 @@
 import { ConFestival } from '../components/Estado'
 import { Pagina, Rotulo, Titulo } from '../components/Mock'
+import { Textura } from '../components/Textura'
 import { Selector, VISTAS_MAPA } from '../components/Selector'
 import type { Lancha } from '../lib/festival'
 
@@ -26,6 +27,8 @@ function Hora({ rotulo, valor, nota }: { rotulo: string; valor: string | null; n
  */
 export default function Lanchas() {
   return (
+    <div className="textura">
+      <Textura tipo="pasto" suave />
     <Pagina>
       <Selector items={VISTAS_MAPA} />
       <Rotulo>Ida y vuelta</Rotulo>
@@ -52,5 +55,6 @@ export default function Lanchas() {
         }
       </ConFestival>
     </Pagina>
+    </div>
   )
 }
