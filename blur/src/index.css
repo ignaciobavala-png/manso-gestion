@@ -193,5 +193,49 @@ body[data-tema='naranja'] { background: #f65200; }
 .pulso { animation: pulso 1.6s ease-in-out infinite; }
 
 @media (prefers-reduced-motion: reduce) {
-  .entra, .pulso { animation: none; }
+  .entra, .pulso, .textura-viva path, .iris, .obturar, .anillo, .flota, .latente { animation: none; }
 }
+/* —— ANALÓGICA: scroll horizontal sin barra (el gesto alcanza), y los movimientos de la cámara. */
+.sin-barra { scrollbar-width: none; -ms-overflow-style: none; }
+.sin-barra::-webkit-scrollbar { display: none; }
+
+/* Visor que se abre como un iris. */
+@keyframes iris {
+  from { clip-path: circle(0% at 50% 50%); }
+  to   { clip-path: circle(80% at 50% 50%); }
+}
+.iris { animation: iris 900ms var(--ease-hard) both; }
+
+/* Al disparar el visor se encoge un instante, como el golpe del obturador. */
+@keyframes obturar { 40% { transform: scale(0.96); } }
+.obturar { animation: obturar 240ms ease-out; }
+
+/* Obturador armado: un anillo que respira desde el botón. */
+@keyframes anillo {
+  from { box-shadow: 0 0 0 0 rgba(255, 252, 220, 0.7); }
+  to   { box-shadow: 0 0 0 24px rgba(255, 252, 220, 0); }
+}
+.anillo { animation: anillo 1.5s ease-out infinite; }
+
+/* Cartucho elegido: flota apenas. */
+@keyframes flota {
+  from { transform: translateY(0) rotate(-1.5deg); }
+  to   { transform: translateY(-8px) rotate(1deg); }
+}
+.flota { animation: flota 2.6s ease-in-out infinite alternate; }
+
+/* Fotograma recién expuesto: arranca nítido y se vela hasta quedar latente. */
+.latente { filter: blur(7px) saturate(0.8); opacity: 0.8; animation: latente 1100ms ease-out backwards; }
+@keyframes latente {
+  from { filter: blur(0) brightness(1.8); opacity: 1; }
+}
+
+/* Sobre: la solapa se cierra, el rollo asoma y el sello cae. */
+@keyframes tapa { from { transform: rotateX(180deg); } }
+@keyframes asoma { from { transform: translateY(46px); } }
+@keyframes sello {
+  0%   { opacity: 0; transform: scale(2.4) rotate(-12deg); }
+  55%  { opacity: 1; transform: scale(0.95) rotate(-3deg); }
+  100% { opacity: 1; transform: scale(1) rotate(-3deg); }
+}
+

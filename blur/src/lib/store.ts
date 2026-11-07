@@ -9,16 +9,33 @@ export interface Pedido {
   creado: number
 }
 
+/**
+ * Un fotograma ya expuesto. No guarda la foto (nadie la ve): solo con qué película
+ * se sacó y dos colores promedio (arriba / abajo) para pintar la imagen latente
+ * en la tira de negativos.
+ */
+export interface Frame {
+  f: string
+  c: [string, string]
+}
+
 interface State {
   saldo: number
   carrito: Record<string, number>
   pedidos: Pedido[]
   fotosSacadas: number
+  /** Película cargada en el rollo; null = todavía no eligió. */
+  pelicula: string | null
+  /** El rollo permite cambiar la película una sola vez. */
+  cambioUsado: boolean
+  tira: Frame[]
+  cargarPelicula: (id: string) => void
+  cambiarPelicula: (id: string) => void
   cargar: (monto: number) => void
   sumar: (id: string, delta: number) => void
   totalCarrito: () => number
   confirmar: () => Pedido | null
-  fotoSacada: () => void
+  fotoSacada: (frame: Frame) => void
   rolloLleno: () => void
 }
 
@@ -29,6 +46,11 @@ export const useBlur = create<State>()(
       carrito: {},
       pedidos: [],
       fotosSacadas: 0,
+      pelicula: null,
+      cambioUsado: false,
+      tira: [],
+      cargarPelicula: (id) => set({ pelicula: id }),
+      cambiarPelicula: (id) => set((s) => (s.cambioUsado ? s : { pelicula: id, cambioUsado: true })),
       cargar: (monto) => set((s) => ({ saldo: s.saldo + monto })),
       sumar: (id, delta) =>
         set((s) => {
@@ -51,7 +73,8 @@ export const useBlur = create<State>()(
         set((s) => ({ saldo: s.saldo - total, carrito: {}, pedidos: [pedido, ...s.pedidos] }))
         return pedido
       },
-      fotoSacada: () => set((s) => ({ fotosSacadas: s.fotosSacadas + 1 })),
+      fotoSacada: (frame) =>
+        set((s) => ({ fotosSacadas: s.fotosSacadas + 1, tira: [...s.tira, frame] })),
       rolloLleno: () => set({ fotosSacadas: FOTOS_POR_PERSONA }),
     }),
     {
@@ -61,6 +84,9 @@ export const useBlur = create<State>()(
         saldo: s.saldo,
         pedidos: s.pedidos,
         fotosSacadas: s.fotosSacadas,
+        pelicula: s.pelicula,
+        cambioUsado: s.cambioUsado,
+        tira: s.tira,
       }),
     },
   ),

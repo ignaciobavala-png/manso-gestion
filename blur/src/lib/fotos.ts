@@ -31,6 +31,16 @@ function dispositivo(): string {
   }
 }
 
+/**
+ * Número de rollo para mostrar (sobre de entrega): los primeros 6 hex del id de
+ * dispositivo módulo 10000. Es decorativo y puede repetirse entre dos teléfonos;
+ * el identificador real sigue siendo el id de dispositivo.
+ */
+export function numeroRollo(): string {
+  const n = parseInt(dispositivo().replace(/-/g, '').slice(0, 6), 16) % 10000
+  return String(n).padStart(4, '0')
+}
+
 export async function subirFoto(blob: Blob, filtro: string): Promise<void> {
   if (!SUBIDA_REAL) {
     await new Promise((r) => setTimeout(r, 250))

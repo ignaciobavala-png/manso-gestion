@@ -67,6 +67,47 @@ export const filtroPorId = (id: string) => FILTROS.find((f) => f.id === id) ?? F
 
 const clamp = (v: number) => (v < 0 ? 0 : v > 255 ? 255 : v)
 
+/** Dos colores promedio (mitad de arriba / de abajo) para la imagen latente de la tira. */
+export function colorLatente(canvas: HTMLCanvasElement): [string, string] {
+  const m = document.createElement('canvas')
+  m.width = 1
+  m.height = 2
+  const ctx = m.getContext('2d')!
+  ctx.drawImage(canvas, 0, 0, 1, 2)
+  const d = ctx.getImageData(0, 0, 1, 2).data
+  const hex = (i: number) => '#' + [d[i], d[i + 1], d[i + 2]].map((n) => n.toString(16).padStart(2, '0')).join('')
+  return [hex(0), hex(4)]
+}
+
+/**
+ * Borde de negativo: la foto sobre negro con el texto del filo de la película
+ * (marca, película, número de cuadro) en naranja, como las que se escanean.
+ */
+export function marcoNegativo(foto: HTMLCanvasElement, f: Filtro, n: number): HTMLCanvasElement {
+  const w = foto.width
+  const h = foto.height
+  const lado = Math.round(w * 0.025)
+  const filo = Math.round(w * 0.075)
+  const out = document.createElement('canvas')
+  out.width = w + filo + lado
+  out.height = h + lado * 2
+  const ctx = out.getContext('2d')!
+  ctx.fillStyle = '#0b0b0b'
+  ctx.fillRect(0, 0, out.width, out.height)
+  ctx.drawImage(foto, filo, lado)
+
+  ctx.save()
+  ctx.translate(filo * 0.5, out.height / 2)
+  ctx.rotate(-Math.PI / 2)
+  ctx.font = `700 ${Math.round(filo * 0.42)}px "Space Mono", monospace`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillStyle = '#f65200'
+  ctx.fillText(`BLUR 2026  ·  ${f.nombre.toUpperCase()}  ·  ${String(n).padStart(2, '0')}`, 0, 0)
+  ctx.restore()
+  return out
+}
+
 /** Procesa lo que ya está dibujado en el canvas. */
 export function aplicarFiltro(canvas: HTMLCanvasElement, f: Filtro, fecha: Date) {
   const ctx = canvas.getContext('2d')!
