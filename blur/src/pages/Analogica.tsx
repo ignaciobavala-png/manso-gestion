@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import lomo from '../assets/lomo.webp'
 import { Mock, Pagina, Rotulo, Titulo } from '../components/Mock'
 import { ElegirPelicula } from '../components/analogica/Cartucho'
 import { Contador } from '../components/analogica/Contador'
@@ -46,9 +47,42 @@ function AvisoMock() {
   )
 }
 
-/** 1 · Elegir la película y cargar el rollo. */
+/** 1 · Portada (la cámara en la mano) y después elegir la película para cargar el rollo. */
 function Cargar() {
   const cargarPelicula = useBlur((s) => s.cargarPelicula)
+  const [paso, setPaso] = useState<'portada' | 'elegir'>('portada')
+
+  if (paso === 'portada') {
+    return (
+      <div className="mx-auto max-w-3xl px-4 pb-16">
+        {/* La foto sale a sangre y se funde con el verde de arriba y de abajo. */}
+        <div className="relative -mx-4 overflow-hidden">
+          <img
+            src={lomo}
+            alt="Una mano sostiene la cámara descartable de BLUR, vista desde atrás"
+            width={1200}
+            height={1607}
+            className="acerca block w-full"
+            style={{ maskImage: 'linear-gradient(transparent 0, #000 14%, #000 72%, transparent 100%)' }}
+          />
+          <div className="absolute inset-x-4 top-6">
+            <Rotulo>Rollo</Rotulo>
+            <Titulo className="mt-4">Analógica</Titulo>
+          </div>
+        </div>
+        <div className="entra relative -mt-6" style={{ animationDelay: '600ms' }}>
+          <p className="max-w-[28ch] text-sm text-apagado">
+            {FOTOS_POR_PERSONA} fotos para todo el festival. Sin vista previa, sin borrar.
+          </p>
+          <button className="btn mt-6" onClick={() => setPaso('elegir')}>
+            Cargar rollo
+          </button>
+          <AvisoMock />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <Pagina>
       <Rotulo>Rollo</Rotulo>
