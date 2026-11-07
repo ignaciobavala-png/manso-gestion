@@ -1,11 +1,15 @@
 import { ConFestival } from '../components/Estado'
 import { Pagina, Rotulo, Titulo } from '../components/Mock'
+import { Selector, VISTAS_LINEUP } from '../components/Selector'
+import { Textura } from '../components/Textura'
 import { lineupPorEscenario } from '../lib/festival'
 
 export default function Escenarios() {
   return (
-    <div className="textura textura-color">
+    <div className="textura">
+      <Textura tipo="llamas" />
       <Pagina>
+        <Selector items={VISTAS_LINEUP} />
         <Rotulo>Spots</Rotulo>
         <Titulo className="mt-5">Escenarios</Titulo>
 

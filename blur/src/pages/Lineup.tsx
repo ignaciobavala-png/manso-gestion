@@ -1,12 +1,16 @@
 import { ConFestival } from '../components/Estado'
 import { Pagina, Rotulo, Titulo } from '../components/Mock'
+import { Selector, VISTAS_LINEUP } from '../components/Selector'
+import { Textura } from '../components/Textura'
 import { Nombres } from '../components/Nombres'
 import { lineupPorEscenario } from '../lib/festival'
 
 export default function Lineup() {
   return (
-    <div className="textura textura-clara">
+    <div className="textura">
+      <Textura tipo="pasto" />
       <Pagina>
+        <Selector items={VISTAS_LINEUP} />
         <Rotulo>Programa</Rotulo>
         <Titulo className="mt-5">Line up</Titulo>
 

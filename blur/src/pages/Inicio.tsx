@@ -1,12 +1,20 @@
 import { Link } from 'react-router-dom'
 import { ConFestival } from '../components/Estado'
 import { Rotulo } from '../components/Mock'
+import { Textura } from '../components/Textura'
 import { Nombres } from '../components/Nombres'
-import { MARCA, SECCIONES } from '../components/Shell'
+import { MARCA } from '../components/Shell'
 import { fechaCorta, lineupPorEscenario } from '../lib/festival'
+import { esNocheDelFestival, proximaLancha } from '../lib/lanchas'
 
-/** Atajos de la app: lo que se usa durante el festival. El line up tiene su propio bloque abajo. */
-const ATAJOS = SECCIONES.filter((s) => !['/', '/lineup'].includes(s.to))
+/** Atajos a todo lo que no está en la barra de abajo o está adentro de una pestaña. El line up tiene su bloque propio. */
+const ATAJOS = [
+  { to: '/lineup/escenarios', nombre: 'Escenarios', desc: 'Los spots y sus artistas' },
+  { to: '/barra', nombre: 'Barra', desc: 'Pedí y retirá con QR' },
+  { to: '/mapa', nombre: 'Mapa', desc: 'Dónde está todo' },
+  { to: '/mapa/lanchas', nombre: 'Lanchas', desc: 'Salidas y regreso' },
+  { to: '/analogica', nombre: 'Analógica', desc: 'Tu rollo de 10 fotos' },
+]
 
 export default function Inicio() {
   return (
@@ -16,6 +24,7 @@ export default function Inicio() {
         const cuando = [fechaCorta(config?.fecha ?? null), config?.horario].filter(Boolean).join(' — ')
         const grupos = lineupPorEscenario(f)
         const vision = (config?.vision ?? '').split('\n\n').filter(Boolean)
+        const proxima = esNocheDelFestival(config?.fecha ?? null) ? proximaLancha(f.lanchas) : null
 
         return (
           <>
@@ -45,8 +54,26 @@ export default function Inicio() {
               </div>
             </section>
 
+            {/* La próxima lancha, solo la noche del festival: es lo que se busca con apuro. */}
+            {proxima && (
+              <Link to="/mapa/lanchas" className="tema-naranja flex items-center justify-between gap-4 px-4 py-4">
+                <span>
+                  <span className="block font-mono text-[11px] uppercase tracking-[0.2em]">
+                    {proxima.tipo === 'sale' ? 'Próxima lancha' : 'Próxima vuelta'}
+                  </span>
+                  <span className="titulo mt-1 block text-3xl">
+                    {proxima.tipo === 'sale'
+                      ? `Sale ${proxima.lancha.salida}${proxima.lancha.regreso ? ` · vuelve ${proxima.lancha.regreso}` : ''}`
+                      : `Vuelve ${proxima.lancha.regreso}`}
+                  </span>
+                </span>
+                <span aria-hidden className="chevron text-xl" />
+              </Link>
+            )}
+
             {/* EN EL FESTIVAL: los atajos de la app, con el peso de los nombres del line up. */}
-            <section className="tema-gris textura textura-color px-4 pb-10 pt-12">
+            <section className="tema-gris textura px-4 pb-10 pt-12">
+              <Textura tipo="llamas" />
               <Rotulo>En el festival</Rotulo>
               <ul className="mt-6">
                 {ATAJOS.map((s) => (
@@ -81,7 +108,8 @@ export default function Inicio() {
             )}
 
             {grupos.length > 0 && (
-              <section className="tema-verde textura textura-clara px-4 pb-12 pt-12">
+              <section className="tema-verde textura px-4 pb-12 pt-12">
+                <Textura tipo="pasto" />
                 <Rotulo>Line up</Rotulo>
                 <div className="mt-8 space-y-10">
                   {grupos.map((e) => (

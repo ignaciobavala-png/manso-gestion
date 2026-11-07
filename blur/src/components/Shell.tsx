@@ -1,17 +1,30 @@
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 
 export type Tema = 'verde' | 'gris' | 'naranja'
 
-export const SECCIONES: { to: string; nombre: string; desc: string; tema: Tema }[] = [
-  { to: '/', nombre: 'Home', desc: 'El festival', tema: 'verde' },
-  { to: '/lineup', nombre: 'Line up', desc: 'Quién toca y dónde', tema: 'verde' },
-  { to: '/escenarios', nombre: 'Escenarios', desc: 'Los spots y sus artistas', tema: 'gris' },
-  { to: '/barra', nombre: 'Barra', desc: 'Pedí y retirá con QR', tema: 'naranja' },
-  { to: '/mapa', nombre: 'Mapa', desc: 'Dónde está todo', tema: 'gris' },
-  { to: '/lanchas', nombre: 'Lanchas', desc: 'Salidas y regreso', tema: 'verde' },
-  { to: '/analogica', nombre: 'Analógica', desc: 'Tu rollo de 10 fotos', tema: 'verde' },
+/**
+ * Las 5 pestañas de la barra de abajo. Escenarios vive dentro de Line up y Lanchas
+ * dentro de Mapa (selector arriba de cada una): ver `Selector`.
+ */
+export const PESTANAS: { to: string; nombre: string }[] = [
+  { to: '/', nombre: 'Home' },
+  { to: '/lineup', nombre: 'Line up' },
+  { to: '/barra', nombre: 'Barra' },
+  { to: '/mapa', nombre: 'Mapa' },
+  { to: '/analogica', nombre: 'Analógica' },
 ]
+
+/** Bloque de color de cada vista, incluidas las que viven dentro de una pestaña. */
+const TEMAS: Record<string, Tema> = {
+  '/': 'verde',
+  '/lineup': 'verde',
+  '/lineup/escenarios': 'gris',
+  '/barra': 'naranja',
+  '/mapa': 'gris',
+  '/mapa/lanchas': 'verde',
+  '/analogica': 'verde',
+}
 
 export const MARCA = `${import.meta.env.BASE_URL}marca/`
 
@@ -20,15 +33,10 @@ const VERDE = '#003009'
 
 export default function Shell() {
   const { pathname } = useLocation()
-  const lista = useRef<HTMLUListElement>(null)
-  const tema = SECCIONES.find((s) => s.to === pathname)?.tema ?? 'verde'
+  const tema = TEMAS[pathname.replace(/\/$/, '') || '/'] ?? 'verde'
 
   useEffect(() => {
     window.scrollTo(0, 0)
-    // En pantallas angostas la barra scrollea: que la pestaña activa quede a la vista.
-    lista.current
-      ?.querySelector('[aria-current="page"]')
-      ?.scrollIntoView({ inline: 'center', block: 'nearest' })
   }, [pathname])
 
   // El fondo detrás del contenido sigue al bloque (rebote de scroll en iOS).
@@ -62,15 +70,16 @@ export default function Shell() {
         style={{ background: VERDE }}
         className="fixed inset-x-0 bottom-0 z-40 border-t border-[#fffcdc]/15 pb-[env(safe-area-inset-bottom,0px)]"
       >
-        <ul ref={lista} className="flex overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:justify-center">
-          {SECCIONES.map(({ to, nombre }) => (
-            <li key={to} className="shrink-0">
+        <ul className="mx-auto flex max-w-3xl">
+          {PESTANAS.map(({ to, nombre }) => (
+            <li key={to} className="min-w-0 flex-1">
+              {/* Sin `end` salvo en Home: Line up y Mapa siguen activas en sus vistas internas. */}
               <NavLink
                 to={to}
                 end={to === '/'}
                 className={({ isActive }) =>
-                  `flex h-12 items-center px-3.5 font-mono text-[12px] font-bold uppercase tracking-[0.04em] whitespace-nowrap ${
-                    isActive ? 'chevron gap-1.5 text-[#f65200]' : 'text-[#fffcdc]/75'
+                  `flex h-12 items-center justify-center whitespace-nowrap px-1 font-mono text-[11px] font-bold uppercase tracking-[0.02em] ${
+                    isActive ? 'chevron gap-1 text-[#f65200]' : 'text-[#fffcdc]/75'
                   }`
                 }
               >

@@ -25,11 +25,14 @@ reusan de `VITE_SUPABASE_*`. Local: `blur/.env.local` (ver `.env.example`). Camb
 | Line up | **Real**: artistas por escenario | Horarios (hoy nadie tiene día/hora), charlas Sinapsis |
 | Escenarios | **Real**: escenarios y spots | Faltan El Beso y Bello Horizonte; descripciones |
 | Barra | Maqueta (MOCK): saldo, carta, carrito, QR de retiro | Saldo/pedidos en backend, lector en barra |
-| Mapa | Maqueta (MOCK): croquis SVG, filtros, leyenda, descarga | Plano real |
+| Mapa | Maqueta (MOCK): isla low-poly de ejemplo, recorrible (arrastre, pellizco), puntos tocables, "Ir acá" con ruta, filtros | El dibujo real de la isla: cambiar solo la geometría en `src/lib/mapa.ts` |
 | Lanchas | **Real**: horarios de salida y regreso que carga Ana en el panel de manso-club (Festival → Transporte, tabla `festival_lanchas`) | Reservas y avisos (se sacaron) |
 | Analógica | **Real**: rollo de 10, 7 películas, sube a Gestión | — |
 
-Navegación: barra inferior fija (como el panel de Gestión). Los textos cargados por la
+Navegación: barra inferior fija de **5 pestañas** (Home, Line up, Barra, Mapa, Analógica).
+Escenarios vive dentro de Line up (`/lineup/escenarios`) y Lanchas dentro de Mapa
+(`/mapa/lanchas`), con un selector arriba de cada una. Las URL viejas (`/escenarios`,
+`/lanchas`, `/transporte`) redirigen. La Home muestra la próxima lancha solo la noche del festival. Los textos cargados por la
 organización se muestran literales (sin mayúsculas forzadas).
 
 ## Analógica — fotos

@@ -1,5 +1,6 @@
 import { ConFestival } from '../components/Estado'
 import { Pagina, Rotulo, Titulo } from '../components/Mock'
+import { Selector, VISTAS_MAPA } from '../components/Selector'
 import type { Lancha } from '../lib/festival'
 
 /** Si el regreso es menor que la salida, es pasada la medianoche (el festival termina a las 04). */
@@ -26,6 +27,7 @@ function Hora({ rotulo, valor, nota }: { rotulo: string; valor: string | null; n
 export default function Lanchas() {
   return (
     <Pagina>
+      <Selector items={VISTAS_MAPA} />
       <Rotulo>Ida y vuelta</Rotulo>
       <Titulo className="mt-5">Lanchas</Titulo>
 
