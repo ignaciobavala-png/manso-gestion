@@ -1,0 +1,38 @@
+/* Estilos solo de la pantalla Barra (en su archivo para no mezclarse con index.css). */
+
+/* Las pestañas de categoría son `sticky`: `overflow: hidden` las rompería, `clip` no. */
+.textura.barra {
+  overflow: clip;
+}
+
+/* El panel del pedido sube desde abajo. */
+@keyframes barra-sube {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+.barra-sube { animation: barra-sube 260ms cubic-bezier(0.77, 0, 0.175, 1) backwards; }
+
+@keyframes barra-vela {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.barra-vela { animation: barra-vela 200ms ease-out backwards; }
+
+/* Al cambiar una cantidad, el número da un saltito. Se reinicia cambiando la `key` del elemento. */
+@keyframes barra-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+.barra-pop { animation: barra-pop 220ms ease-out; }
+
+/* El pedido listo late para que se note en una fila de tickets. */
+@keyframes barra-listo {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 48, 9, 0.55); }
+  60%      { box-shadow: 0 0 0 9px rgba(0, 48, 9, 0); }
+}
+.barra-listo { animation: barra-listo 1.8s ease-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .barra-sube, .barra-vela, .barra-pop, .barra-listo { animation: none; }
+}

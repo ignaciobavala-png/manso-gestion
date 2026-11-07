@@ -10,6 +10,8 @@ export interface Producto {
   nombre: string
   categoria: 'Bebidas' | 'Comida' | 'Otros'
   precio: number
+  /** URL de la foto del producto; si falta, la carta muestra la ilustración de su categoría. */
+  foto?: string
 }
 
 export const CARTA: Producto[] = [
