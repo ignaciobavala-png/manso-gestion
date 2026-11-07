@@ -42,7 +42,16 @@ organización se muestran literales (sin mayúsculas forzadas).
 - Revisión: `/admin/fotos` en Gestión (roles control/owner): publicar, descargar, borrar.
 - El tope es por id de dispositivo guardado en el navegador: borrar datos del navegador da otro rollo.
 - Una subida que registra la fila pero falla el archivo igual cuenta contra las 10.
-- La marca `publicada` se guarda pero **ninguna pantalla pública la usa todavía**.
+- Revisión en 3 estados (migración `045_blur_fotos_descartada.sql`, **escrita, sin aplicar**): sin revisar /
+  para publicar (`publicada`) / revisada y no se publica (`descartada`). Sin la 045 el panel
+  `/admin/fotos` de esta rama falla al leer `descartada`: aplicar la migración antes de desplegarlo.
+- **Revelado** (`/analogica/revelado`): hoy es solo la pantalla de espera (hoja de contactos latente del
+  rollo de la persona + estado). Las fotos **no se muestran hasta después del festival**. Opcional:
+  `VITE_REVELADO_DESDE` (fecha ISO) activa la cuenta regresiva; no abre nada por sí sola.
+- Para abrir el revelado falta la lectura pública de las publicadas: el bucket es privado y `anon` no
+  tiene SELECT en `blur_fotos`. Hace falta una función `SECURITY DEFINER` que devuelva solo las
+  `publicada = true` y URLs firmadas (o copiarlas a un bucket público al publicar). Sin eso, la marca
+  `publicada` no tiene consumidor público.
 
 ## Pendientes
 1. Borrar desde `/admin/fotos` la foto de prueba (9 bytes) que quedó en el bucket.

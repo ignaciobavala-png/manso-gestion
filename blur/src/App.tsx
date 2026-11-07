@@ -7,6 +7,7 @@ import Barra from './pages/Barra'
 import Mapa from './pages/Mapa'
 import Lanchas from './pages/Lanchas'
 import Analogica from './pages/Analogica'
+import Revelado from './pages/Revelado'
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
         <Route path="mapa" element={<Mapa />} />
         <Route path="mapa/lanchas" element={<Lanchas />} />
         <Route path="analogica" element={<Analogica />} />
+        <Route path="analogica/revelado" element={<Revelado />} />
 
         {/* Las URL de cuando Escenarios, Lanchas (y antes Transporte) eran pestañas propias. */}
         <Route path="escenarios" element={<Navigate to="/lineup/escenarios" replace />} />

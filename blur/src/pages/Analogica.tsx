@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import lomo from '../assets/lomo.webp'
 import { Mock, Pagina, Rotulo, Titulo } from '../components/Mock'
 import { ElegirPelicula } from '../components/analogica/Cartucho'
@@ -74,9 +75,14 @@ function Cargar() {
           <p className="max-w-[28ch] text-sm text-apagado">
             {FOTOS_POR_PERSONA} fotos para todo el festival. Sin vista previa, sin borrar.
           </p>
-          <button className="btn mt-6" onClick={() => setPaso('elegir')}>
-            Cargar rollo
-          </button>
+          <div className="mt-6 flex items-center gap-6">
+            <button className="btn" onClick={() => setPaso('elegir')}>
+              Cargar rollo
+            </button>
+            <Link to="/analogica/revelado" className="enlace">
+              Revelado
+            </Link>
+          </div>
           <AvisoMock />
         </div>
       </div>
@@ -301,7 +307,10 @@ function Camara() {
       <div className="entra mt-10" style={{ animationDelay: '440ms' }}>
         <Tira frames={tira} sacadas={fotosSacadas} />
       </div>
-      <div className="mt-6 text-center">
+      <div className="mt-6 flex flex-col items-center gap-3">
+        <Link to="/analogica/revelado" className="enlace">
+          Revelado
+        </Link>
         <AvisoMock />
       </div>
 
@@ -343,6 +352,9 @@ function Entrega() {
         Se acabó el rollo. Las {FOTOS_POR_PERSONA} fotos ya están con la organización, que las revisa y elige cuáles
         publicar. Gracias por mirar con nosotros.
       </p>
+      <Link to="/analogica/revelado" className="enlace mt-6">
+        Ver el revelado
+      </Link>
       <div className="mt-6">
         <Tira frames={tira} sacadas={Math.min(fotosSacadas, FOTOS_POR_PERSONA)} />
       </div>

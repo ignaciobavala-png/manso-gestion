@@ -24,6 +24,7 @@ const TEMAS: Record<string, Tema> = {
   '/mapa': 'verde',
   '/mapa/lanchas': 'verde',
   '/analogica': 'verde',
+  '/analogica/revelado': 'gris',
 }
 
 export const MARCA = `${import.meta.env.BASE_URL}marca/`
