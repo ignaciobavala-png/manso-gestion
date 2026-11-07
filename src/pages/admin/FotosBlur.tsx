@@ -1,10 +1,11 @@
-import { Camera, Check, Download, Trash2 } from 'lucide-react'
+import { Camera, Check, Download, Trash2, Undo2, X } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 
 /**
  * Fotos de Analógica (app de BLUR, carpeta blur/). Llegan solas al bucket
- * privado `blur-analogica`; acá la organización elige cuáles se publican.
+ * privado `blur-analogica`; acá la organización decide foto por foto:
+ * sin revisar → para publicar, o revisada y no se publica (migración 045).
  * El bucket no tiene lectura pública: se ven con URLs firmadas que vencen.
  */
 const BUCKET = 'blur-analogica'
@@ -15,12 +16,16 @@ interface Foto {
   path: string
   filtro: string | null
   publicada: boolean
+  descartada: boolean
   created_at: string
   dispositivo: string
   url?: string
 }
 
-type Filtro = 'todas' | 'sin-revisar' | 'publicadas'
+type Estado = 'sin-revisar' | 'publicar' | 'descartada'
+type Filtro = 'todas' | Estado
+
+const estadoDe = (f: Foto): Estado => (f.publicada ? 'publicar' : f.descartada ? 'descartada' : 'sin-revisar')
 
 export default function FotosBlur() {
   const [fotos, setFotos] = useState<Foto[]>([])
@@ -32,7 +37,7 @@ export default function FotosBlur() {
   const cargar = useCallback(async () => {
     const { data, error: e } = await supabase
       .from('blur_fotos')
-      .select('id, path, filtro, publicada, created_at, dispositivo')
+      .select('id, path, filtro, publicada, descartada, created_at, dispositivo')
       .order('created_at', { ascending: false })
       .limit(500)
     if (e) {
@@ -55,11 +60,12 @@ export default function FotosBlur() {
     cargar()
   }, [cargar])
 
-  const alternar = async (f: Foto) => {
+  const decidir = async (f: Foto, estado: Estado) => {
     setOcupada(f.id)
-    const { error: e } = await supabase.from('blur_fotos').update({ publicada: !f.publicada }).eq('id', f.id)
+    const marcas = { publicada: estado === 'publicar', descartada: estado === 'descartada' }
+    const { error: e } = await supabase.from('blur_fotos').update(marcas).eq('id', f.id)
     if (e) setError('No se pudo guardar el cambio.')
-    else setFotos((fs) => fs.map((x) => (x.id === f.id ? { ...x, publicada: !f.publicada } : x)))
+    else setFotos((fs) => fs.map((x) => (x.id === f.id ? { ...x, ...marcas } : x)))
     setOcupada(null)
   }
 
@@ -79,25 +85,25 @@ export default function FotosBlur() {
     setOcupada(null)
   }
 
-  const visibles = fotos.filter((f) =>
-    filtro === 'todas' ? true : filtro === 'publicadas' ? f.publicada : !f.publicada,
-  )
-  const publicadas = fotos.filter((f) => f.publicada).length
+  const cuenta = (e: Estado) => fotos.filter((f) => estadoDe(f) === e).length
+  const visibles = fotos.filter((f) => filtro === 'todas' || estadoDe(f) === filtro)
 
   return (
     <div className="px-4 pt-4 pb-24 max-w-5xl mx-auto w-full space-y-4">
       <div className="flex items-end justify-between gap-3">
         <h1 className="text-white font-bold text-xl">Fotos de Analógica</h1>
         <p className="text-white/60 text-sm">
-          {fotos.length} recibidas · {publicadas} para publicar
+          {fotos.length} recibidas · {cuenta('sin-revisar')} sin revisar · {cuenta('publicar')} para publicar ·{' '}
+          {cuenta('descartada')} descartadas
         </p>
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {(
           [
-            ['sin-revisar', 'Sin revisar'],
-            ['publicadas', 'Publicadas'],
+            ['sin-revisar', `Sin revisar (${cuenta('sin-revisar')})`],
+            ['publicar', `Para publicar (${cuenta('publicar')})`],
+            ['descartada', `No se publican (${cuenta('descartada')})`],
             ['todas', 'Todas'],
           ] as const
         ).map(([id, texto]) => (
@@ -132,7 +138,7 @@ export default function FotosBlur() {
             <li
               key={f.id}
               className={`bg-black/40 border rounded-2xl overflow-hidden ${
-                f.publicada ? 'border-olive-500' : 'border-white/20'
+                f.publicada ? 'border-olive-500' : f.descartada ? 'border-red-400/50 opacity-70' : 'border-white/20'
               }`}
             >
               <div className="relative aspect-[3/4] bg-gray-800/80">
@@ -150,16 +156,37 @@ export default function FotosBlur() {
                 )}
               </div>
               <div className="flex items-center gap-1 p-2">
-                <button
-                  onClick={() => alternar(f)}
-                  disabled={ocupada === f.id}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-medium disabled:opacity-50 ${
-                    f.publicada ? 'bg-olive-600 text-white' : 'bg-white text-black hover:bg-white/90'
-                  }`}
-                >
-                  <Check size={16} strokeWidth={2} aria-hidden />
-                  {f.publicada ? 'Publicada' : 'Publicar'}
-                </button>
+                {estadoDe(f) === 'sin-revisar' ? (
+                  <>
+                    <button
+                      onClick={() => decidir(f, 'publicar')}
+                      disabled={ocupada === f.id}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-medium bg-white text-black hover:bg-white/90 disabled:opacity-50"
+                    >
+                      <Check size={16} strokeWidth={2} aria-hidden />
+                      Publicar
+                    </button>
+                    <button
+                      onClick={() => decidir(f, 'descartada')}
+                      disabled={ocupada === f.id}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-medium border border-white/30 text-white/80 hover:text-white disabled:opacity-50"
+                    >
+                      <X size={16} strokeWidth={2} aria-hidden />
+                      No
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => decidir(f, 'sin-revisar')}
+                    disabled={ocupada === f.id}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-medium disabled:opacity-50 ${
+                      f.publicada ? 'bg-olive-600 text-white' : 'border border-red-400/50 text-red-300'
+                    }`}
+                  >
+                    <Undo2 size={16} strokeWidth={2} aria-hidden />
+                    {f.publicada ? 'Se publica · deshacer' : 'No se publica · deshacer'}
+                  </button>
+                )}
                 {f.url && (
                   <a
                     href={f.url}
