@@ -1,4 +1,4 @@
-import { Camera, Check, Download, Trash2, Undo2, X } from 'lucide-react'
+import { Camera, Check, CheckCheck, Copy, Download, ExternalLink, Mail, Trash2, Undo2, X } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 
@@ -7,6 +7,10 @@ import { supabase } from '../../lib/supabase'
  * privado `blur-analogica`; acá la organización decide foto por foto:
  * sin revisar → para publicar, o revisada y no se publica (migración 045).
  * El bucket no tiene lectura pública: se ven con URLs firmadas que vencen.
+ *
+ * Pestaña "Rollos": cada teléfono es una cámara descartable con 10 fotos y su
+ * link personal (/blur/rollo/<token>, migración 046). Desde ahí la organización
+ * copia el link o se lo manda por mail a quien dejó su contacto.
  */
 const BUCKET = 'blur-analogica'
 const VENCE_SEG = 60 * 60
@@ -22,6 +26,15 @@ interface Foto {
   url?: string
 }
 
+interface RolloFila {
+  dispositivo: string
+  token: string
+  numero: string
+  contacto: string | null
+  enviado_at: string | null
+  created_at: string
+}
+
 type Estado = 'sin-revisar' | 'publicar' | 'descartada'
 type Filtro = 'todas' | Estado
 
@@ -33,6 +46,8 @@ export default function FotosBlur() {
   const [error, setError] = useState('')
   const [filtro, setFiltro] = useState<Filtro>('sin-revisar')
   const [ocupada, setOcupada] = useState<string | null>(null)
+  const [vista, setVista] = useState<'fotos' | 'rollos'>('fotos')
+  const [rollos, setRollos] = useState<RolloFila[]>([])
 
   const cargar = useCallback(async () => {
     const { data, error: e } = await supabase
@@ -51,7 +66,15 @@ export default function FotosBlur() {
       .createSignedUrls(filas.map((f) => f.path), VENCE_SEG)
     const porPath = new Map((firmadas ?? []).map((s) => [s.path, s.signedUrl]))
     setFotos(filas.map((f) => ({ ...f, url: porPath.get(f.path) ?? undefined })))
-    setError('')
+    const { data: filasRollos, error: eRollos } = await supabase
+      .from('blur_rollos')
+      .select('dispositivo, token, numero, contacto, enviado_at, created_at')
+      .order('created_at', { ascending: false })
+    if (eRollos) setError('No se pudieron leer los rollos.')
+    else {
+      setRollos((filasRollos ?? []) as RolloFila[])
+      setError('')
+    }
     setCargando(false)
   }, [])
 
@@ -98,6 +121,31 @@ export default function FotosBlur() {
         </p>
       </div>
 
+      <div className="flex gap-2 border-b border-white/10 pb-3">
+        {(
+          [
+            ['fotos', 'Fotos'],
+            ['rollos', `Rollos (${rollos.length})`],
+          ] as const
+        ).map(([id, texto]) => (
+          <button
+            key={id}
+            onClick={() => setVista(id)}
+            className={`px-3 py-1.5 rounded-xl text-sm border transition-colors ${
+              vista === id ? 'bg-white text-black border-white' : 'border-white/20 text-white/60 hover:text-white'
+            }`}
+          >
+            {texto}
+          </button>
+        ))}
+      </div>
+
+      {error && <p className="text-red-400 text-sm">{error}</p>}
+
+      {vista === 'rollos' ? (
+        <ListaRollos rollos={rollos} fotos={fotos} cargando={cargando} onCambio={cargar} onError={setError} />
+      ) : (
+      <>
       <div className="flex flex-wrap gap-2">
         {(
           [
@@ -120,8 +168,6 @@ export default function FotosBlur() {
           </button>
         ))}
       </div>
-
-      {error && <p className="text-red-400 text-sm">{error}</p>}
 
       {cargando ? (
         <p className="text-white/60 text-sm">Cargando…</p>
@@ -208,6 +254,152 @@ export default function FotosBlur() {
               </div>
             </li>
           ))}
+        </ul>
+      )}
+      </>
+      )}
+    </div>
+  )
+}
+
+/** Cuántas fotos de un rollo hay en cada estado (de las que ya cargó el panel). */
+function resumen(fotos: Foto[]) {
+  let publicar = 0
+  let descartadas = 0
+  for (const f of fotos) {
+    if (f.publicada) publicar++
+    else if (f.descartada) descartadas++
+  }
+  return { total: fotos.length, publicar, descartadas, sinRevisar: fotos.length - publicar - descartadas }
+}
+
+function ListaRollos({
+  rollos,
+  fotos,
+  cargando,
+  onCambio,
+  onError,
+}: {
+  rollos: RolloFila[]
+  fotos: Foto[]
+  cargando: boolean
+  onCambio: () => Promise<void>
+  onError: (m: string) => void
+}) {
+  const [soloConMail, setSoloConMail] = useState(false)
+  const [copiado, setCopiado] = useState<string | null>(null)
+
+  const porRollo = new Map<string, Foto[]>()
+  for (const f of fotos) porRollo.set(f.dispositivo, [...(porRollo.get(f.dispositivo) ?? []), f])
+
+  // Los rollos sin fotos (se borraron todas) no tienen nada que mandar.
+  const filas = rollos.filter((r) => porRollo.has(r.dispositivo) && (!soloConMail || r.contacto))
+
+  const link = (r: RolloFila) => `${window.location.origin}/blur/rollo/${r.token}`
+
+  const copiar = async (r: RolloFila) => {
+    try {
+      await navigator.clipboard.writeText(link(r))
+      setCopiado(r.dispositivo)
+      setTimeout(() => setCopiado((c) => (c === r.dispositivo ? null : c)), 2000)
+    } catch {
+      onError('No se pudo copiar. Abrí el link y copialo desde la barra.')
+    }
+  }
+
+  const mailto = (r: RolloFila) => {
+    const asunto = 'Tus fotos del rollo analógico de BLUR'
+    const cuerpo = `Hola!\n\nAcá están las fotos de tu rollo (Nº ${r.numero}). Podés verlas y guardarlas todas juntas desde este link:\n\n${link(r)}\n\n¡Gracias por sacar fotos con nosotros!`
+    return `mailto:${r.contacto}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`
+  }
+
+  const marcarEnviado = async (r: RolloFila) => {
+    const { error } = await supabase
+      .from('blur_rollos')
+      .update({ enviado_at: r.enviado_at ? null : new Date().toISOString() })
+      .eq('dispositivo', r.dispositivo)
+    if (error) onError('No se pudo guardar la marca de envío.')
+    else await onCambio()
+  }
+
+  if (cargando) return <p className="text-white/60 text-sm">Cargando…</p>
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-white/60 text-sm">
+          {filas.length} rollos · {rollos.filter((r) => r.contacto).length} dejaron su mail ·{' '}
+          {rollos.filter((r) => r.enviado_at).length} enviados
+        </p>
+        <button
+          onClick={() => setSoloConMail((v) => !v)}
+          className={`px-3 py-1.5 rounded-xl text-sm border transition-colors ${
+            soloConMail ? 'border-terra-400 text-terra-400' : 'border-white/20 text-white/60 hover:text-white'
+          }`}
+        >
+          Solo con mail
+        </button>
+      </div>
+
+      {filas.length === 0 ? (
+        <div className="bg-black/40 border border-white/20 rounded-2xl p-8 text-center">
+          <p className="text-white/60 text-sm">No hay rollos en esta vista.</p>
+        </div>
+      ) : (
+        <ul className="space-y-2">
+          {filas.map((r) => {
+            const t = resumen(porRollo.get(r.dispositivo) ?? [])
+            return (
+              <li key={r.dispositivo} className="bg-black/40 border border-white/20 rounded-2xl p-3 space-y-2">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <p className="text-white font-semibold">Rollo Nº {r.numero}</p>
+                  <p className="text-white/60 text-xs">
+                    {t.total} {t.total === 1 ? 'foto' : 'fotos'} · {t.publicar} para publicar · {t.descartadas} no ·{' '}
+                    {t.sinRevisar} sin revisar
+                  </p>
+                </div>
+                <p className="text-sm text-white/80">{r.contacto ?? <span className="text-white/40">Sin mail</span>}</p>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => copiar(r)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm bg-white text-black hover:bg-white/90"
+                  >
+                    {copiado === r.dispositivo ? <Check size={16} aria-hidden /> : <Copy size={16} aria-hidden />}
+                    {copiado === r.dispositivo ? 'Copiado' : 'Copiar link'}
+                  </button>
+                  <a
+                    href={link(r)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm border border-white/30 text-white/80 hover:text-white"
+                  >
+                    <ExternalLink size={16} aria-hidden />
+                    Abrir
+                  </a>
+                  {r.contacto && (
+                    <a
+                      href={mailto(r)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm border border-white/30 text-white/80 hover:text-white"
+                    >
+                      <Mail size={16} aria-hidden />
+                      Enviar por mail
+                    </a>
+                  )}
+                  <button
+                    onClick={() => marcarEnviado(r)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm border ${
+                      r.enviado_at ? 'border-olive-500 text-olive-500' : 'border-white/30 text-white/60 hover:text-white'
+                    }`}
+                  >
+                    <CheckCheck size={16} aria-hidden />
+                    {r.enviado_at
+                      ? `Enviado ${new Date(r.enviado_at).toLocaleDateString('es-AR')} · deshacer`
+                      : 'Marcar enviado'}
+                  </button>
+                </div>
+              </li>
+            )
+          })}
         </ul>
       )}
     </div>
