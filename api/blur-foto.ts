@@ -1,6 +1,6 @@
 /// <reference types="node" />
 import { adminClient } from './_lib/registro'
-import { BUCKET, esUuid, reveladoAbierto } from './_lib/blur'
+import { BUCKET, esUuid, leerRevelado } from './_lib/blur'
 
 export const config = {
   runtime: 'edge',
@@ -9,7 +9,7 @@ export const config = {
 // GET /api/blur-foto?i=<id de la foto> — entrega UNA imagen de Analógica.
 //
 // Tres puertas, como api/blur-rollo.ts, y cada pedido se valida por separado:
-//   ?i=                 pública: solo fotos publicadas, y solo con el revelado abierto.
+//   ?i=                 pública: solo fotos publicadas, y solo con el revelado abierto (blur_config).
 //   ?i=&t=<token>       el link personal: una foto de ESE rollo (la org decide cuándo se manda).
 //   ?i=&d=<dispositivo> la propia app: una foto de ESTE teléfono, con el revelado abierto.
 // Las descartadas no salen por ninguna puerta. Cualquier rechazo responde 404
@@ -48,9 +48,10 @@ export default async function handler(req: Request): Promise<Response> {
         .maybeSingle<{ dispositivo: string }>()
       permitido = rollo?.dispositivo === foto.dispositivo
     } else if (esUuid(disp)) {
-      permitido = reveladoAbierto() && disp === foto.dispositivo
+      // Primero lo barato: si no es de este teléfono, ni se lee la configuración.
+      permitido = disp === foto.dispositivo && (await leerRevelado(supabase)).abierto
     } else {
-      permitido = reveladoAbierto() && foto.publicada
+      permitido = foto.publicada && (await leerRevelado(supabase)).abierto
       // Pública: puede cachearla la red. Poco tiempo, por si la org la despublica.
       cache = 'public, max-age=300, s-maxage=300'
     }

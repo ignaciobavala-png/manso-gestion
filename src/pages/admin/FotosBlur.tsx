@@ -8,6 +8,8 @@ import { supabase } from '../../lib/supabase'
  * sin revisar → para publicar, o revisada y no se publica (migración 045).
  * El bucket no tiene lectura pública: se ven con URLs firmadas que vencen.
  *
+ * Pestaña "Revelado": cuándo abre el revelado público de la app (migración 047).
+ *
  * Pestaña "Rollos": cada teléfono es una cámara descartable con 10 fotos y su
  * link personal (/blur/rollo/<token>, migración 046). Desde ahí la organización
  * copia el link o se lo manda por mail a quien dejó su contacto.
@@ -46,7 +48,7 @@ export default function FotosBlur() {
   const [error, setError] = useState('')
   const [filtro, setFiltro] = useState<Filtro>('sin-revisar')
   const [ocupada, setOcupada] = useState<string | null>(null)
-  const [vista, setVista] = useState<'fotos' | 'rollos'>('fotos')
+  const [vista, setVista] = useState<'fotos' | 'rollos' | 'revelado'>('fotos')
   const [rollos, setRollos] = useState<RolloFila[]>([])
 
   const cargar = useCallback(async () => {
@@ -126,6 +128,7 @@ export default function FotosBlur() {
           [
             ['fotos', 'Fotos'],
             ['rollos', `Rollos (${rollos.length})`],
+            ['revelado', 'Revelado'],
           ] as const
         ).map(([id, texto]) => (
           <button
@@ -142,7 +145,9 @@ export default function FotosBlur() {
 
       {error && <p className="text-red-400 text-sm">{error}</p>}
 
-      {vista === 'rollos' ? (
+      {vista === 'revelado' ? (
+        <ControlRevelado fotos={fotos} onError={setError} />
+      ) : vista === 'rollos' ? (
         <ListaRollos rollos={rollos} fotos={fotos} cargando={cargando} onCambio={cargar} onError={setError} />
       ) : (
       <>
@@ -402,6 +407,158 @@ function ListaRollos({
           })}
         </ul>
       )}
+    </div>
+  )
+}
+
+const dos = (n: number) => String(n).padStart(2, '0')
+
+/** ISO → valor de <input type="datetime-local"> en la hora del navegador (no en UTC). */
+function aInputLocal(iso: string) {
+  const d = new Date(iso)
+  return `${d.getFullYear()}-${dos(d.getMonth() + 1)}-${dos(d.getDate())}T${dos(d.getHours())}:${dos(d.getMinutes())}`
+}
+
+const fechaLarga = (iso: string) =>
+  new Date(iso).toLocaleString('es-AR', { dateStyle: 'full', timeStyle: 'short' })
+
+/**
+ * Cuándo abre el revelado público de la app (blur_config.revelado_desde, migración 047).
+ * Sin fecha = cerrado. Con fecha futura = programado. Con fecha pasada = abierto.
+ * Abre las fotos marcadas "para publicar" a cualquiera que tenga la app, y a cada
+ * persona el rollo de su teléfono.
+ */
+function ControlRevelado({ fotos, onError }: { fotos: Foto[]; onError: (m: string) => void }) {
+  // undefined = todavía leyendo; null = sin fecha (cerrado)
+  const [desde, setDesde] = useState<string | null | undefined>(undefined)
+  const [entrada, setEntrada] = useState('')
+  const [guardando, setGuardando] = useState(false)
+
+  const leer = useCallback(async () => {
+    const { data, error } = await supabase.from('blur_config').select('revelado_desde').eq('id', true).maybeSingle()
+    if (error) {
+      onError('No se pudo leer el estado del revelado.')
+      return
+    }
+    const v = (data as { revelado_desde: string | null } | null)?.revelado_desde ?? null
+    setDesde(v)
+    setEntrada(v ? aInputLocal(v) : '')
+  }, [onError])
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    leer()
+  }, [leer])
+
+  const guardar = async (valor: string | null) => {
+    setGuardando(true)
+    // .select() para saber si de verdad cambió una fila (con permisos de menos, un update no falla: no toca nada).
+    const { data, error } = await supabase
+      .from('blur_config')
+      .update({ revelado_desde: valor })
+      .eq('id', true)
+      .select('revelado_desde')
+      .maybeSingle()
+    if (error || !data) onError('No se pudo guardar el cambio.')
+    else {
+      onError('')
+      const v = (data as { revelado_desde: string | null }).revelado_desde
+      setDesde(v)
+      setEntrada(v ? aInputLocal(v) : '')
+    }
+    setGuardando(false)
+  }
+
+  const abrirAhora = () => {
+    if (!window.confirm('¿Abrir el revelado ahora? Las fotos marcadas para publicar se ven en la app.')) return
+    // 'now' lo resuelve la base: no depende del reloj de esta computadora.
+    guardar('now')
+  }
+
+  const programar = () => {
+    const fecha = new Date(entrada)
+    if (Number.isNaN(fecha.getTime())) return
+    if (fecha.getTime() <= Date.now() && !window.confirm('Esa fecha ya pasó: el revelado se abre ahora. ¿Seguir?')) return
+    guardar(fecha.toISOString())
+  }
+
+  const cerrar = () => {
+    if (!window.confirm('¿Cerrar el revelado? Las fotos dejan de verse en la app.')) return
+    guardar(null)
+  }
+
+  if (desde === undefined) return <p className="text-white/60 text-sm">Cargando…</p>
+
+  const abierto = desde !== null && new Date(desde).getTime() <= Date.now()
+  const programado = desde !== null && !abierto
+  const publicar = fotos.filter((f) => f.publicada).length
+  const sinRevisar = fotos.filter((f) => !f.publicada && !f.descartada).length
+
+  return (
+    <div className="space-y-4">
+      <div
+        className={`rounded-2xl border p-4 ${
+          abierto ? 'border-olive-500 bg-olive-600/10' : programado ? 'border-terra-400/60' : 'border-white/20 bg-black/40'
+        }`}
+      >
+        <p className="text-white font-semibold">
+          {abierto ? 'Abierto' : programado ? 'Programado' : 'Cerrado'}
+        </p>
+        <p className="text-white/70 text-sm mt-1">
+          {abierto
+            ? `Abierto desde el ${fechaLarga(desde)}. En la app se ven las ${publicar} fotos marcadas para publicar.`
+            : programado
+              ? `Se abre el ${fechaLarga(desde)}. Hasta entonces la app muestra la espera en el laboratorio.`
+              : 'Nadie ve las fotos. La app muestra la espera en el laboratorio.'}
+        </p>
+      </div>
+
+      {sinRevisar > 0 && (
+        <p className="text-sm text-amber-300/90 border border-amber-300/30 rounded-2xl p-3">
+          Hay {sinRevisar} {sinRevisar === 1 ? 'foto sin revisar' : 'fotos sin revisar'}. En la galería pública solo salen
+          las que marcás para publicar, pero cada persona ve en su rollo personal todas las suyas menos las descartadas.
+          Conviene terminar la revisión antes de abrir.
+        </p>
+      )}
+
+      <div className="rounded-2xl border border-white/20 bg-black/40 p-4 space-y-3">
+        <label htmlFor="revelado-fecha" className="block text-sm text-white/70">
+          Fecha y hora de apertura
+        </label>
+        <input
+          id="revelado-fecha"
+          type="datetime-local"
+          value={entrada}
+          onChange={(e) => setEntrada(e.target.value)}
+          className="w-full sm:w-auto rounded-xl bg-white/10 border border-white/20 px-3 py-2 text-white"
+        />
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={programar}
+            disabled={guardando || !entrada}
+            className="px-3 py-1.5 rounded-xl text-sm bg-white text-black hover:bg-white/90 disabled:opacity-50"
+          >
+            Programar
+          </button>
+          <button
+            onClick={abrirAhora}
+            disabled={guardando || abierto}
+            className="px-3 py-1.5 rounded-xl text-sm border border-olive-500 text-olive-500 disabled:opacity-40"
+          >
+            Abrir ahora
+          </button>
+          <button
+            onClick={cerrar}
+            disabled={guardando || desde === null}
+            className="px-3 py-1.5 rounded-xl text-sm border border-white/30 text-white/80 hover:text-white disabled:opacity-40"
+          >
+            Cerrar
+          </button>
+        </div>
+        <p className="text-xs text-white/50">
+          Los links personales de la pestaña Rollos funcionan aunque esté cerrado: cuándo mandarlos lo decidís vos.
+        </p>
+      </div>
     </div>
   )
 }

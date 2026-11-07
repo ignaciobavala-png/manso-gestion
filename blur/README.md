@@ -52,9 +52,11 @@ organización se muestran literales (sin mayúsculas forzadas).
   (patrón de `api/reenviar-entradas.ts`) no está hecho.
 - Al entregar el rollo la app pide el mail (opcional) con `blur_rollo_dejar_contacto()`: guarda el mail y
   no devuelve el token. El mail no se guarda en el teléfono, solo la marca de que ya lo dejó.
-- **Revelado público** (`/analogica/revelado`): cerrado hasta que el servidor lo abre. Se abre con la
-  variable de Vercel **`BLUR_REVELADO_DESDE`** (fecha ISO, ej. `2026-12-20T12:00:00-03:00`); sin definir, o
-  inválida, queda cerrado. Abierto muestra solo las `publicada`. Después de esa fecha, cada persona también
+- **Revelado público** (`/analogica/revelado`): cerrado hasta que lo abre la organización, **desde
+  `/admin/fotos` → pestaña Revelado** (migración `047_blur_config.sql`, **aplicada el 07/11/2026**): programar
+  fecha y hora, "Abrir ahora" o "Cerrar", sin Vercel ni redeploy. La fecha vive en `blur_config.revelado_desde`
+  (solo staff); sin fecha, con fecha inválida o si el servidor no puede leerla, queda cerrado. Abierto muestra
+  solo las `publicada`. Después de esa fecha, cada persona también
   ve su rollo desde su teléfono (`/rollo`). Con el revelado cerrado, el link `/rollo/<token>` que manda la
   org sí funciona: cuándo mandarlo lo decide la org.
 - Cómo se sirven las fotos: funciones de servidor con la clave de servicio, no URLs del bucket.
@@ -71,8 +73,8 @@ organización se muestran literales (sin mayúsculas forzadas).
    La foto de prueba de 9 bytes de octubre ya no figura en la base.
 2. Cargar en manso-club los horarios, los escenarios que faltan y las charlas.
 3. Reemplazar los MOCK (Barra, Mapa) por datos reales.
-4. Definir `BLUR_REVELADO_DESDE` en Vercel cuando se quiera abrir el revelado, y decidir si los mails se
-   mandan solos (Resend) en vez de `mailto:`. Publicar fotos de asistentes pide términos claros al sacar la foto.
+4. Cuando se quiera abrir el revelado: terminar la revisión de fotos y usar la pestaña Revelado. Decidir si
+   los mails se mandan solos (Resend) en vez de `mailto:`. Publicar fotos de asistentes pide términos claros al sacar la foto.
 5. Decidir cuándo mergear a `master` (publica `/blur/` en el dominio real de Gestión) y si se
    separa a un proyecto de Vercel propio con `blur.mansoclub.com.ar` (sumaría una regla para que
    la raíz del subdominio caiga en `/blur/`).

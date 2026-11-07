@@ -1,8 +1,8 @@
 /**
  * Revelado: lo que se ve de las fotos después del festival. Todo sale de dos
- * funciones de servidor de Gestión (api/blur-reveladas.ts y api/blur-rollo.ts),
- * que firman URLs temporales del bucket privado. La fecha de apertura la
- * decide el servidor (BLUR_REVELADO_DESDE): la app no la conoce de antemano.
+ * funciones de servidor de Gestión (api/blur-reveladas.ts, blur-rollo.ts y blur-foto.ts),
+ * que entregan las imágenes del bucket privado sin exponer su path. La fecha de apertura la
+ * decide la organización desde el panel (blur_config.revelado_desde) y la app se entera por el servidor.
  *
  * En desarrollo local (Vite) esas rutas no existen: cualquier falla de red o
  * respuesta que no sea JSON se trata como "todavía cerrado".

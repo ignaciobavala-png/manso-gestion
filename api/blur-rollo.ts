@@ -1,6 +1,6 @@
 /// <reference types="node" />
 import { adminClient } from './_lib/registro'
-import { conNumeros, esUuid, responder, reveladoAbierto, reveladoDesde } from './_lib/blur'
+import { conNumeros, esUuid, leerRevelado, responder } from './_lib/blur'
 
 export const config = {
   runtime: 'edge',
@@ -13,7 +13,7 @@ export const config = {
 //   ?t=<token>        el link personal que la organización le manda a la persona.
 //                     Funciona siempre: quién lo recibe y cuándo lo decide la org.
 //   ?d=<dispositivo>  la propia app, desde el teléfono que sacó las fotos. Solo
-//                     después de BLUR_REVELADO_DESDE, igual que el revelado público.
+//                     con el revelado abierto (blur_config), igual que el revelado público.
 // Las URLs de las fotos (api/blur-foto.ts) repiten la credencial con la que se
 // pidió la lista, y nada más: no se devuelve el dispositivo que corresponde a
 // un token, ni el token que corresponde a un dispositivo, ni el contacto.
@@ -44,8 +44,9 @@ export default async function handler(req: Request): Promise<Response> {
       numero = data.numero
       credencial = { t: token }
     } else {
-      if (!reveladoAbierto()) {
-        return responder({ abierto: false, desde: reveladoDesde()?.toISOString() ?? null })
+      const revelado = await leerRevelado(supabase)
+      if (!revelado.abierto) {
+        return responder({ abierto: false, desde: revelado.desde?.toISOString() ?? null })
       }
       dispositivo = disp as string
       credencial = { d: dispositivo }

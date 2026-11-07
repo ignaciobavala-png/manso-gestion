@@ -1,4 +1,5 @@
 /// <reference types="node" />
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 // Lectura de las fotos de Analógica (app de BLUR). El bucket `blur-analogica`
 // es privado y `anon` no tiene SELECT en `blur_fotos`: las funciones de api/
@@ -20,20 +21,34 @@ export interface FotoRollo {
   url: string
 }
 
-/**
- * Cuándo abre el revelado público: env BLUR_REVELADO_DESDE (fecha ISO, ej.
- * 2026-12-20T12:00:00-03:00). Sin definir, o con un valor inválido: cerrado.
- */
-export function reveladoDesde(): Date | null {
-  const crudo = process.env.BLUR_REVELADO_DESDE
-  if (!crudo) return null
-  const d = new Date(crudo)
-  return Number.isNaN(d.getTime()) ? null : d
+export interface Revelado {
+  /** Cuándo abre (o abrió); null si no hay fecha. */
+  desde: Date | null
+  abierto: boolean
 }
 
-export function reveladoAbierto(): boolean {
-  const d = reveladoDesde()
-  return d !== null && Date.now() >= d.getTime()
+/**
+ * Cuándo abre el revelado público: blur_config.revelado_desde (migración 047),
+ * que la organización maneja desde /admin/fotos. Sin fecha, con una fecha
+ * inválida o si la lectura falla: cerrado. Nunca abre por una duda.
+ */
+export async function leerRevelado(supabase: SupabaseClient): Promise<Revelado> {
+  const cerrado: Revelado = { desde: null, abierto: false }
+  try {
+    const { data, error } = await supabase
+      .from('blur_config')
+      .select('revelado_desde')
+      .eq('id', true)
+      .maybeSingle<{ revelado_desde: string | null }>()
+    if (error) throw new Error(error.message)
+    if (!data?.revelado_desde) return cerrado
+    const desde = new Date(data.revelado_desde)
+    if (Number.isNaN(desde.getTime())) return cerrado
+    return { desde, abierto: Date.now() >= desde.getTime() }
+  } catch (err) {
+    console.error('[blur] no se pudo leer blur_config:', err instanceof Error ? err.message : err)
+    return cerrado
+  }
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
