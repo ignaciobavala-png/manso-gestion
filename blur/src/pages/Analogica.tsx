@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Mock, Rotulo, Titulo } from '../components/Mock'
+import { Mock, Pagina, Rotulo, Titulo } from '../components/Mock'
 import { FOTOS_POR_PERSONA } from '../lib/mock'
 import { FILTROS, aplicarFiltro, filtroPorId } from '../lib/filtros'
 import { RolloCompleto, SUBIDA_REAL, subirFoto } from '../lib/fotos'
@@ -78,9 +78,9 @@ export default function Analogica() {
   }
 
   return (
-    <>
-      <Rotulo>07 · Analógica</Rotulo>
-      <Titulo className="mt-3">Analógica</Titulo>
+    <Pagina>
+      <Rotulo>Rollo</Rotulo>
+      <Titulo className="mt-5">Analógica</Titulo>
       {!SUBIDA_REAL && <div className="mt-3"><Mock>Las fotos no se suben a ningún lado</Mock></div>}
 
       <p className="mt-6 text-sm text-apagado">
@@ -89,8 +89,8 @@ export default function Analogica() {
       </p>
 
       {terminado ? (
-        <div className="mt-6 flex aspect-[3/4] flex-col items-center justify-center border border-texto bg-superficie p-8 text-center">
-          <p className="rotulo">{FOTOS_POR_PERSONA}/{FOTOS_POR_PERSONA}</p>
+        <div className="mt-6 flex aspect-[3/4] flex-col items-center justify-center border-2 border-texto bg-superficie p-8 text-center">
+          <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-apagado">{FOTOS_POR_PERSONA}/{FOTOS_POR_PERSONA}</p>
           <p className="titulo mt-4 text-5xl">Tu rollo se ha acabado</p>
           <p className="mt-5 text-sm text-apagado">
             Ya no quedan fotos. La organización las revisa y elige cuáles publicar. Gracias por mirar con nosotros.
@@ -118,7 +118,7 @@ export default function Analogica() {
               <div className="absolute inset-0 flex items-center justify-center p-6 text-center">
                 <button
                   onClick={prender}
-                  className="border border-texto px-5 py-3 font-mono text-xs uppercase tracking-[0.25em] hover:text-acento"
+                  className="btn"
                 >
                   Abrir cámara
                 </button>
@@ -167,6 +167,6 @@ export default function Analogica() {
           <li key={i} className={`aspect-square border ${i < fotosSacadas ? 'border-acento bg-acento' : 'border-linea'}`} />
         ))}
       </ol>
-    </>
+    </Pagina>
   )
 }

@@ -7,10 +7,15 @@ export function Mock({ children = 'Datos de ejemplo' }: { children?: string }) {
   )
 }
 
-export function Rotulo({ children }: { children: React.ReactNode }) {
-  return <p className="rotulo">{children}</p>
+export function Rotulo({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return <p className={`rotulo ${className}`}>{children}</p>
 }
 
 export function Titulo({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return <h1 className={`titulo text-[clamp(2.4rem,13vw,4.5rem)] ${className}`}>{children}</h1>
+  return <h1 className={`titulo text-[clamp(3rem,16vw,5.5rem)] ${className}`}>{children}</h1>
+}
+
+/** Contenedor estándar de una pantalla interna (la home arma sus propios bloques a sangre). */
+export function Pagina({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return <div className={`mx-auto max-w-3xl px-4 pb-16 pt-10 ${className}`}>{children}</div>
 }

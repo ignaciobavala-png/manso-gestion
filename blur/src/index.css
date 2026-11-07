@@ -1,77 +1,197 @@
 @import 'tailwindcss';
 
-/* BLUR — paleta y tipografía de /blur en manso-club (festival_config):
-   fondo marrón tostado, texto crema, acento naranja, resalte oliva.
-   Criterio de manso-design: esquinas filosas, un solo acento por pantalla,
-   mono para datos, grano encima de todo. */
-@theme {
-  --font-sans: 'Archivo', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+/* BLUR — lenguaje visual de mansoclub.com.ar/blur.
+   Tres bloques de color que se alternan (verde / gris / naranja), cada uno con
+   su tinta y su acento; rótulos mono con filete, enlaces mono con chevron,
+   nombres enormes en grotesca, trazos naranja de ilustración encima.
+   Los colores salen de los `--fest-*` de esa página (festival_config).
+   Los tokens apuntan a variables de bloque: cambiar `.tema-*` cambia todo lo de adentro. */
+@theme inline {
+  --font-sans: 'Helvetica Neue', Helvetica, Arial, sans-serif;
   --font-mono: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  --color-fondo: #1c1410;
-  --color-superficie: #261b15;
-  --color-linea: #3d2d24;
-  --color-texto: #fffcdc;
-  --color-apagado: #a7a38d;
-  --color-acento: #e2532b;
-  --color-resalte: #b9b23e;
+  --color-fondo: var(--f-fondo);
+  --color-texto: var(--f-texto);
+  --color-acento: var(--f-acento);
+  --color-resalte: var(--f-resalte);
+  --color-sobre-acento: var(--f-sobre-acento);
+  --color-apagado: var(--f-apagado);
+  --color-linea: var(--f-linea);
+  --color-superficie: var(--f-superficie);
 
   --ease-hard: cubic-bezier(0.77, 0, 0.175, 1);
 }
 
-html {
-  background: var(--color-fondo);
-  color: var(--color-texto);
-  font-family: var(--font-sans);
-  -webkit-tap-highlight-color: transparent;
+/* Bloques de color. `.tema-*` se puede anidar: la home mezcla los tres. */
+.tema-verde {
+  --f-fondo: #003009;
+  --f-texto: #fffcdc;
+  --f-acento: #f65200;
+  --f-resalte: #ffa7fe;
+  --f-sobre-acento: #003009;
+}
+.tema-gris {
+  --f-fondo: #eaeaea;
+  --f-texto: #1a1a1a;
+  --f-acento: #f65200;
+  --f-resalte: #005b15;
+  --f-sobre-acento: #1a1a1a;
+}
+.tema-naranja {
+  --f-fondo: #f65200;
+  --f-texto: #1a1a1a;
+  --f-acento: #fffcdc;
+  --f-resalte: #003009;
+  --f-sobre-acento: #003009;
+}
+.tema-verde,
+.tema-gris,
+.tema-naranja {
+  --f-apagado: color-mix(in srgb, var(--f-texto) 68%, var(--f-fondo));
+  --f-linea: color-mix(in srgb, var(--f-texto) 28%, var(--f-fondo));
+  --f-superficie: color-mix(in srgb, var(--f-texto) 8%, var(--f-fondo));
+  background: var(--f-fondo);
+  color: var(--f-texto);
+}
+/* Sobre naranja el texto secundario necesita más tinta para llegar a contraste. */
+.tema-naranja {
+  --f-apagado: color-mix(in srgb, var(--f-texto) 86%, var(--f-fondo));
 }
 
+html {
+  background: #003009;
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* El fondo detrás del contenido sigue al bloque de la pantalla (rebote de scroll, barras). */
 body {
   margin: 0;
   min-height: 100svh;
-  background: var(--color-fondo);
+  background: #003009;
 }
-
-/* Grano: siempre presente, no intercepta toques. */
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  pointer-events: none;
-  opacity: 0.07;
-  mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-}
+body[data-tema='gris'] { background: #eaeaea; }
+body[data-tema='naranja'] { background: #f65200; }
 
 *:focus-visible {
-  outline: 1px solid var(--color-acento);
+  outline: 2px solid var(--f-acento, #f65200);
   outline-offset: 2px;
 }
 
+/* —— ROTULO: filete + mono espaciado, como las secciones de la web. */
 .rotulo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: var(--color-apagado);
+  color: var(--f-apagado);
+}
+.rotulo::before {
+  content: '';
+  width: 2rem;
+  height: 1px;
+  background: currentColor;
+  flex: none;
 }
 
-.titulo {
-  font-weight: 900;
-  font-stretch: 125%;
-  letter-spacing: -0.04em;
-  line-height: 0.88;
+/* > ENLACE: mono en negrita, acento, chevron fino adelante. */
+.enlace {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55em;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
+  color: var(--f-acento);
+}
+.chevron {
+  display: inline-flex;
+  align-items: center;
+}
+.enlace::before,
+.chevron::before {
+  content: '';
+  width: 0.5em;
+  height: 0.5em;
+  border-top: 1.5px solid currentColor;
+  border-right: 1.5px solid currentColor;
+  transform: rotate(45deg) scale(0.9);
+  flex: none;
 }
 
+/* Botones: relleno de acento (TICKETS) o contorno (INFO). Esquinas filosas. */
+.btn,
+.btn-borde {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.7rem 1.1rem;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  line-height: 1;
+  transition: opacity 150ms;
+}
+.btn { background: var(--f-acento); color: var(--f-sobre-acento); }
+.btn-borde { border: 2px solid currentColor; }
+.btn:disabled, .btn-borde:disabled { opacity: 0.35; }
+.btn:active, .btn-borde:active { opacity: 0.7; }
+
+/* Títulos: grotesca negrita, apretada, en la caja que haya escrito la organización. */
+.titulo {
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 0.92;
+}
+
+/* Nombres de artistas: lo más grande de la pantalla. */
+.nombre {
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1.02;
+  font-size: clamp(1.9rem, 9.5vw, 3rem);
+}
+
+/* Trazos de ilustración encima del bloque (textura de la marca). */
+.textura {
+  position: relative;
+  isolation: isolate;
+}
+.textura::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-repeat: no-repeat;
+  background-position: right top;
+  background-size: 120% auto;
+  opacity: 0.55;
+}
+.textura-clara::before { background-image: url('/marca/textura_1_b.svg'); opacity: 0.22; }
+.textura-color::before { background-image: url('/marca/textura_1_color.svg'); opacity: 0.4; }
+
+/* Solo opacity/transform ANTES de empezar: con `both` quedaría un transform
+   permanente que confina a los `position: fixed` (carrito, modales) a la caja. */
 @keyframes entra {
-  from { opacity: 0; transform: translateY(18px); }
+  from { opacity: 0; transform: translateY(14px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.entra { animation: entra 700ms var(--ease-hard) both; }
+.entra { animation: entra 600ms var(--ease-hard) backwards; }
 
 @keyframes pulso {
   50% { opacity: 0.35; }
 }
 .pulso { animation: pulso 1.6s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .entra, .pulso { animation: none; }
+}

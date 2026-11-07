@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Mock, Rotulo, Titulo } from '../components/Mock'
+import { Mock, Pagina, Rotulo, Titulo } from '../components/Mock'
 import { PUNTOS, TIPOS_PUNTO, type TipoPunto } from '../lib/mock'
 
 export default function Mapa() {
@@ -26,9 +26,9 @@ export default function Mapa() {
   }
 
   return (
-    <>
-      <Rotulo>05 · Locación</Rotulo>
-      <Titulo className="mt-3">Mapa</Titulo>
+    <Pagina>
+      <Rotulo>Locación</Rotulo>
+      <Titulo className="mt-5">Mapa</Titulo>
       <div className="mt-3"><Mock>Croquis de ejemplo</Mock></div>
 
       <div className="mt-6 flex flex-wrap gap-2">
@@ -40,7 +40,7 @@ export default function Mapa() {
               onClick={() => alternar(t.id)}
               aria-pressed={on}
               className={`border px-2.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.12em] ${
-                on ? 'border-acento text-acento' : 'border-linea text-apagado'
+                on ? 'border-texto bg-texto text-fondo' : 'border-linea text-apagado'
               }`}
             >
               {t.nombre}
@@ -55,11 +55,11 @@ export default function Mapa() {
         xmlns="http://www.w3.org/2000/svg"
         role="img"
         aria-label="Croquis del predio"
-        className="mt-4 w-full border border-linea bg-superficie"
+        className="mt-4 w-full border border-linea"
       >
-        <rect width="100" height="100" fill="#261b15" />
-        <path d="M4 4H96V96H4Z" fill="none" stroke="#3d2d24" strokeWidth=".4" strokeDasharray="1.5 1.5" />
-        <path d="M12 88 C30 80 40 60 50 48 S75 30 66 30" fill="none" stroke="#3d2d24" strokeWidth="1.2" />
+        <rect width="100" height="100" fill="#dcdcd4" />
+        <path d="M4 4H96V96H4Z" fill="none" stroke="#1a1a1a" strokeOpacity=".35" strokeWidth=".4" strokeDasharray="1.5 1.5" />
+        <path d="M12 88 C30 80 40 60 50 48 S75 30 66 30" fill="none" stroke="#005b15" strokeOpacity=".55" strokeWidth="1.2" />
         {PUNTOS.filter((p) => activos.has(p.tipo)).map((p) => {
           const marca = TIPOS_PUNTO.find((t) => t.id === p.tipo)!.marca
           const esc = p.tipo === 'escenario' || p.tipo === 'charlas'
@@ -67,17 +67,17 @@ export default function Mapa() {
             <g key={p.id}>
               <rect
                 x={p.x - 3.2} y={p.y - 3.2} width="6.4" height="6.4"
-                fill={esc ? '#e2532b' : '#1c1410'}
-                stroke={esc ? '#e2532b' : '#fffcdc'} strokeWidth=".4"
+                fill={esc ? '#f65200' : '#eaeaea'}
+                stroke={esc ? '#f65200' : '#1a1a1a'} strokeWidth=".4"
               />
               <text
                 x={p.x} y={p.y + 1} textAnchor="middle" fontSize="2.6" fontWeight="700"
-                fontFamily="Space Mono, monospace" fill={esc ? '#1c1410' : '#fffcdc'}
+                fontFamily="Space Mono, monospace" fill="#1a1a1a"
               >
                 {marca}
               </text>
               {esc && (
-                <text x={p.x} y={p.y + 7} textAnchor="middle" fontSize="2.4" fontFamily="Archivo, sans-serif" fontWeight="800" fill="#fffcdc">
+                <text x={p.x} y={p.y + 7} textAnchor="middle" fontSize="2.4" fontFamily="Helvetica Neue, Arial, sans-serif" fontWeight="700" fill="#1a1a1a">
                   {p.nombre}
                 </text>
               )}
@@ -86,7 +86,7 @@ export default function Mapa() {
         })}
       </svg>
 
-      <button onClick={descargar} className="mt-4 w-full border border-texto py-3 font-mono text-xs uppercase tracking-[0.25em] hover:text-acento">
+      <button onClick={descargar} className="btn mt-4 w-full">
         Descargar mapa
       </button>
 
@@ -103,6 +103,6 @@ export default function Mapa() {
           ))}
         </ul>
       </section>
-    </>
+    </Pagina>
   )
 }

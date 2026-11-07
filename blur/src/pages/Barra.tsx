@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import QRCode from 'qrcode'
-import { Mock, Rotulo, Titulo } from '../components/Mock'
+import { Mock, Pagina, Rotulo, Titulo } from '../components/Mock'
 import { CARTA } from '../lib/mock'
 import { pesos, useBlur, type Pedido } from '../lib/store'
 
@@ -25,12 +25,12 @@ export default function Barra() {
   const categorias = [...new Set(CARTA.map((p) => p.categoria))]
 
   return (
-    <>
-      <Rotulo>04 · Barra</Rotulo>
-      <Titulo className="mt-3">Barra</Titulo>
+    <Pagina>
+      <Rotulo>Pedidos</Rotulo>
+      <Titulo className="mt-5">Barra</Titulo>
       <div className="mt-3"><Mock>Sin cobro real</Mock></div>
 
-      <section className="mt-8 border border-texto p-4">
+      <section className="mt-8 border-2 border-texto p-4">
         <Rotulo>Tu saldo</Rotulo>
         <p className="titulo mt-2 text-5xl">{pesos(saldo)}</p>
         <div className="mt-4 grid grid-cols-3 gap-px bg-linea">
@@ -68,13 +68,13 @@ export default function Barra() {
       ))}
 
       {total > 0 && (
-        <div className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))] z-30 border-t border-texto bg-fondo p-4">
+        <div className="fixed inset-x-0 bottom-[calc(3rem+env(safe-area-inset-bottom,0px))] z-30 border-t border-texto bg-fondo p-4">
           <div className="mx-auto flex max-w-3xl items-center justify-between gap-4">
             <div>
               <Rotulo>Carrito</Rotulo>
               <p className="titulo text-2xl">{pesos(total)}</p>
             </div>
-            <button onClick={pagar} className="bg-acento px-5 py-3 font-mono text-xs font-bold uppercase tracking-[0.2em] text-fondo">
+            <button onClick={pagar} className="btn">
               Confirmar y retirar
             </button>
           </div>
@@ -89,8 +89,8 @@ export default function Barra() {
             {pedidos.map((p) => (
               <li key={p.id} className="flex items-center justify-between border-b border-linea py-3">
                 <span className="font-mono text-xs">#{p.id.slice(0, 6)} · {pesos(p.total)}</span>
-                <button onClick={() => setVerPedido(p)} className="font-mono text-xs uppercase tracking-[0.2em] text-acento">
-                  Ver QR →
+                <button onClick={() => setVerPedido(p)} className="enlace">
+                  Ver QR
                 </button>
               </li>
             ))}
@@ -99,14 +99,14 @@ export default function Barra() {
       )}
 
       {verPedido && <ModalQr pedido={verPedido} onCerrar={() => setVerPedido(null)} />}
-    </>
+    </Pagina>
   )
 }
 
 function ModalQr({ pedido, onCerrar }: { pedido: Pedido; onCerrar: () => void }) {
   const [src, setSrc] = useState('')
   useEffect(() => {
-    QRCode.toDataURL(qrDe(pedido), { margin: 1, width: 480, color: { dark: '#1c1410', light: '#fffcdc' } }).then(setSrc)
+    QRCode.toDataURL(qrDe(pedido), { margin: 1, width: 480, color: { dark: '#1a1a1a', light: '#fffcdc' } }).then(setSrc)
   }, [pedido])
 
   return (
@@ -115,7 +115,7 @@ function ModalQr({ pedido, onCerrar }: { pedido: Pedido; onCerrar: () => void })
         <Rotulo>Retiralo en la barra</Rotulo>
         <p className="titulo mt-2 text-4xl">Pedido #{pedido.id.slice(0, 6)}</p>
         {src ? <img src={src} alt="QR del pedido" className="mt-5 w-full" /> : <div className="mt-5 aspect-square bg-superficie" />}
-        <button onClick={onCerrar} className="mt-5 w-full border border-texto py-3 font-mono text-xs uppercase tracking-[0.25em] hover:text-acento">
+        <button onClick={onCerrar} className="btn-borde mt-5 w-full">
           Cerrar
         </button>
       </div>

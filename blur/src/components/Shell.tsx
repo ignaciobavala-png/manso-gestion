@@ -1,20 +1,27 @@
 import { useEffect, useRef } from 'react'
-import { Camera, CalendarDays, Beer, Bus, House, Layers, Map as MapIcon, type LucideIcon } from 'lucide-react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 
-export const SECCIONES: { to: string; n: string; nombre: string; Icon: LucideIcon }[] = [
-  { to: '/', n: '01', nombre: 'Home', Icon: House },
-  { to: '/lineup', n: '02', nombre: 'Line up', Icon: CalendarDays },
-  { to: '/escenarios', n: '03', nombre: 'Escenarios', Icon: Layers },
-  { to: '/barra', n: '04', nombre: 'Barra', Icon: Beer },
-  { to: '/mapa', n: '05', nombre: 'Mapa', Icon: MapIcon },
-  { to: '/transporte', n: '06', nombre: 'Transporte', Icon: Bus },
-  { to: '/analogica', n: '07', nombre: 'Analógica', Icon: Camera },
+export type Tema = 'verde' | 'gris' | 'naranja'
+
+export const SECCIONES: { to: string; nombre: string; desc: string; tema: Tema }[] = [
+  { to: '/', nombre: 'Home', desc: 'El festival', tema: 'verde' },
+  { to: '/lineup', nombre: 'Line up', desc: 'Quién toca y dónde', tema: 'verde' },
+  { to: '/escenarios', nombre: 'Escenarios', desc: 'Los spots y sus artistas', tema: 'gris' },
+  { to: '/barra', nombre: 'Barra', desc: 'Pedí y retirá con QR', tema: 'naranja' },
+  { to: '/mapa', nombre: 'Mapa', desc: 'Dónde está todo', tema: 'gris' },
+  { to: '/transporte', nombre: 'Transporte', desc: 'Salidas y lugares', tema: 'verde' },
+  { to: '/analogica', nombre: 'Analógica', desc: 'Tu rollo de 10 fotos', tema: 'verde' },
 ]
+
+export const MARCA = `${import.meta.env.BASE_URL}marca/`
+
+/** La barra de arriba y la de abajo son siempre el verde de la marca, como el nav de la web. */
+const VERDE = '#003009'
 
 export default function Shell() {
   const { pathname } = useLocation()
   const lista = useRef<HTMLUListElement>(null)
+  const tema = SECCIONES.find((s) => s.to === pathname)?.tema ?? 'verde'
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -24,37 +31,50 @@ export default function Shell() {
       ?.scrollIntoView({ inline: 'center', block: 'nearest' })
   }, [pathname])
 
+  // El fondo detrás del contenido sigue al bloque (rebote de scroll en iOS).
+  useEffect(() => {
+    document.body.dataset.tema = tema
+    return () => {
+      delete document.body.dataset.tema
+    }
+  }, [tema])
+
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-40 flex h-14 items-center border-b border-linea bg-fondo/95 px-4 backdrop-blur-sm">
-        <NavLink to="/" className="titulo text-2xl" aria-label="BLUR, inicio">
-          Blur
-        </NavLink>
+      <header
+        style={{ background: VERDE }}
+        className="fixed inset-x-0 top-0 z-40 flex h-14 items-center justify-between border-b border-[#fffcdc]/15 px-4"
+      >
+        <Link to="/" aria-label="BLUR, inicio">
+          <img src={`${MARCA}logo_1_b.svg`} alt="BLUR" className="h-[18px] w-auto" />
+        </Link>
+        <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#fffcdc]/70">Hecho en Argentina</span>
       </header>
 
-      <main className="mx-auto min-h-svh max-w-3xl px-4 pb-32 pt-20 entra">
-        <Outlet />
-      </main>
+      <div className={`tema-${tema} min-h-svh pt-14 pb-[calc(3rem+env(safe-area-inset-bottom,0px))]`}>
+        <main key={pathname} className="entra">
+          <Outlet />
+        </main>
+      </div>
 
-      {/* Barra inferior, como la del panel de Gestión. */}
       <nav
         aria-label="Secciones"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-texto/20 bg-fondo/95 pb-[env(safe-area-inset-bottom,0px)] backdrop-blur-sm"
+        style={{ background: VERDE }}
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-[#fffcdc]/15 pb-[env(safe-area-inset-bottom,0px)]"
       >
-        <ul ref={lista} className="flex overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-auto md:max-w-3xl">
-          {SECCIONES.map(({ to, nombre, Icon }) => (
-            <li key={to} className="min-w-[3.6rem] flex-1">
+        <ul ref={lista} className="flex overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:justify-center">
+          {SECCIONES.map(({ to, nombre }) => (
+            <li key={to} className="shrink-0">
               <NavLink
                 to={to}
                 end={to === '/'}
                 className={({ isActive }) =>
-                  `flex h-14 flex-col items-center justify-center gap-0.5 px-1 text-[10px] font-medium transition-colors ${
-                    isActive ? 'text-acento' : 'text-apagado hover:text-texto'
+                  `flex h-12 items-center px-3.5 font-mono text-[12px] font-bold uppercase tracking-[0.04em] whitespace-nowrap ${
+                    isActive ? 'chevron gap-1.5 text-[#f65200]' : 'text-[#fffcdc]/75'
                   }`
                 }
               >
-                <Icon size={20} strokeWidth={1.5} aria-hidden />
-                <span className="whitespace-nowrap">{nombre}</span>
+                {nombre}
               </NavLink>
             </li>
           ))}

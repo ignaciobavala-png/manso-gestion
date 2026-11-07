@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Mock, Rotulo, Titulo } from '../components/Mock'
+import { Mock, Pagina, Rotulo, Titulo } from '../components/Mock'
 import { SALIDAS } from '../lib/mock'
 import { useBlur } from '../lib/store'
 
@@ -31,9 +31,9 @@ export default function Transporte() {
   }
 
   return (
-    <>
-      <Rotulo>06 · Cómo volver</Rotulo>
-      <Titulo className="mt-3">Transporte</Titulo>
+    <Pagina>
+      <Rotulo>Cómo volver</Rotulo>
+      <Titulo className="mt-5">Transporte</Titulo>
       <div className="mt-3"><Mock>Horarios de ejemplo</Mock></div>
 
       <ul className="mt-8">
@@ -45,18 +45,16 @@ export default function Transporte() {
           return (
             <li key={s.id} className="border-t border-texto py-4">
               <div className="flex items-baseline justify-between">
-                <span className="titulo text-4xl">{hhmm(new Date(sale))}</span>
+                <span className="titulo text-5xl">{hhmm(new Date(sale))}</span>
                 <span className={`font-mono text-lg ${urgente ? 'pulso text-acento' : 'text-apagado'}`}>{cuenta(falta)}</span>
               </div>
-              <p className="rotulo mt-1">{s.destino} · {s.cupo} lugares</p>
+              <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.2em] text-apagado">{s.destino} · {s.cupo} lugares</p>
               <p className="mt-2 text-sm text-apagado">{urgente ? 'No pierdas tu micro.' : ' '}</p>
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <button
                   onClick={() => reservar(s.id)}
                   disabled={falta <= 0}
-                  className={`py-3 font-mono text-xs uppercase tracking-[0.2em] disabled:opacity-30 ${
-                    reservada ? 'bg-acento text-fondo' : 'border border-texto hover:text-acento'
-                  }`}
+                  className={reservada ? 'btn' : 'btn-borde'}
                 >
                   {reservada ? 'Lugar reservado ✓' : 'Reservar lugar'}
                 </button>
@@ -64,9 +62,7 @@ export default function Transporte() {
                   onClick={() => alternarAviso(s.id)}
                   disabled={falta <= 0}
                   aria-pressed={avisos.includes(s.id)}
-                  className={`border py-3 font-mono text-xs uppercase tracking-[0.2em] disabled:opacity-30 ${
-                    avisos.includes(s.id) ? 'border-acento text-acento' : 'border-linea hover:text-acento'
-                  }`}
+                  className={avisos.includes(s.id) ? 'btn' : 'btn-borde'}
                 >
                   {avisos.includes(s.id) ? 'Aviso activo' : 'Avisarme'}
                 </button>
@@ -75,6 +71,6 @@ export default function Transporte() {
           )
         })}
       </ul>
-    </>
+    </Pagina>
   )
 }
