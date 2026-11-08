@@ -38,8 +38,14 @@ interface Fila {
   pack_size: number | null
 }
 
-type Grupo = 'invitados' | 'en-curso' | 'otras' | 'todas'
+type Grupo = 'invitados' | 'por-verificar' | 'en-curso' | 'otras' | 'todas'
 type Vista = 'compradores' | 'entradas'
+
+/**
+ * Transferencia que cuenta como entrada pero cuyo pago nadie confirmó todavía.
+ * Es solo información para la organización: no frena a nadie en la puerta.
+ */
+const porVerificar = (f: Fila) => esVendida(f) && f.payment_provider === 'transferencia' && !f.payment_verified
 
 /** Quién compró: el mail, que es lo que se repite entre las entradas de una misma compra. */
 const compradorDe = (f: Fila) => f.email?.trim().toLowerCase() || f.id
@@ -192,6 +198,7 @@ export default function Invitados() {
   const delGrupo = (f: Fila, g: Grupo) =>
     g === 'todas' ||
     (g === 'invitados' && esVendida(f)) ||
+    (g === 'por-verificar' && porVerificar(f)) ||
     (g === 'en-curso' && esReservada(f)) ||
     (g === 'otras' && !esVendida(f) && !esReservada(f))
 
@@ -264,6 +271,7 @@ export default function Invitados() {
 
   const GRUPOS: [Grupo, string][] = [
     ['invitados', 'Invitados'],
+    ['por-verificar', 'Por verificar'],
     ['en-curso', 'Pagando'],
     ['otras', 'Sin valor'],
     ['todas', 'Todas'],
@@ -273,6 +281,7 @@ export default function Invitados() {
     ['Entradas', cuenta('invitados')],
     ['Compradores', compradores],
     ['Ya ingresaron', ingresaron],
+    ['Por verificar', cuenta('por-verificar')],
     ['Pagando', cuenta('en-curso')],
   ]
 
@@ -287,7 +296,7 @@ export default function Invitados() {
 
       {error && <p className="text-red-200 text-sm">{error}</p>}
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {NUMEROS.map(([texto, n]) => (
           <div key={texto} className={`${VIDRIO} rounded-2xl px-4 py-3`}>
             <p className="text-3xl font-bold text-white leading-none">{n}</p>

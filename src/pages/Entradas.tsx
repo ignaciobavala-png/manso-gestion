@@ -257,15 +257,42 @@ export default function Entradas(): React.JSX.Element {
         return
       }
     } else {
-      const { error } = await supabase
+      // `.is('used_at', null)` hace que solo gane el primero, pero un UPDATE
+      // que no toca ninguna fila no da error: sin pedir las filas de vuelta,
+      // dos teléfonos con el mismo QR confirmaban a la vez y los dos veían
+      // "Entrada registrada". Si no volvió ninguna fila, no se marcó nada.
+      const { data: marcadas, error } = await supabase
         .from('ticket_registrations')
         .update({ used_at: new Date().toISOString() })
         .eq('token', mansoTicketPending.token)
         .is('used_at', null)
+        .select('id')
 
       if (error) {
         setConfirming(false)
         setAlertModal({ isOpen: true, message: 'Error al registrar el ingreso.', type: 'error' })
+        return
+      }
+
+      if (!marcadas || marcadas.length === 0) {
+        // No se marcó nada. Se mira por qué antes de decir algo: si la entrada
+        // ya tiene fecha de uso, otro registro llegó primero (o fue este mismo
+        // dispositivo y se perdió la respuesta); si no, la escritura no se hizo
+        // y hay que reintentar. Nunca se afirma algo que no se comprobó.
+        const { data: actual } = await supabase
+          .from('ticket_registrations')
+          .select('used_at')
+          .eq('token', mansoTicketPending.token)
+          .maybeSingle()
+        setConfirming(false)
+        setMansoTicketPending(null)
+        setAlertModal({
+          isOpen: true,
+          message: actual?.used_at
+            ? `Este QR ya quedó registrado el ${new Date(actual.used_at).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'medium' })}. Si fue hace instantes, puede haber sido desde este mismo dispositivo: verificá antes de decidir.`
+            : 'No se pudo registrar el ingreso. Intentá escanear de nuevo.',
+          type: 'error'
+        })
         return
       }
     }
