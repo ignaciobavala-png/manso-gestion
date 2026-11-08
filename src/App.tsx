@@ -32,6 +32,8 @@ const Sala = pagina(() => import('./pages/public/Sala'))
 const Llegada = pagina(() => import('./pages/public/Llegada'))
 const Cartel = pagina(() => import('./pages/admin/Cartel'))
 const FotosBlur = pagina(() => import('./pages/admin/FotosBlur'))
+const BlurLayout = pagina(() => import('./pages/admin/blur/BlurLayout'))
+const Invitados = pagina(() => import('./pages/admin/blur/Invitados'))
 const CoworkAdmin = pagina(() => import('./pages/admin/Cowork'))
 
 // Stats arrastra recharts (~300 KB con d3) y solo la abre el owner: va en
@@ -138,13 +140,19 @@ function App() {
               }
             />
             <Route
-              path="fotos"
+              path="blur"
               element={
                 <ProtectedRoute requiredRole="control">
-                  <FotosBlur />
+                  <BlurLayout />
                 </ProtectedRoute>
               }
-            />
+            >
+              <Route index element={<Navigate to="invitados" replace />} />
+              <Route path="invitados" element={<Invitados />} />
+              <Route path="fotos" element={<FotosBlur />} />
+            </Route>
+            {/* La ruta vieja sigue viva: hay links y marcadores apuntando acá. */}
+            <Route path="fotos" element={<Navigate to="/admin/blur/fotos" replace />} />
             <Route
               path="cineclub"
               element={

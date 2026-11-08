@@ -1,4 +1,4 @@
-import { LayoutDashboard, Globe, Laptop, Users, TrendingUp, Calculator, Clapperboard, Beer, Ticket, Camera, LogOut, type LucideIcon } from 'lucide-react'
+import { LayoutDashboard, Globe, Laptop, Users, TrendingUp, Calculator, Clapperboard, Beer, Ticket, Waves, LogOut, type LucideIcon } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useSecciones, enPanel } from '../hooks/useSeccionPublica'
@@ -22,7 +22,7 @@ export default function BottomNav() {
       ? [{ path: '/admin/cowork', label: 'Cowork', Icon: Laptop }]
       : []),
     ...(role === 'control' || role === 'owner'
-      ? [{ path: '/admin/fotos', label: 'Fotos', Icon: Camera }]
+      ? [{ path: '/admin/blur', label: 'BLUR', Icon: Waves }]
       : []),
     ...(role === 'owner'
       ? [
@@ -54,7 +54,7 @@ export default function BottomNav() {
                 flex flex-col items-center
                 min-h-12 md:min-h-14 w-16 md:w-full px-1 md:px-3 py-1 md:py-2
                 text-[10px] md:text-sm font-medium transition-colors
-                ${location.pathname === tab.path
+                ${(location.pathname === tab.path || (tab.path === '/admin/blur' && location.pathname.startsWith('/admin/blur')))
                   ? 'text-terra-400'
                   : 'text-gray-400 hover:text-gray-300'
                 }
