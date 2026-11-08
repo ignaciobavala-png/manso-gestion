@@ -32,6 +32,12 @@ interface State {
   /** Ya dejó su mail al entregar el rollo (el mail en sí no se guarda en el teléfono). */
   contactoDejado: boolean
   marcarContacto: () => void
+  /** El rollo de este teléfono ya se activó con una entrada que pasó por la puerta. */
+  rolloActivado: boolean
+  /** El servidor rechazó una foto por rollo sin activar: hay que mostrar la activación. No se guarda. */
+  exigeActivar: boolean
+  marcarActivado: () => void
+  pedirActivacion: () => void
   cargarPelicula: (id: string) => void
   cambiarPelicula: (id: string) => void
   cargar: (monto: number) => void
@@ -54,6 +60,10 @@ export const useBlur = create<State>()(
       tira: [],
       contactoDejado: false,
       marcarContacto: () => set({ contactoDejado: true }),
+      rolloActivado: false,
+      exigeActivar: false,
+      marcarActivado: () => set({ rolloActivado: true, exigeActivar: false }),
+      pedirActivacion: () => set({ rolloActivado: false, exigeActivar: true }),
       cargarPelicula: (id) => set({ pelicula: id }),
       cambiarPelicula: (id) => set((s) => (s.cambioUsado ? s : { pelicula: id, cambioUsado: true })),
       cargar: (monto) => set((s) => ({ saldo: s.saldo + monto })),
@@ -93,6 +103,7 @@ export const useBlur = create<State>()(
         cambioUsado: s.cambioUsado,
         tira: s.tira,
         contactoDejado: s.contactoDejado,
+        rolloActivado: s.rolloActivado,
       }),
     },
   ),

@@ -15,6 +15,8 @@ const KEY = (import.meta.env.VITE_GESTION_ANON_KEY ?? import.meta.env.VITE_SUPAB
 export const SUBIDA_REAL = import.meta.env.VITE_ANALOGICA_SUBIR === '1' && !!URL_BASE && !!KEY
 
 export class RolloCompleto extends Error {}
+/** El servidor exige un rollo activado con el código de una entrada (migración 048). */
+export class RolloNoActivado extends Error {}
 
 /** Id anónimo por teléfono. No identifica a nadie; solo agrupa el rollo. */
 export function idDispositivo(): string {
@@ -62,6 +64,7 @@ export async function subirFoto(blob: Blob, filtro: string): Promise<void> {
   if (!fila.ok) {
     const texto = await fila.text()
     if (texto.includes('rollo_completo')) throw new RolloCompleto()
+    if (texto.includes('rollo_no_activado')) throw new RolloNoActivado()
     throw new Error(`No se pudo registrar la foto (${fila.status})`)
   }
 
@@ -94,4 +97,45 @@ export async function dejarContacto(email: string): Promise<void> {
   const texto = await res.text()
   if (texto.includes('contacto_invalido')) throw new ContactoInvalido()
   throw new Error(`No se pudo guardar el contacto (${res.status})`)
+}
+
+/** Resultado de intentar activar el rollo con el código de una entrada. */
+export type EstadoActivacion =
+  | 'activado'
+  | 'codigo_invalido'
+  | 'no_encontrada'
+  | 'ambiguo'
+  | 'anulada'
+  | 'sin_pago'
+  | 'sin_ingreso'
+  | 'entrada_ya_activada'
+  | 'dispositivo_con_otra_entrada'
+  | 'demasiados_intentos'
+
+/**
+ * ¿Hay que activar el rollo antes de sacar fotos? El servidor decide (la llave
+ * vive en blur_config); si no se puede preguntar, se sigue de largo: el que
+ * hace cumplir la regla es el servidor al recibir cada foto.
+ */
+export async function estadoRollo(): Promise<{ requiere: boolean; activado: boolean }> {
+  if (!SUBIDA_REAL) return { requiere: false, activado: true }
+  try {
+    const res = await fetch(`/api/blur-activar?d=${encodeURIComponent(idDispositivo())}`)
+    if (!res.ok) throw new Error(String(res.status))
+    return (await res.json()) as { requiere: boolean; activado: boolean }
+  } catch {
+    return { requiere: false, activado: true }
+  }
+}
+
+/** Activa el rollo de este teléfono con el código (corto o el token entero) de una entrada. */
+export async function activarRollo(codigo: string): Promise<EstadoActivacion> {
+  const res = await fetch('/api/blur-activar', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ d: idDispositivo(), codigo }),
+  })
+  const cuerpo = (await res.json().catch(() => ({}))) as { estado?: EstadoActivacion }
+  if (!cuerpo.estado) throw new Error(`No se pudo activar (${res.status})`)
+  return cuerpo.estado
 }

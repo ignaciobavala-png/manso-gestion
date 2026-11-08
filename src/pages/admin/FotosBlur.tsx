@@ -35,6 +35,8 @@ interface RolloFila {
   contacto: string | null
   enviado_at: string | null
   created_at: string
+  /** La entrada que activó este rollo (migración 048); null = rollo sin activar o anterior a la 048. */
+  entrada: { name: string; email: string } | null
 }
 
 type Estado = 'sin-revisar' | 'publicar' | 'descartada'
@@ -70,11 +72,16 @@ export default function FotosBlur() {
     setFotos(filas.map((f) => ({ ...f, url: porPath.get(f.path) ?? undefined })))
     const { data: filasRollos, error: eRollos } = await supabase
       .from('blur_rollos')
-      .select('dispositivo, token, numero, contacto, enviado_at, created_at')
+      .select('dispositivo, token, numero, contacto, enviado_at, created_at, entrada:ticket_registrations!entrada_id(name, email)')
       .order('created_at', { ascending: false })
     if (eRollos) setError('No se pudieron leer los rollos.')
     else {
-      setRollos((filasRollos ?? []) as RolloFila[])
+      // PostgREST devuelve el embed to-one como objeto (los tipos generados dicen array).
+      setRollos(
+        ((filasRollos ?? []) as unknown as (Omit<RolloFila, 'entrada'> & { entrada: RolloFila['entrada'] | RolloFila['entrada'][] })[]).map(
+          (r) => ({ ...r, entrada: Array.isArray(r.entrada) ? (r.entrada[0] ?? null) : (r.entrada ?? null) }),
+        ),
+      )
       setError('')
     }
     setCargando(false)
@@ -293,6 +300,27 @@ function ListaRollos({
 }) {
   const [soloConMail, setSoloConMail] = useState(false)
   const [copiado, setCopiado] = useState<string | null>(null)
+  // Llave de blur_config (migración 048): si está prendida, el servidor solo
+  // acepta fotos de rollos activados con el código de una entrada.
+  const [exige, setExige] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    void supabase
+      .from('blur_config')
+      .select('rollo_requiere_entrada')
+      .eq('id', true)
+      .maybeSingle()
+      .then(({ data }) => setExige(data ? Boolean(data.rollo_requiere_entrada) : null))
+  }, [])
+
+  const cambiarExige = async () => {
+    if (exige === null) return
+    const nuevo = !exige
+    if (nuevo && !window.confirm('¿Pedir entrada para sacar fotos? Quien no active su rollo con el código de su entrada no va a poder sacar más fotos.')) return
+    const { error } = await supabase.from('blur_config').update({ rollo_requiere_entrada: nuevo }).eq('id', true)
+    if (error) onError('No se pudo cambiar la configuración.')
+    else setExige(nuevo)
+  }
 
   const porRollo = new Map<string, Foto[]>()
   for (const f of fotos) porRollo.set(f.dispositivo, [...(porRollo.get(f.dispositivo) ?? []), f])
@@ -312,10 +340,13 @@ function ListaRollos({
     }
   }
 
+  // El mail al que mandar: el que dejó la persona, o el de la entrada que activó el rollo.
+  const destino = (r: RolloFila) => r.contacto ?? r.entrada?.email ?? null
+
   const mailto = (r: RolloFila) => {
     const asunto = 'Tus fotos del rollo analógico de BLUR'
     const cuerpo = `Hola!\n\nAcá están las fotos de tu rollo (Nº ${r.numero}). Podés verlas y guardarlas todas juntas desde este link:\n\n${link(r)}\n\n¡Gracias por sacar fotos con nosotros!`
-    return `mailto:${r.contacto}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`
+    return `mailto:${destino(r)}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`
   }
 
   const marcarEnviado = async (r: RolloFila) => {
@@ -331,6 +362,26 @@ function ListaRollos({
 
   return (
     <div className="space-y-3">
+      <div className="bg-neutral-900/95 border border-white/15 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-white font-semibold text-sm">Pedir entrada para sacar fotos</p>
+          <p className="text-white/60 text-xs max-w-[52ch]">
+            Apagado: cualquiera con el link de la app puede sacar fotos. Prendido: cada persona activa su rollo con el
+            código de su entrada, y solo si ya pasó por la puerta. {rollos.filter((r) => r.entrada).length} rollos
+            activados hasta ahora.
+          </p>
+        </div>
+        <button
+          onClick={cambiarExige}
+          disabled={exige === null}
+          aria-pressed={exige === true}
+          className={`px-3 py-1.5 rounded-xl text-sm border transition-colors disabled:opacity-40 ${
+            exige ? 'bg-white text-black border-white font-medium' : 'border-white/30 text-white/80 hover:text-white'
+          }`}
+        >
+          {exige === null ? '…' : exige ? 'Prendido · apagar' : 'Apagado · prender'}
+        </button>
+      </div>
       <div className="flex items-center justify-between gap-3">
         <p className="text-white/60 text-sm">
           {filas.length} rollos · {rollos.filter((r) => r.contacto).length} dejaron su mail ·{' '}
@@ -363,6 +414,11 @@ function ListaRollos({
                     {t.sinRevisar} sin revisar
                   </p>
                 </div>
+                {r.entrada && (
+                  <p className="text-xs text-white/60">
+                    Entrada de {r.entrada.name} · {r.entrada.email}
+                  </p>
+                )}
                 <p className="text-sm text-white/80">{r.contacto ?? <span className="text-white/40">Sin mail</span>}</p>
                 <div className="flex flex-wrap gap-2">
                   <button
@@ -381,7 +437,7 @@ function ListaRollos({
                     <ExternalLink size={16} aria-hidden />
                     Abrir
                   </a>
-                  {r.contacto && (
+                  {destino(r) && (
                     <a
                       href={mailto(r)}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm border border-white/30 text-white/80 hover:text-white"

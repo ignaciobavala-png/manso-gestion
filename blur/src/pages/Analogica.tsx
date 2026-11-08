@@ -9,7 +9,18 @@ import { Sobre } from '../components/analogica/Sobre'
 import { Tira } from '../components/analogica/Tira'
 import { FOTOS_POR_PERSONA } from '../lib/mock'
 import { FILTROS, aplicarFiltro, colorLatente, filtroPorId, marcoNegativo } from '../lib/filtros'
-import { ContactoInvalido, RolloCompleto, SUBIDA_REAL, dejarContacto, numeroRollo, subirFoto } from '../lib/fotos'
+import {
+  ContactoInvalido,
+  RolloCompleto,
+  RolloNoActivado,
+  SUBIDA_REAL,
+  activarRollo,
+  dejarContacto,
+  estadoRollo,
+  numeroRollo,
+  subirFoto,
+  type EstadoActivacion,
+} from '../lib/fotos'
 import { clic, vibrar } from '../lib/sonido'
 import { useBlur } from '../lib/store'
 
@@ -33,11 +44,135 @@ async function aJpeg(c: HTMLCanvasElement): Promise<Blob | null> {
 }
 
 export default function Analogica() {
-  const { fotosSacadas, pelicula } = useBlur()
+  const { fotosSacadas, pelicula, rolloActivado, exigeActivar, marcarActivado } = useBlur()
+  // null = todavía no se sabe si hay que activar el rollo con una entrada.
+  const [hayQueActivar, setHayQueActivar] = useState<boolean | null>(rolloActivado ? false : null)
+
+  useEffect(() => {
+    if (rolloActivado || hayQueActivar !== null) return
+    let vivo = true
+    void estadoRollo().then((e) => {
+      if (!vivo) return
+      if (e.activado) marcarActivado()
+      setHayQueActivar(e.requiere && !e.activado)
+    })
+    return () => {
+      vivo = false
+    }
+  }, [rolloActivado, hayQueActivar, marcarActivado])
+
   if (fotosSacadas >= FOTOS_POR_PERSONA) return <Entrega />
+  if (!rolloActivado && (exigeActivar || hayQueActivar)) return <Activar />
+  if (!rolloActivado && hayQueActivar === null) {
+    return (
+      <Pagina>
+        <Rotulo>Rollo</Rotulo>
+        <p role="status" className="mt-6 text-sm text-apagado">
+          Un momento…
+        </p>
+      </Pagina>
+    )
+  }
   // Rollos empezados antes de que existiera la elección de película siguen su curso.
   if (pelicula === null && fotosSacadas === 0) return <Cargar />
   return <Camara />
+}
+
+const MENSAJE_ACTIVACION: Record<Exclude<EstadoActivacion, 'activado'>, string> = {
+  codigo_invalido: 'Ese código no es válido. Son 10 letras y números, abajo del QR de tu entrada.',
+  no_encontrada: 'No encontramos una entrada con ese código. Revisalo y probá de nuevo.',
+  ambiguo: 'Ese código coincide con más de una entrada. Usá el link personal de tu entrada.',
+  anulada: 'Esta entrada fue anulada.',
+  sin_pago: 'Esta entrada todavía no tiene el pago confirmado.',
+  sin_ingreso:
+    'Tu cámara se activa cuando tu entrada pasa por la puerta del festival. Probá de nuevo después de entrar.',
+  entrada_ya_activada: 'Esta entrada ya activó su cámara en otro teléfono.',
+  dispositivo_con_otra_entrada: 'Este teléfono ya tiene el rollo de otra entrada.',
+  demasiados_intentos: 'Probaste muchas veces. Esperá unos minutos y volvé a intentar.',
+}
+
+/**
+ * 0 · Activar el rollo. Cada persona activa el suyo con el código de SU entrada
+ * (los 10 caracteres abajo del QR) o con el link personal que trae el código
+ * adentro (#e=...). No se pide el mail: con un mail se compran varias entradas.
+ * Solo funciona si esa entrada ya pasó por la puerta, y un teléfono toma un solo rollo.
+ */
+function Activar() {
+  const marcarActivado = useBlur((s) => s.marcarActivado)
+  const [codigo, setCodigo] = useState('')
+  const [enviando, setEnviando] = useState(false)
+  const [error, setError] = useState('')
+  const delLink = useRef(false)
+
+  const probar = useCallback(
+    async (valor: string) => {
+      setError('')
+      setEnviando(true)
+      try {
+        const estado = await activarRollo(valor)
+        if (estado === 'activado') marcarActivado()
+        else setError(MENSAJE_ACTIVACION[estado])
+      } catch {
+        setError('No pudimos conectar. Revisá la señal y probá de nuevo.')
+      }
+      setEnviando(false)
+    },
+    [marcarActivado],
+  )
+
+  // Link personal: el código viaja en el fragmento (#e=...), que no llega a ningún servidor.
+  useEffect(() => {
+    if (delLink.current) return
+    const e = new URLSearchParams(window.location.hash.slice(1)).get('e')
+    if (!e) return
+    delLink.current = true
+    history.replaceState(null, '', window.location.pathname + window.location.search)
+    void probar(e)
+  }, [probar])
+
+  return (
+    <Pagina>
+      <Rotulo>Rollo</Rotulo>
+      <Titulo className="mt-5">Activá tu cámara</Titulo>
+      <p className="mt-6 max-w-[30ch] text-sm">
+        Cada entrada tiene su rollo de {FOTOS_POR_PERSONA} fotos. Poné el código que está abajo del QR de tu entrada.
+      </p>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          void probar(codigo)
+        }}
+        className="mt-6"
+      >
+        <label htmlFor="codigo-entrada" className="sr-only">
+          Código de tu entrada
+        </label>
+        <input
+          id="codigo-entrada"
+          required
+          autoComplete="off"
+          autoCapitalize="characters"
+          spellCheck={false}
+          value={codigo}
+          onChange={(e) => setCodigo(e.target.value)}
+          placeholder="Código de tu entrada"
+          className="w-full border-2 border-texto bg-transparent px-3 py-3 font-mono text-sm uppercase placeholder:normal-case placeholder:text-apagado"
+        />
+        <button className="btn mt-3" disabled={enviando}>
+          {enviando ? 'Activando…' : 'Activar mi cámara'}
+        </button>
+      </form>
+      {error && (
+        <p role="alert" className="mt-4 max-w-[34ch] text-sm text-acento">
+          {error}
+        </p>
+      )}
+      <p className="mt-6 max-w-[34ch] text-xs text-apagado">
+        Se activa cuando tu entrada ya pasó por la puerta del festival. Si venís con las entradas de tus amigos, cada
+        uno activa la suya con su código.
+      </p>
+    </Pagina>
+  )
 }
 
 function AvisoMock() {
@@ -106,7 +241,7 @@ function Cargar() {
 
 /** 2 · La cámara. */
 function Camara() {
-  const { fotosSacadas, fotoSacada, rolloLleno, pelicula, cambiarPelicula, cambioUsado, tira } = useBlur()
+  const { fotosSacadas, fotoSacada, rolloLleno, pedirActivacion, pelicula, cambiarPelicula, cambioUsado, tira } = useBlur()
   const filtro = filtroPorId(pelicula ?? FILTROS[0].id)
   const restantes = FOTOS_POR_PERSONA - fotosSacadas
 
@@ -192,6 +327,7 @@ function Camara() {
       } catch (e) {
         // Si no se pudo enviar, la foto no se gasta: queda armada para volver a disparar.
         if (e instanceof RolloCompleto) rolloLleno()
+        else if (e instanceof RolloNoActivado) pedirActivacion()
         else {
           setArmado(true)
           setAviso('No se pudo enviar la foto. Revisá la conexión y probá de nuevo.')
