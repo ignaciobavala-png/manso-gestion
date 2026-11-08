@@ -5,6 +5,14 @@
   "devCommand": "pnpm run dev",
   "installCommand": "pnpm install",
   "framework": "vite",
+  "redirects": [
+    {
+      "source": "/((?!blur(?:/|$)|api/|\\.well-known/).*)",
+      "has": [{ "type": "host", "value": "blur.mansoclub.com.ar" }],
+      "destination": "/blur/$1",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     {
       "source": "/registro",
