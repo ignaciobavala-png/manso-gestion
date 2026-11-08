@@ -1,4 +1,4 @@
-import { Download, Search } from 'lucide-react'
+import { ChevronDown, Download, Search } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../../lib/supabase'
 import { esReservada, esVendida, etiquetaEstado, etiquetaTipo } from '../../../lib/entradas'
@@ -12,6 +12,9 @@ import { esReservada, esVendida, etiquetaEstado, etiquetaTipo } from '../../../l
  * "Invitado" = entrada que cuenta como vendida (regla de lib/entradas, la
  * misma de la DB). Las reservas sin pagar y las rechazadas se ven aparte, para
  * que no inflen el total.
+ *
+ * Todo lo de acá es presentación: agrupar, plegar y colorear no cambia ningún
+ * dato ni ningún número.
  */
 
 interface Evento { id: string; name: string }
@@ -55,30 +58,84 @@ function medio(f: Fila): string {
 
 const csv = (v: string | number | null | undefined) => `"${String(v ?? '').replace(/"/g, '""')}"`
 
-function FilaEntrada({ f, evento, sinContacto }: { f: Fila; evento?: string; sinContacto?: boolean }) {
+/* Vidrio opaco: fondo casi sólido con un poco de desenfoque, borde claro y
+   sombra, para que el texto se lea sobre la foto o la textura de atrás. */
+const VIDRIO = 'bg-neutral-900/95 backdrop-blur-md border border-white/15 shadow-lg shadow-black/40'
+const VIDRIO_INTERNO = 'bg-neutral-800/95 border border-white/10'
+
+/** Color del estado, para que se lea de un vistazo sin tener que leer la palabra. */
+function colorEstado(texto: string): string {
+  switch (texto) {
+    case 'Verificado':
+      return 'bg-emerald-500/20 text-emerald-200 border-emerald-400/40'
+    case 'Ingresó':
+      return 'bg-sky-500/20 text-sky-200 border-sky-400/40'
+    case 'Pendiente':
+      return 'bg-amber-500/20 text-amber-200 border-amber-400/40'
+    case 'Rechazado':
+      return 'bg-red-500/20 text-red-200 border-red-400/40'
+    default:
+      return 'bg-white/10 text-white/80 border-white/25'
+  }
+}
+
+function FilaEntrada({ f, mostrarContacto }: { f: Fila; mostrarContacto?: boolean }) {
+  const estado = etiquetaEstado(f)
   return (
-    <div className="px-4 py-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-      <div className="min-w-0">
-        <p className="text-white font-medium truncate">{f.name}</p>
-        {!sinContacto && (
-          <p className="text-white/50 text-xs truncate">{[f.email, f.phone, f.instagram].filter(Boolean).join(' · ')}</p>
+    <div className="px-3 py-2.5">
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-white font-semibold text-[15px] leading-tight break-words min-w-0">{f.name}</p>
+        <span className={`shrink-0 px-2 py-0.5 rounded-full border text-[11px] font-medium ${colorEstado(estado)}`}>
+          {estado}
+        </span>
+      </div>
+      <p className="mt-1 text-[13px] text-white/75 leading-snug">
+        {f.ticket_type_nombre && <span>{etiquetaTipo({ ...f, pack_pos: null, pack_size: null })}</span>}
+        {f.pack_pos && f.pack_size && (
+          <span className="ml-1.5 px-1.5 py-px rounded bg-white/15 text-white text-[11px] font-semibold">
+            {f.pack_pos}/{f.pack_size}
+          </span>
         )}
-      </div>
-      <div className="text-right text-xs text-white/60">
-        <p>
-          {evento}
-          {f.ticket_type_nombre ? ` · ${f.ticket_type_nombre}` : ''}
-          {f.pack_pos && f.pack_size && (
-            <span className="ml-2 px-1.5 py-0.5 rounded border border-white/30 text-white/80">
-              {f.pack_pos}/{f.pack_size}
-            </span>
-          )}
-        </p>
-        <p>
-          {medio(f)} · <span className="text-white/90">{etiquetaEstado(f)}</span>
-        </p>
-      </div>
+        {f.ticket_type_nombre && <span className="text-white/40"> · </span>}
+        <span>{medio(f)}</span>
+      </p>
+      {mostrarContacto && (f.email || f.phone || f.instagram) && (
+        <p className="mt-0.5 text-xs text-white/55 truncate">{[f.email, f.phone, f.instagram].filter(Boolean).join(' · ')}</p>
+      )}
     </div>
+  )
+}
+
+/** Un comprador con una sola entrada es una tarjeta común; con varias, una tarjeta con sus entradas adentro. */
+function TarjetaComprador({ entradas, agrupar }: { entradas: Fila[]; agrupar: boolean }) {
+  if (!agrupar || entradas.length === 1) {
+    return (
+      <>
+        {entradas.map((f) => (
+          <li key={f.id} className={`${VIDRIO_INTERNO} rounded-xl overflow-hidden`}>
+            <FilaEntrada f={f} mostrarContacto />
+          </li>
+        ))}
+      </>
+    )
+  }
+  const cab = entradas[0]
+  return (
+    <li className={`${VIDRIO_INTERNO} rounded-xl overflow-hidden border-white/25`}>
+      <div className="px-3 py-2 bg-white/10 flex items-center justify-between gap-2">
+        <p className="text-white text-xs truncate">{[cab.email, cab.phone].filter(Boolean).join(' · ')}</p>
+        <span className="shrink-0 px-2 py-0.5 rounded-full bg-terra-400 text-white text-[11px] font-semibold">
+          {entradas.length} entradas
+        </span>
+      </div>
+      <ul className="divide-y divide-white/10">
+        {entradas.map((f) => (
+          <li key={f.id}>
+            <FilaEntrada f={f} />
+          </li>
+        ))}
+      </ul>
+    </li>
   )
 }
 
@@ -91,6 +148,7 @@ export default function Invitados() {
   const [eventoId, setEventoId] = useState('')
   const [busca, setBusca] = useState('')
   const [vista, setVista] = useState<Vista>('compradores')
+  const [abiertos, setAbiertos] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     let vivo = true
@@ -131,21 +189,18 @@ export default function Invitados() {
     }
   }, [])
 
-  const nombreEvento = useMemo(() => new Map(eventos.map((e) => [e.id, e.name])), [eventos])
-
   const delGrupo = (f: Fila, g: Grupo) =>
     g === 'todas' ||
     (g === 'invitados' && esVendida(f)) ||
     (g === 'en-curso' && esReservada(f)) ||
     (g === 'otras' && !esVendida(f) && !esReservada(f))
 
-  const cuenta = (g: Grupo) => filas.filter((f) => (!eventoId || f.event_id === eventoId) && delGrupo(f, g)).length
-  const ingresaron = filas.filter((f) => (!eventoId || f.event_id === eventoId) && esVendida(f) && f.used_at).length
-  // Compradores distintos entre las entradas que cuentan: es solo una forma de
-  // contar lo mismo, no cambia ningún dato.
-  const compradores = new Set(
-    filas.filter((f) => (!eventoId || f.event_id === eventoId) && esVendida(f)).map(compradorDe)
-  ).size
+  const delEvento = (f: Fila) => !eventoId || f.event_id === eventoId
+  const cuenta = (g: Grupo) => filas.filter((f) => delEvento(f) && delGrupo(f, g)).length
+  const ingresaron = filas.filter((f) => delEvento(f) && esVendida(f) && f.used_at).length
+  // Compradores distintos entre las entradas que cuentan: otra forma de contar
+  // lo mismo, no cambia ningún dato.
+  const compradores = new Set(filas.filter((f) => delEvento(f) && esVendida(f)).map(compradorDe)).size
 
   const visibles = useMemo(() => {
     const q = busca.trim().toLowerCase()
@@ -157,17 +212,32 @@ export default function Invitados() {
     )
   }, [filas, grupo, eventoId, busca])
 
-  // Una tarjeta por comprador, con sus entradas adentro. Respeta filtros y búsqueda.
-  const porComprador = useMemo(() => {
-    const m = new Map<string, Fila[]>()
-    for (const f of visibles) {
-      const k = compradorDe(f)
-      m.set(k, [...(m.get(k) ?? []), f])
-    }
-    return [...m.values()]
-  }, [visibles])
+  // Una sección por evento; dentro, una tarjeta por comprador.
+  const secciones = useMemo(() => {
+    return eventos
+      .map((e) => {
+        const delE = visibles.filter((f) => f.event_id === e.id)
+        const m = new Map<string, Fila[]>()
+        for (const f of delE) m.set(compradorDe(f), [...(m.get(compradorDe(f)) ?? []), f])
+        return { evento: e, entradas: delE, compradores: [...m.values()] }
+      })
+      .filter((s) => s.entradas.length > 0)
+  }, [eventos, visibles])
+
+  // Buscando o mirando un solo evento no tiene sentido tener todo cerrado.
+  const forzarAbierto = busca.trim() !== '' || eventoId !== ''
+  const estaAbierta = (id: string) => forzarAbierto || abiertos.has(id)
+  const alternar = (id: string) =>
+    setAbiertos((a) => {
+      const n = new Set(a)
+      if (n.has(id)) n.delete(id)
+      else n.add(id)
+      return n
+    })
+  const todasAbiertas = secciones.length > 0 && secciones.every((s) => abiertos.has(s.evento.id))
 
   const exportar = () => {
+    const nombreEvento = new Map(eventos.map((e) => [e.id, e.name]))
     const cab = ['Nombre', 'Email', 'Teléfono', 'Instagram', 'Evento', 'Tipo', 'Medio', 'Estado', 'Registrada']
     const lineas = visibles.map((f) =>
       [
@@ -199,120 +269,135 @@ export default function Invitados() {
     ['todas', 'Todas'],
   ]
 
+  const NUMEROS: [string, number][] = [
+    ['Entradas', cuenta('invitados')],
+    ['Compradores', compradores],
+    ['Ya ingresaron', ingresaron],
+    ['Pagando', cuenta('en-curso')],
+  ]
+
+  const boton = (activo: boolean) =>
+    `px-3 py-1.5 rounded-xl text-sm border transition-colors ${
+      activo ? 'bg-white text-black border-white font-medium' : 'border-white/25 text-white/80 hover:text-white hover:border-white/50'
+    }`
+
   return (
     <div className="px-4 pt-4 pb-24 max-w-5xl mx-auto w-full space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <h1 className="text-white font-bold text-xl">Invitados</h1>
-        <p className="text-white/60 text-sm">
-          {cuenta('invitados')} entradas · {compradores} compradores · {ingresaron} ya ingresaron · {cuenta('en-curso')}{' '}
-          pagando
-        </p>
+      <h1 className="text-white font-bold text-xl">Invitados</h1>
+
+      {error && <p className="text-red-200 text-sm">{error}</p>}
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {NUMEROS.map(([texto, n]) => (
+          <div key={texto} className={`${VIDRIO} rounded-2xl px-4 py-3`}>
+            <p className="text-3xl font-bold text-white leading-none">{n}</p>
+            <p className="mt-1.5 text-xs uppercase tracking-wider text-white/65">{texto}</p>
+          </div>
+        ))}
       </div>
 
-      {error && <p className="text-red-300 text-sm">{error}</p>}
-
-      <div className="flex flex-wrap gap-2 items-center">
-        {GRUPOS.map(([id, texto]) => (
-          <button
-            key={id}
-            onClick={() => setGrupo(id)}
-            className={`px-3 py-1.5 rounded-xl text-sm border transition-colors ${
-              grupo === id ? 'bg-white text-black border-white' : 'border-white/20 text-white/60 hover:text-white'
-            }`}
-          >
-            {texto} ({cuenta(id)})
-          </button>
-        ))}
-        <select
-          value={eventoId}
-          onChange={(e) => setEventoId(e.target.value)}
-          className="px-3 py-1.5 rounded-xl text-sm bg-black border border-white/20 text-white/80"
-          aria-label="Evento"
-        >
-          <option value="">Todos los BLUR</option>
-          {eventos.map((e) => (
-            <option key={e.id} value={e.id}>
-              {e.name}
-            </option>
+      <div className={`${VIDRIO} rounded-2xl p-3 space-y-3`}>
+        <div className="flex flex-wrap gap-2 items-center">
+          {GRUPOS.map(([id, texto]) => (
+            <button key={id} onClick={() => setGrupo(id)} className={boton(grupo === id)}>
+              {texto} ({cuenta(id)})
+            </button>
           ))}
-        </select>
-      </div>
-
-      <div className="flex gap-2" role="group" aria-label="Cómo ver la lista">
-        {(
-          [
-            ['compradores', 'Por comprador'],
-            ['entradas', 'Una por una'],
-          ] as const
-        ).map(([id, texto]) => (
-          <button
-            key={id}
-            onClick={() => setVista(id)}
-            aria-pressed={vista === id}
-            className={`px-3 py-1.5 rounded-xl text-sm border transition-colors ${
-              vista === id ? 'bg-white/15 text-white border-white/40' : 'border-white/15 text-white/50 hover:text-white'
-            }`}
+          <select
+            value={eventoId}
+            onChange={(e) => setEventoId(e.target.value)}
+            className="px-3 py-1.5 rounded-xl text-sm bg-neutral-800 border border-white/25 text-white"
+            aria-label="Evento"
           >
-            {texto}
-          </button>
-        ))}
-      </div>
+            <option value="">Todos los BLUR</option>
+            {eventos.map((e) => (
+              <option key={e.id} value={e.id}>
+                {e.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
-      <div className="flex gap-2">
-        <label className="flex-1 flex items-center gap-2 px-3 py-2 rounded-xl border border-white/20 text-white/80">
-          <Search size={16} aria-hidden />
-          <input
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-            placeholder="Buscar por nombre, mail, teléfono o Instagram"
-            className="flex-1 bg-transparent outline-none text-sm placeholder:text-white/40"
-          />
-        </label>
-        <button
-          onClick={exportar}
-          disabled={!visibles.length}
-          className="flex items-center gap-2 px-3 py-2 rounded-xl border border-white/20 text-sm text-white/80 hover:text-white disabled:opacity-40"
-        >
-          <Download size={16} aria-hidden /> CSV
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <label className="flex-1 min-w-[220px] flex items-center gap-2 px-3 py-2 rounded-xl bg-neutral-800 border border-white/25 text-white">
+            <Search size={16} aria-hidden />
+            <input
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              placeholder="Buscar por nombre, mail, teléfono o Instagram"
+              className="flex-1 bg-transparent outline-none text-sm placeholder:text-white/50"
+            />
+          </label>
+          <div className="flex gap-2" role="group" aria-label="Cómo ver la lista">
+            <button onClick={() => setVista('compradores')} aria-pressed={vista === 'compradores'} className={boton(vista === 'compradores')}>
+              Por comprador
+            </button>
+            <button onClick={() => setVista('entradas')} aria-pressed={vista === 'entradas'} className={boton(vista === 'entradas')}>
+              Una por una
+            </button>
+          </div>
+          <button
+            onClick={exportar}
+            disabled={!visibles.length}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl border border-white/25 text-sm text-white hover:border-white/50 disabled:opacity-40"
+          >
+            <Download size={16} aria-hidden /> CSV
+          </button>
+        </div>
       </div>
 
       {cargando ? (
-        <p className="text-white/50 text-sm py-10 text-center">Cargando…</p>
-      ) : visibles.length === 0 ? (
-        <p className="text-white/50 text-sm py-10 text-center">No hay entradas con ese filtro.</p>
+        <p className="text-white/70 text-sm py-10 text-center">Cargando…</p>
+      ) : secciones.length === 0 ? (
+        <p className="text-white/70 text-sm py-10 text-center">No hay entradas con ese filtro.</p>
       ) : (
-        <ul className="space-y-3">
-          {vista === 'entradas'
-            ? visibles.map((f) => (
-                <li key={f.id} className="border border-white/10 rounded-2xl overflow-hidden">
-                  <FilaEntrada f={f} evento={nombreEvento.get(f.event_id)} />
-                </li>
-              ))
-            : porComprador.map((grupoF) =>
-                grupoF.length === 1 ? (
-                  <li key={grupoF[0].id} className="border border-white/10 rounded-2xl overflow-hidden">
-                    <FilaEntrada f={grupoF[0]} evento={nombreEvento.get(grupoF[0].event_id)} />
-                  </li>
-                ) : (
-                  <li key={compradorDe(grupoF[0])} className="border border-white/20 rounded-2xl overflow-hidden">
-                    <div className="px-4 py-2 bg-white/5 flex flex-wrap items-baseline justify-between gap-2">
-                      <p className="text-white/80 text-xs truncate">
-                        {[grupoF[0].email, grupoF[0].phone].filter(Boolean).join(' · ')}
-                      </p>
-                      <p className="text-terra-400 text-xs font-medium">{grupoF.length} entradas</p>
-                    </div>
-                    <ul className="divide-y divide-white/10">
-                      {grupoF.map((f) => (
-                        <li key={f.id}>
-                          <FilaEntrada f={f} evento={nombreEvento.get(f.event_id)} sinContacto />
-                        </li>
+        <>
+          {!forzarAbierto && secciones.length > 1 && (
+            <div className="flex justify-end">
+              <button
+                onClick={() => setAbiertos(todasAbiertas ? new Set() : new Set(secciones.map((s) => s.evento.id)))}
+                className="text-sm text-white/80 underline underline-offset-4 hover:text-white"
+              >
+                {todasAbiertas ? 'Cerrar todo' : 'Abrir todo'}
+              </button>
+            </div>
+          )}
+          <div className="space-y-3">
+            {secciones.map(({ evento, entradas, compradores: grupos }) => {
+              const abierta = estaAbierta(evento.id)
+              return (
+                <section key={evento.id} className={`${VIDRIO} rounded-2xl overflow-hidden`}>
+                  <button
+                    onClick={() => alternar(evento.id)}
+                    aria-expanded={abierta}
+                    disabled={forzarAbierto}
+                    className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left"
+                  >
+                    <span className="min-w-0">
+                      <span className="block text-white font-semibold">{evento.name}</span>
+                      <span className="block text-[13px] text-white/70">
+                        {entradas.length} {entradas.length === 1 ? 'entrada' : 'entradas'} · {grupos.length}{' '}
+                        {grupos.length === 1 ? 'comprador' : 'compradores'}
+                      </span>
+                    </span>
+                    <ChevronDown
+                      size={20}
+                      aria-hidden
+                      className={`shrink-0 text-white/70 transition-transform ${abierta ? 'rotate-180' : ''} ${forzarAbierto ? 'opacity-30' : ''}`}
+                    />
+                  </button>
+                  {abierta && (
+                    <ul className="grid gap-2 md:grid-cols-2 p-3 pt-0">
+                      {grupos.map((g) => (
+                        <TarjetaComprador key={compradorDe(g[0]) + g[0].id} entradas={g} agrupar={vista === 'compradores'} />
                       ))}
                     </ul>
-                  </li>
-                )
-              )}
-        </ul>
+                  )}
+                </section>
+              )
+            })}
+          </div>
+        </>
       )}
     </div>
   )
