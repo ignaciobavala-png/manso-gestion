@@ -36,6 +36,10 @@ interface Fila {
 }
 
 type Grupo = 'invitados' | 'en-curso' | 'otras' | 'todas'
+type Vista = 'compradores' | 'entradas'
+
+/** Quién compró: el mail, que es lo que se repite entre las entradas de una misma compra. */
+const compradorDe = (f: Fila) => f.email?.trim().toLowerCase() || f.id
 
 const COLUMNAS =
   'id, event_id, name, email, phone, instagram, registered_at, used_at, payment_verified, is_banned, payment_provider, mp_expires_at, origen, ticket_type_nombre, pack_pos, pack_size'
@@ -51,6 +55,33 @@ function medio(f: Fila): string {
 
 const csv = (v: string | number | null | undefined) => `"${String(v ?? '').replace(/"/g, '""')}"`
 
+function FilaEntrada({ f, evento, sinContacto }: { f: Fila; evento?: string; sinContacto?: boolean }) {
+  return (
+    <div className="px-4 py-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+      <div className="min-w-0">
+        <p className="text-white font-medium truncate">{f.name}</p>
+        {!sinContacto && (
+          <p className="text-white/50 text-xs truncate">{[f.email, f.phone, f.instagram].filter(Boolean).join(' · ')}</p>
+        )}
+      </div>
+      <div className="text-right text-xs text-white/60">
+        <p>
+          {evento}
+          {f.ticket_type_nombre ? ` · ${f.ticket_type_nombre}` : ''}
+          {f.pack_pos && f.pack_size && (
+            <span className="ml-2 px-1.5 py-0.5 rounded border border-white/30 text-white/80">
+              {f.pack_pos}/{f.pack_size}
+            </span>
+          )}
+        </p>
+        <p>
+          {medio(f)} · <span className="text-white/90">{etiquetaEstado(f)}</span>
+        </p>
+      </div>
+    </div>
+  )
+}
+
 export default function Invitados() {
   const [eventos, setEventos] = useState<Evento[]>([])
   const [filas, setFilas] = useState<Fila[]>([])
@@ -59,6 +90,7 @@ export default function Invitados() {
   const [grupo, setGrupo] = useState<Grupo>('invitados')
   const [eventoId, setEventoId] = useState('')
   const [busca, setBusca] = useState('')
+  const [vista, setVista] = useState<Vista>('compradores')
 
   useEffect(() => {
     let vivo = true
@@ -109,6 +141,11 @@ export default function Invitados() {
 
   const cuenta = (g: Grupo) => filas.filter((f) => (!eventoId || f.event_id === eventoId) && delGrupo(f, g)).length
   const ingresaron = filas.filter((f) => (!eventoId || f.event_id === eventoId) && esVendida(f) && f.used_at).length
+  // Compradores distintos entre las entradas que cuentan: es solo una forma de
+  // contar lo mismo, no cambia ningún dato.
+  const compradores = new Set(
+    filas.filter((f) => (!eventoId || f.event_id === eventoId) && esVendida(f)).map(compradorDe)
+  ).size
 
   const visibles = useMemo(() => {
     const q = busca.trim().toLowerCase()
@@ -119,6 +156,16 @@ export default function Invitados() {
         (!q || [f.name, f.email, f.phone, f.instagram].some((v) => v?.toLowerCase().includes(q)))
     )
   }, [filas, grupo, eventoId, busca])
+
+  // Una tarjeta por comprador, con sus entradas adentro. Respeta filtros y búsqueda.
+  const porComprador = useMemo(() => {
+    const m = new Map<string, Fila[]>()
+    for (const f of visibles) {
+      const k = compradorDe(f)
+      m.set(k, [...(m.get(k) ?? []), f])
+    }
+    return [...m.values()]
+  }, [visibles])
 
   const exportar = () => {
     const cab = ['Nombre', 'Email', 'Teléfono', 'Instagram', 'Evento', 'Tipo', 'Medio', 'Estado', 'Registrada']
@@ -157,7 +204,8 @@ export default function Invitados() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <h1 className="text-white font-bold text-xl">Invitados</h1>
         <p className="text-white/60 text-sm">
-          {cuenta('invitados')} invitados · {ingresaron} ya ingresaron · {cuenta('en-curso')} pagando
+          {cuenta('invitados')} entradas · {compradores} compradores · {ingresaron} ya ingresaron · {cuenta('en-curso')}{' '}
+          pagando
         </p>
       </div>
 
@@ -190,6 +238,26 @@ export default function Invitados() {
         </select>
       </div>
 
+      <div className="flex gap-2" role="group" aria-label="Cómo ver la lista">
+        {(
+          [
+            ['compradores', 'Por comprador'],
+            ['entradas', 'Una por una'],
+          ] as const
+        ).map(([id, texto]) => (
+          <button
+            key={id}
+            onClick={() => setVista(id)}
+            aria-pressed={vista === id}
+            className={`px-3 py-1.5 rounded-xl text-sm border transition-colors ${
+              vista === id ? 'bg-white/15 text-white border-white/40' : 'border-white/15 text-white/50 hover:text-white'
+            }`}
+          >
+            {texto}
+          </button>
+        ))}
+      </div>
+
       <div className="flex gap-2">
         <label className="flex-1 flex items-center gap-2 px-3 py-2 rounded-xl border border-white/20 text-white/80">
           <Search size={16} aria-hidden />
@@ -214,26 +282,36 @@ export default function Invitados() {
       ) : visibles.length === 0 ? (
         <p className="text-white/50 text-sm py-10 text-center">No hay entradas con ese filtro.</p>
       ) : (
-        <ul className="divide-y divide-white/10 border border-white/10 rounded-2xl overflow-hidden">
-          {visibles.map((f) => (
-            <li key={f.id} className="px-4 py-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-              <div className="min-w-0">
-                <p className="text-white font-medium truncate">{f.name}</p>
-                <p className="text-white/50 text-xs truncate">
-                  {[f.email, f.phone, f.instagram].filter(Boolean).join(' · ')}
-                </p>
-              </div>
-              <div className="text-right text-xs text-white/60">
-                <p>
-                  {nombreEvento.get(f.event_id)}
-                  {etiquetaTipo(f) ? ` · ${etiquetaTipo(f)}` : ''}
-                </p>
-                <p>
-                  {medio(f)} · <span className="text-white/90">{etiquetaEstado(f)}</span>
-                </p>
-              </div>
-            </li>
-          ))}
+        <ul className="space-y-3">
+          {vista === 'entradas'
+            ? visibles.map((f) => (
+                <li key={f.id} className="border border-white/10 rounded-2xl overflow-hidden">
+                  <FilaEntrada f={f} evento={nombreEvento.get(f.event_id)} />
+                </li>
+              ))
+            : porComprador.map((grupoF) =>
+                grupoF.length === 1 ? (
+                  <li key={grupoF[0].id} className="border border-white/10 rounded-2xl overflow-hidden">
+                    <FilaEntrada f={grupoF[0]} evento={nombreEvento.get(grupoF[0].event_id)} />
+                  </li>
+                ) : (
+                  <li key={compradorDe(grupoF[0])} className="border border-white/20 rounded-2xl overflow-hidden">
+                    <div className="px-4 py-2 bg-white/5 flex flex-wrap items-baseline justify-between gap-2">
+                      <p className="text-white/80 text-xs truncate">
+                        {[grupoF[0].email, grupoF[0].phone].filter(Boolean).join(' · ')}
+                      </p>
+                      <p className="text-terra-400 text-xs font-medium">{grupoF.length} entradas</p>
+                    </div>
+                    <ul className="divide-y divide-white/10">
+                      {grupoF.map((f) => (
+                        <li key={f.id}>
+                          <FilaEntrada f={f} evento={nombreEvento.get(f.event_id)} sinContacto />
+                        </li>
+                      ))}
+                    </ul>
+                  </li>
+                )
+              )}
         </ul>
       )}
     </div>
