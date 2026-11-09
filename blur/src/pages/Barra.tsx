@@ -9,6 +9,8 @@ import { pesos, useBlur, type Pedido } from '../lib/store'
 import '../barra.css'
 
 const MONTOS = [10000, 20000, 50000]
+/** La carta borrador no trae precios: sin ellos no hay saldo, carrito ni pedidos que mostrar. */
+const SE_PIDE = CARTA.some((p) => p.precio !== undefined)
 const TINTA = '#1a1a1a'
 const CREMA = '#fffcdc'
 
@@ -117,18 +119,23 @@ function Ticket({ p, ahora, onVer }: { p: Pedido; ahora: number; onVer: () => vo
 }
 
 function Tarjeta({ p, cantidad, onMas, onMenos }: { p: Producto; cantidad: number; onMas: () => void; onMenos: () => void }) {
+  const pedible = p.precio !== undefined && !p.vacante
   return (
-    <li className="flex flex-col border-2 border-[#1a1a1a] bg-[#fffcdc] p-3 text-[#1a1a1a]">
+    <li className={`flex flex-col p-3 text-[#1a1a1a] ${p.vacante ? 'border-2 border-dashed border-[#1a1a1a]/40 opacity-70' : 'border-2 border-[#1a1a1a] bg-[#fffcdc]'}`}>
       <IconoProducto producto={p} className="h-14 w-14" />
       <p className="mt-3 text-[17px] font-bold leading-tight tracking-tight">{p.nombre}</p>
-      <p className="mt-0.5 font-mono text-sm">{pesos(p.precio)}</p>
-      <div className="mt-3">
-        {cantidad === 0 ? (
-          <button onClick={onMas} className="btn w-full !bg-[#1a1a1a] !text-[#fffcdc]">Agregar</button>
-        ) : (
-          <Cantidad valor={cantidad} onMas={onMas} onMenos={onMenos} nombre={p.nombre} grande />
-        )}
-      </div>
+      {p.etiqueta && <p className="mt-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-[#f65200]">{p.etiqueta}</p>}
+      {p.descripcion && <p className="mt-1 text-[13px] leading-snug text-[#1a1a1a]/70">{p.descripcion}</p>}
+      {p.precio !== undefined && <p className="mt-0.5 font-mono text-sm">{pesos(p.precio)}</p>}
+      {pedible && (
+        <div className="mt-3">
+          {cantidad === 0 ? (
+            <button onClick={onMas} className="btn w-full !bg-[#1a1a1a] !text-[#fffcdc]">Agregar</button>
+          ) : (
+            <Cantidad valor={cantidad} onMas={onMas} onMenos={onMenos} nombre={p.nombre} grande />
+          )}
+        </div>
+      )}
     </li>
   )
 }
@@ -167,11 +174,11 @@ export default function Barra() {
       <Pagina className={cuenta > 0 ? '!pb-44' : ''}>
         <Rotulo>Pedidos</Rotulo>
         <Titulo className="mt-5">Barra</Titulo>
-        <div className="mt-3"><Mock>Sin cobro real · el avance del pedido es simulado</Mock></div>
+        <div className="mt-3"><Mock>{SE_PIDE ? 'Sin cobro real · el avance del pedido es simulado' : 'Carta borrador · todavía sin precios'}</Mock></div>
 
-        <div className="mt-6"><Pulsera saldo={saldo} onCargar={cargar} /></div>
+        {SE_PIDE && <div className="mt-6"><Pulsera saldo={saldo} onCargar={cargar} /></div>}
 
-        {pedidos.length > 0 && (
+        {SE_PIDE && pedidos.length > 0 && (
           <section className="mt-10">
             <Rotulo>Para retirar</Rotulo>
             <ul className="mt-4 space-y-4">
@@ -198,11 +205,16 @@ export default function Barra() {
               </button>
             ))}
           </div>
-          <ul className="mt-2 grid grid-cols-2 gap-3">
-            {visibles.map((p) => (
-              <Tarjeta key={p.id} p={p} cantidad={carrito[p.id] ?? 0} onMas={() => sumar(p.id, 1)} onMenos={() => sumar(p.id, -1)} />
-            ))}
-          </ul>
+          {categorias.slice(1).filter((c) => cat === 'Todo' || c === cat).map((c) => (
+            <div key={c} className="mt-4">
+              {cat === 'Todo' && <h3 className="mb-2 border-b-2 border-[#1a1a1a] pb-1 font-mono text-[12px] font-bold uppercase tracking-[0.2em] text-[#1a1a1a]">{c}</h3>}
+              <ul className="grid grid-cols-2 gap-3">
+                {visibles.filter((p) => p.categoria === c).map((p) => (
+                  <Tarjeta key={p.id} p={p} cantidad={carrito[p.id] ?? 0} onMas={() => sumar(p.id, 1)} onMenos={() => sumar(p.id, -1)} />
+                ))}
+              </ul>
+            </div>
+          ))}
         </section>
       </Pagina>
     </div>
@@ -273,7 +285,7 @@ function PanelPedido({
                   <IconoProducto producto={p} className="h-10 w-10 shrink-0" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-bold tracking-tight">{p.nombre}</p>
-                    <p className="font-mono text-xs">{pesos(p.precio * n)}</p>
+                    <p className="font-mono text-xs">{pesos((p.precio ?? 0) * n)}</p>
                   </div>
                   <Cantidad valor={n} onMas={() => onSumar(id, 1)} onMenos={() => onSumar(id, -1)} nombre={p.nombre} />
                 </li>
