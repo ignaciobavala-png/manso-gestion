@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import camara from '../assets/camara.webp'
 import { Mock, Pagina, Rotulo, Titulo } from '../components/Mock'
+import { Textura } from '../components/Textura'
 import { ElegirPelicula } from '../components/analogica/Cartucho'
 import { Contador } from '../components/analogica/Contador'
 import { Rueda } from '../components/analogica/Rueda'
@@ -182,29 +184,46 @@ function AvisoMock() {
   )
 }
 
-/** 1 · Portada y después elegir la película para cargar el rollo. */
+/** 1 · Portada (la cámara sobre los trazos del festival) y después elegir la película para cargar el rollo. */
 function Cargar() {
   const cargarPelicula = useBlur((s) => s.cargarPelicula)
   const [paso, setPaso] = useState<'portada' | 'elegir'>('portada')
 
   if (paso === 'portada') {
     return (
-      <Pagina>
-        <Rotulo>Rollo</Rotulo>
-        <Titulo className="mt-5">Analógica</Titulo>
-        <p className="mt-6 max-w-[28ch] text-sm text-apagado">
-          Tu cámara descartable del festival. {FOTOS_POR_PERSONA} fotos para todo el festival. Sin vista previa, sin borrar.
-        </p>
-        <div className="mt-6 flex items-center gap-6">
-          <button className="btn" onClick={() => setPaso('elegir')}>
-            Cargar rollo
-          </button>
-          <Link to="/analogica/revelado" className="enlace">
-            Revelado
-          </Link>
+      <section className="tema-verde textura flex min-h-[calc(100svh-6.5rem)] flex-col justify-between overflow-hidden pb-10 pt-10">
+        <Textura tipo="pasto" suave />
+        <div className="relative px-4">
+          <Rotulo>Rollo</Rotulo>
+          <Titulo className="mt-4">Analógica</Titulo>
         </div>
-        <AvisoMock />
-      </Pagina>
+
+        <div className="relative mx-auto my-6 w-full max-w-sm px-6">
+          <img
+            src={camara}
+            alt="La cámara descartable de BLUR, vista desde atrás"
+            width={676}
+            height={482}
+            className="acerca block w-full -rotate-3"
+            style={{ filter: 'drop-shadow(0 20px 24px rgb(0 0 0 / 0.45))' }}
+          />
+        </div>
+
+        <div className="entra relative px-4" style={{ animationDelay: '600ms' }}>
+          <p className="max-w-[28ch] text-sm text-apagado">
+            {FOTOS_POR_PERSONA} fotos para todo el festival. Sin vista previa, sin borrar.
+          </p>
+          <div className="mt-5 flex items-center gap-6">
+            <button className="btn" onClick={() => setPaso('elegir')}>
+              Cargar rollo
+            </button>
+            <Link to="/analogica/revelado" className="enlace">
+              Revelado
+            </Link>
+          </div>
+          <AvisoMock />
+        </div>
+      </section>
     )
   }
 
