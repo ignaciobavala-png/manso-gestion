@@ -31,7 +31,7 @@ export default function Inicio() {
             {/* HERO: paisaje a pantalla completa, marca al centro, datos abajo a la izquierda. */}
             <section className="tema-verde relative flex min-h-[calc(100svh-6.5rem)] flex-col justify-between overflow-hidden">
               {config?.banner_url && (
-                <img src={config.banner_url} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                <img src={config.banner_url} alt="" className="dron absolute inset-0 h-full w-full object-cover" />
               )}
               <div
                 aria-hidden
@@ -39,11 +39,11 @@ export default function Inicio() {
               />
 
               <div className="relative flex flex-1 flex-col items-center justify-center px-6 text-center">
-                <img src={`${MARCA}logo_1_b.svg`} alt="BLUR" className="w-[min(72vw,19rem)]" />
+                <img src={`${MARCA}logo_1_b.svg`} alt="BLUR" className="w-[min(84vw,24rem)]" />
                 <p className="mt-5 font-mono text-[11px] uppercase tracking-[0.35em]">Hecho en Argentina</p>
                 <div className="mt-8 flex gap-3">
-                  <Link to="/lineup" className="btn">Line up</Link>
-                  <Link to="/barra" className="btn-borde">Barra</Link>
+                  <Link to="/lineup" className="btn !px-7 !py-4 !text-base">Line up</Link>
+                  <Link to="/barra" className="btn-borde !px-7 !py-4 !text-base">Barra</Link>
                 </div>
               </div>
 

@@ -34,7 +34,10 @@ const VERDE = '#003009'
 
 export default function Shell() {
   const { pathname } = useLocation()
-  const tema = TEMAS[pathname.replace(/\/$/, '') || '/'] ?? 'verde'
+  const ruta = pathname.replace(/\/$/, '') || '/'
+  const tema = TEMAS[ruta] ?? 'verde'
+  // En la home el hero ya muestra la marca grande: repetirla en la barra sobra.
+  const esHome = ruta === '/'
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -54,10 +57,12 @@ export default function Shell() {
         style={{ background: VERDE }}
         className="fixed inset-x-0 top-0 z-40 flex h-14 items-center justify-between border-b border-[#fffcdc]/15 px-4"
       >
-        <Link to="/" aria-label="BLUR, inicio">
-          <img src={`${MARCA}logo_1_b.svg`} alt="BLUR" className="h-[18px] w-auto" />
-        </Link>
-        <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#fffcdc]/70">Hecho en Argentina</span>
+        {!esHome && (
+          <Link to="/" aria-label="BLUR, inicio">
+            <img src={`${MARCA}logo_1_b.svg`} alt="BLUR" className="h-[18px] w-auto" />
+          </Link>
+        )}
+        <span className="ml-auto font-mono text-[11px] uppercase tracking-[0.2em] text-[#fffcdc]/70">Hecho en Argentina</span>
       </header>
 
       <div className={`tema-${tema} min-h-svh pt-14 pb-[calc(3rem+env(safe-area-inset-bottom,0px))]`}>

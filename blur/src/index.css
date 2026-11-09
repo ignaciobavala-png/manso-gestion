@@ -279,10 +279,18 @@ body[data-tema='naranja'] { background: #f65200; }
 }
 .revelando { animation: revelando 5s ease-in-out infinite alternate; }
 
+/* Hero de la home: la foto avanza y sube despacio, como un dron que se acerca a la isla.
+   Dura unos segundos y se queda quieta al final (forwards): no es un loop. */
+@keyframes dron {
+  from { transform: scale(1) translate3d(0, 0, 0); }
+  to { transform: scale(1.14) translate3d(0, -2.5%, 0); }
+}
+.dron { animation: dron 9s cubic-bezier(0.25, 0.1, 0.25, 1) forwards; transform-origin: 50% 65%; will-change: transform; }
+
 /* Portada: la foto de la cámara en mano se acerca despacio al aparecer. */
 @keyframes acerca { from { opacity: 0; transform: scale(1.08); } }
 .acerca { animation: acerca 1400ms var(--ease-hard) backwards; }
 
 @media (prefers-reduced-motion: reduce) {
-  .entra, .pulso, .textura-viva path, .iris, .obturar, .anillo, .flota, .latente, .acerca, .revelando { animation: none; }
+  .entra, .pulso, .textura-viva path, .iris, .obturar, .anillo, .flota, .latente, .acerca, .dron, .revelando { animation: none; }
 }
