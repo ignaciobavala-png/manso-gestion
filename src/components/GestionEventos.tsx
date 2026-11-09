@@ -6,6 +6,7 @@ import { compressImage } from '../lib/compressImage'
 import EventCreator from './EventCreator'
 import EventEditor from './EventEditor'
 import ConteoPorTipo from './ConteoPorTipo'
+import NotasEvento from './NotasEvento'
 import { leerConteoPorTipo, type FilaConteoTipo } from '../lib/conteoPorTipo'
 
 export default function GestionEventos() {
@@ -19,6 +20,7 @@ export default function GestionEventos() {
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [notasId, setNotasId] = useState<string | null>(null)
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({})
   const bgFileInputRefs = useRef<Record<string, HTMLInputElement | null>>({})
 
@@ -308,6 +310,12 @@ export default function GestionEventos() {
                     >
                       {isUploadingBg ? 'Subiendo...' : e.background_url ? 'Cambiar fondo' : 'Subir fondo'}
                     </button>
+                    <button
+                      onClick={() => setNotasId(id => (id === e.id ? null : e.id))}
+                      className="text-sm px-3 py-1.5 bg-white/10 hover:bg-white/20 text-gray-300 font-medium rounded-xl transition-colors whitespace-nowrap"
+                    >
+                      {notasId === e.id ? 'Cerrar notas' : 'Info · notas'}
+                    </button>
                     <input
                       ref={el => { bgFileInputRefs.current[e.id] = el }}
                       type="file"
@@ -322,6 +330,11 @@ export default function GestionEventos() {
                   </div>
                 </div>
               </div>
+              {notasId === e.id && (
+                <div className="px-4 pb-4">
+                  <NotasEvento eventId={e.id} eventName={e.name} />
+                </div>
+              )}
               {editingId === e.id && (
                 <div className="px-4 pb-4">
                   <EventEditor
