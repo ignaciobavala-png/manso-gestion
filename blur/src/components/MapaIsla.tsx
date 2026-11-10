@@ -27,6 +27,32 @@ function suave(p: Pt[]) {
   return d
 }
 
+/** Azar determinista por celda: el mismo dibujo en cada carga. */
+const az = (i: number, j: number, k: number) => {
+  const v = Math.sin(i * 127.1 + j * 311.7 + k * 74.7) * 43758.5453
+  return v - Math.floor(v)
+}
+
+/**
+ * Malla de triángulos con los vértices corridos al azar: da el aspecto "low poly" de los mapas
+ * de relieve. Cada triángulo lleva un tono apenas distinto; los que tienen `b` brillan despacio.
+ */
+const CELDA = 64
+const FACETAS = (() => {
+  const nx = Math.ceil(MAPA_W / CELDA) + 1, ny = Math.ceil(MAPA_H / CELDA) + 1
+  const v = (i: number, j: number): Pt => [i * CELDA + (az(i, j, 1) - 0.5) * CELDA * 0.7, j * CELDA + (az(i, j, 2) - 0.5) * CELDA * 0.7]
+  const out: { d: string; a: number; b: number; k: number }[] = []
+  for (let i = 0; i < nx; i++)
+    for (let j = 0; j < ny; j++) {
+      const a = v(i, j), b = v(i + 1, j), c = v(i, j + 1), d = v(i + 1, j + 1)
+      ;([[a, b, c], [b, d, c]] as Pt[][]).forEach((t, k) => {
+        const r = az(i, j, 3 + k)
+        out.push({ d: `M${t[0]}L${t[1]}L${t[2]}Z`, a: r, b: az(i, j, 9 + k), k: Math.floor(az(i, j, 20 + k) * 5000) })
+      })
+    }
+  return out
+})()
+
 const tierra = '#e6d9a6'
 const tinta = '#1a1a1a'
 const COPAS = ['#5f8131', '#7c9a3a', '#8aa34a', '#9fae3e', '#b9a63a', '#c7b84a']
@@ -84,7 +110,17 @@ const Arte = memo(function Arte({ id, liviano }: { id: string; liviano?: boolean
       </defs>
 
       <rect width={MAPA_W} height={MAPA_H} fill="#003009" />
-      <rect width={MAPA_W} height={MAPA_H} fill={`url(#olas-${id})`} />
+      {!liviano && (
+        <g aria-hidden>
+          {FACETAS.map((f, i) => (
+            <path
+              key={i} d={f.d} fill="#0a7a2c" fillOpacity={0.06 + f.a * 0.16}
+              className={f.b > 0.9 ? 'mapa-brillo' : undefined} style={f.b > 0.9 ? { animationDelay: `${(f.k % 50) / 10}s` } : undefined}
+            />
+          ))}
+        </g>
+      )}
+      <rect x="-46" width={MAPA_W + 46} height={MAPA_H} fill={`url(#olas-${id})`} className={liviano ? undefined : 'mapa-olas'} />
 
       {/* Sombra desplazada de la tierra, como el relieve de un mapa impreso. */}
       <g transform="translate(10 12)" fill="#000" fillOpacity=".4">
@@ -94,6 +130,13 @@ const Arte = memo(function Arte({ id, liviano }: { id: string; liviano?: boolean
 
       <polygon points={pts(COSTA)} fill="#d4c68f" />
       <polygon points={pts(TIERRA)} fill={tierra} />
+
+      {/* Facetas del relieve sobre la tierra y la costa. */}
+      {!liviano && (
+        <g clipPath={`url(#tierra-${id})`}>
+          {FACETAS.map((f, i) => <path key={i} d={f.d} fill={f.a > 0.5 ? '#fff' : '#8a7a3a'} fillOpacity={Math.abs(f.a - 0.5) * 0.22} />)}
+        </g>
+      )}
 
       {/* Arena de las zonas abiertas. */}
       <g clipPath={`url(#tierra-${id})`} fill="#d9b878" fillOpacity=".75">
@@ -113,6 +156,12 @@ const Arte = memo(function Arte({ id, liviano }: { id: string; liviano?: boolean
         {CAMINOS.map((s, i) => <path key={`b${i}`} d={suave(s)} stroke={tinta} strokeWidth="15" />)}
         {CAMINOS.map((s, i) => <path key={`r${i}`} d={suave(s)} stroke="#f65200" strokeWidth="9" />)}
       </g>
+
+      {!liviano && (
+        <g fill="none" strokeLinecap="round" aria-hidden>
+          {CAMINOS.map((c, i) => <path key={i} d={suave(c)} stroke="#fff" strokeOpacity=".45" strokeWidth="2.5" strokeDasharray="2 26" className="mapa-flujo" />)}
+        </g>
+      )}
 
       {!liviano && (
         <>
@@ -142,7 +191,7 @@ const Arte = memo(function Arte({ id, liviano }: { id: string; liviano?: boolean
         <path d="M0 38 L9 0 L0 -8 L-9 0 Z" fill="#fffcdc" fillOpacity=".7" />
         <text y="-56" textAnchor="middle" fill="#fffcdc" fontFamily="Space Mono, monospace" fontWeight="700" fontSize="22">N</text>
       </g>
-      <image href={`${import.meta.env.BASE_URL}marca/logo_1_b.svg`} x="880" y="1150" width="220" height="38" opacity=".9" />
+      <image href={`${import.meta.env.BASE_URL}marca/logo_1_b.svg`} x="60" y="1150" width="220" height="38" opacity=".9" />
     </svg>
   )
 })
@@ -182,8 +231,8 @@ export function MapaIsla({ puntos, seleccionado, onSelect, destino, children }: 
 
   const centrada = useCallback((w: number, h: number) => {
     const min = Math.min(w / MAPA_W, h / MAPA_H)
-    // Las zonas a la vista, centrado en ellas y no en el mapa.
-    return acotar({ s: min * 1.05, x: w / 2 - 690 * min * 1.05, y: h / 2 - 540 * min * 1.05 }, w, h)
+    // Todo el predio a la vista.
+    return acotar({ s: min, x: 0, y: 0 }, w, h)
   }, [acotar])
 
   useEffect(() => {
@@ -282,7 +331,7 @@ export function MapaIsla({ puntos, seleccionado, onSelect, destino, children }: 
       onPointerMove={mover}
       onPointerUp={soltar}
       onPointerCancel={soltar}
-      className="relative h-[min(68svh,34rem)] w-full cursor-grab touch-none select-none overflow-hidden border border-linea bg-[#003009] active:cursor-grabbing"
+      className="relative aspect-[1280/1224] max-h-[82svh] w-full cursor-grab touch-none select-none overflow-hidden border border-linea bg-[#003009] active:cursor-grabbing"
       role="application"
       aria-label="Mapa del predio. Arrastrá para recorrerlo y pellizcá para acercar."
     >
