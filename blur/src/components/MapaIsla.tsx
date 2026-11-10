@@ -1,6 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
-  ARBOLES, ARENA, CAMINOS, COSTA, EDEN, ESTRUCTURAS, ETIQUETAS, GENTE, ID_LLEGADA, MAPA_H, MAPA_W, TIERRA, TIPOS_PUNTO,
+  ARBOLES, ARENA, CAMINOS, COSTA, EDEN, ESTRUCTURAS, ETIQUETAS, GENTE, ID_LLEGADA, MAPA_H, MAPA_W, MARGEN, PREDIO_H, PREDIO_W, TIERRA, TIPOS_PUNTO,
   type Grupo3D, type Prim, type Pt, type Punto,
 } from '../lib/mapa'
 
@@ -147,7 +147,7 @@ const Arte = memo(function Arte({ id, liviano }: { id: string; liviano?: boolean
       {!liviano &&
         (['tierra', 'costa'] as const).map((z) => (
           <g key={z} clipPath={`url(#${z}-${id})`} stroke="#003009" strokeWidth="1.5" strokeOpacity=".5">
-            {arboles.map((t) => (t.y > -80 && t.costa === (z === 'costa') ? <circle key={t.i} cx={t.x} cy={t.y} r={t.r * 0.5} fill={t.k > 0.94 ? '#c98da0' : COPAS[Math.floor(t.k * 997) % COPAS.length]} /> : null))}
+            {arboles.map((t) => (t.costa === (z === 'costa') ? <circle key={t.i} cx={t.x} cy={t.y} r={t.r * 0.5} fill={t.k > 0.94 ? '#c98da0' : COPAS[Math.floor(t.k * 997) % COPAS.length]} /> : null))}
           </g>
         ))}
 
@@ -185,13 +185,13 @@ const Arte = memo(function Arte({ id, liviano }: { id: string; liviano?: boolean
       ))}
 
       {/* Brújula y marca, en el agua. */}
-      <g transform="translate(1200 1130)" aria-hidden>
+      <g transform={`translate(${MARGEN + 1200} ${MARGEN + 1130})`} aria-hidden>
         <circle r="46" fill="none" stroke="#fffcdc" strokeOpacity=".7" strokeWidth="2.5" />
         <path d="M0 -38 L9 0 L0 8 L-9 0 Z" fill="#f65200" />
         <path d="M0 38 L9 0 L0 -8 L-9 0 Z" fill="#fffcdc" fillOpacity=".7" />
         <text y="-56" textAnchor="middle" fill="#fffcdc" fontFamily="Space Mono, monospace" fontWeight="700" fontSize="22">N</text>
       </g>
-      <image href={`${import.meta.env.BASE_URL}marca/logo_1_b.svg`} x="60" y="1150" width="220" height="38" opacity=".9" />
+      <image href={`${import.meta.env.BASE_URL}marca/logo_1_b.svg`} x={MARGEN + 60} y={MARGEN + 1150} width="220" height="38" opacity=".9" />
     </svg>
   )
 })
@@ -217,9 +217,9 @@ export function MapaIsla({ puntos, seleccionado, onSelect, destino, children }: 
   const punteros = useRef(new Map<number, { x: number; y: number }>())
   const arrastro = useRef(false)
 
-  /** El zoom mínimo muestra el mapa entero; el máximo lo acerca ZOOM_MAX veces. */
+  /** El mapa siempre cubre la caja: sin bordes vacíos ni zoom fuera de rango. */
   const acotar = useCallback((v: Vista, w: number, h: number): Vista => {
-    const min = Math.min(w / MAPA_W, h / MAPA_H)
+    const min = Math.max(w / MAPA_W, h / MAPA_H)
     const s = Math.min(Math.max(v.s, min), min * ZOOM_MAX)
     return {
       s,
@@ -230,9 +230,11 @@ export function MapaIsla({ puntos, seleccionado, onSelect, destino, children }: 
   }, [])
 
   const centrada = useCallback((w: number, h: number) => {
-    const min = Math.min(w / MAPA_W, h / MAPA_H)
+    const min = Math.max(w / MAPA_W, h / MAPA_H)
     // Todo el predio a la vista.
-    return acotar({ s: min, x: 0, y: 0 }, w, h)
+    // El predio de Ana entero y centrado; el margen recreado queda a los costados si la caja es más ancha.
+    const f = Math.max(min, Math.min(w / PREDIO_W, h / PREDIO_H))
+    return acotar({ s: f, x: w / 2 - (MARGEN + PREDIO_W / 2) * f, y: h / 2 - (MARGEN + PREDIO_H / 2) * f }, w, h)
   }, [acotar])
 
   useEffect(() => {
@@ -254,7 +256,7 @@ export function MapaIsla({ puntos, seleccionado, onSelect, destino, children }: 
 
   /** Acerca/aleja conservando fijo el punto (cx, cy) de la caja. */
   const zoomEn = useCallback((v: Vista, factor: number, cx: number, cy: number, w: number, h: number): Vista => {
-    const min = Math.min(w / MAPA_W, h / MAPA_H)
+    const min = Math.max(w / MAPA_W, h / MAPA_H)
     const s = Math.min(Math.max(v.s * factor, min), min * ZOOM_MAX)
     const f = s / v.s
     return acotar({ s, x: cx - (cx - v.x) * f, y: cy - (cy - v.y) * f }, w, h)

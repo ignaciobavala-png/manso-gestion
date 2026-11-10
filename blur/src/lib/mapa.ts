@@ -11,25 +11,31 @@
  * Todo lo que se dibuja sale de este archivo: MapaIsla no sabe cómo es el predio.
  */
 
-export const MAPA_W = 1280
-export const MAPA_H = 1224
+/** El predio de Ana ocupa 1280 × 1224; alrededor hay un margen recreado (monte, tierra y agua) para que el mapa siempre llene la caja. */
+export const PREDIO_W = 1280
+export const PREDIO_H = 1224
+export const MARGEN = 300
+export const MAPA_W = PREDIO_W + MARGEN * 2
+export const MAPA_H = PREDIO_H + MARGEN * 2
 
 export type Pt = [number, number]
 
 const SX = 0.1
 const SZ = 0.17
 /** Del plano 1280 × 720 del original a coordenadas de mapa. */
-export const plano = (x: number, y: number): Pt => [x, 612 + (y - 360) * (SZ / SX)]
+export const plano = (x: number, y: number): Pt => [x + MARGEN, 612 + MARGEN + (y - 360) * (SZ / SX)]
 const poli = (p: Pt[]): Pt[] => p.map(([x, y]) => plano(x, y))
 
-/** Tierra firme: el predio. Se sale del plano por arriba y por la derecha. */
-export const TIERRA: Pt[] = poli([
-  [520, -60], [1340, -60], [1340, 575], [1150, 600], [1000, 612], [860, 628], [720, 630], [590, 628], [470, 612],
+/** Tierra firme: el predio. Más allá del recuadro de Ana (arriba y a la derecha) la costa sigue recreada. */
+const TIERRA_PLANO: Pt[] = [
+  [580, -260], [1700, -260], [1700, 575], [1150, 600], [1000, 612], [860, 628], [720, 630], [590, 628], [470, 612],
   [360, 585], [260, 550], [195, 505], [170, 445], [168, 380], [192, 322], [250, 262], [318, 190], [395, 110], [455, 40],
-])
+]
+export const TIERRA: Pt[] = poli(TIERRA_PLANO)
 
 /** La otra orilla, arriba a la izquierda. Entre las dos queda el canal. */
-export const COSTA: Pt[] = poli([[-80, -60], [430, -60], [380, 10], [300, 95], [205, 180], [110, 262], [30, 320], [-80, 345]])
+const COSTA_PLANO: Pt[] = [[-400, -260], [480, -260], [430, -60], [380, 10], [300, 95], [205, 180], [110, 262], [30, 320], [-400, 345]]
+export const COSTA: Pt[] = poli(COSTA_PLANO)
 
 /** Manchas de arena: elipses. */
 export const ARENA: { cx: number; cy: number; rx: number; ry: number; rot: number }[] = [
@@ -223,6 +229,21 @@ function generar() {
         gente.push(plano(x + u * a * 0.5, y + v * b * 0.5 + (x === 690 ? 14 : 0)))
       }
     })
+
+  // Margen recreado: más monte en las zonas que el original no cubría, con otro azar para no tocar el de Ana.
+  const r2 = ((s) => () => ((s = (Math.imul(s ^ (s >>> 15), 1 | s) + 0x6d2b79f5) | 0), ((s ^ (s >>> 7)) >>> 0) / 4294967296))(11)
+  for (let x = -420; x < 1720; x += 21)
+    for (let y = -270; y < 700; y += 13) {
+      if (x >= -60 && x < 1340 && y >= -50 && y < 640) continue
+      const px = x + r2() * 16, py = y + r2() * 10
+      const enT = dentro(px, py, TIERRA_PLANO), enC = dentro(px, py, COSTA_PLANO)
+      if (!(enT || enC)) continue
+      if (enT && !libre(px, py)) continue
+      if (r2() < 0.18) continue
+      const s = 0.75 + r2() * 0.75
+      const [mx, my] = plano(px, py)
+      arboles.push({ x: mx, y: my, r: 23 * s, k: r2(), costa: enC })
+    }
   return { arboles, eden, gente }
 }
 
