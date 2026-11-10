@@ -47,13 +47,10 @@ export default function Mapa() {
               key={t.id}
               onClick={() => alternar(t.id)}
               aria-pressed={on}
-              className={`flex items-center gap-2 border px-2 py-1.5 font-mono text-[11px] uppercase tracking-[0.1em] ${
+              className={`flex items-center border px-2.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.1em] ${
                 on ? 'border-texto bg-texto text-fondo' : 'border-linea text-apagado'
               }`}
             >
-              <span aria-hidden className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-fondo px-1 text-[9px] font-bold text-texto">
-                {t.marca}
-              </span>
               {t.nombre}
             </button>
           )

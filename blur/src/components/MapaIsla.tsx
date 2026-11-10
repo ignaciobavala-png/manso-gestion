@@ -1,6 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
-  ARBOLES, ARENA, CAMINOS, COSTA, EDEN, ESTRUCTURAS, ETIQUETAS, GENTE, ID_LLEGADA, MAPA_H, MAPA_W, MARGEN, PREDIO_H, PREDIO_W, TIERRA, TIPOS_PUNTO,
+  ARBOLES, ARENA, CAMINOS, COSTA, EDEN, ESTRUCTURAS, ETIQUETAS, GENTE, ID_LLEGADA, MAPA_H, MAPA_W, MARGEN, PREDIO_H, PREDIO_W, TIERRA,
   type Grupo3D, type Prim, type Pt, type Punto,
 } from '../lib/mapa'
 
@@ -53,9 +53,35 @@ const FACETAS = (() => {
   return out
 })()
 
+const COPAS = ['#5f8131', '#7c9a3a', '#8aa34a', '#9fae3e', '#b9a63a', '#c7b84a']
+const r1 = (n: number) => Math.round(n * 10) / 10
+const circulo = (x: number, y: number, r: number) => `M${r1(x - r)} ${r1(y)}a${r1(r)} ${r1(r)} 0 1 0 ${r1(2 * r)} 0a${r1(r)} ${r1(r)} 0 1 0 ${r1(-2 * r)} 0`
+
+/**
+ * Un `<path>` por color en vez de miles de nodos sueltos: el dibujo es el mismo y el navegador
+ * pinta y recorta mucho menos. Se arma una sola vez, al cargar el módulo.
+ */
+const agrupar = <T,>(items: T[], clave: (t: T) => string, trazo: (t: T) => string) => {
+  const m = new Map<string, string>()
+  items.forEach((t) => { const k = clave(t); m.set(k, (m.get(k) ?? '') + trazo(t)) })
+  return [...m]
+}
+const COPAS_PATHS = agrupar(
+  ARBOLES.map((t) => ({ ...t, c: t.k > 0.94 ? '#c98da0' : COPAS[Math.floor(t.k * 997) % COPAS.length] })),
+  (t) => `${t.costa ? 'c' : 't'}|${t.c}`,
+  (t) => circulo(t.x, t.y, t.r * 0.5),
+).map(([k, d]) => ({ costa: k[0] === 'c', c: k.slice(2), d }))
+const GENTE_PATH = GENTE.map(([x, y]) => circulo(x, y, 2.6)).join('')
+const FACETAS_TIERRA = agrupar(
+  FACETAS,
+  (f) => `${f.a > 0.5 ? '#fff' : '#8a7a3a'}|${Math.min(3, Math.floor(Math.abs(f.a - 0.5) / 0.125))}`,
+  (f) => f.d,
+).map(([k, d]) => { const [c, n] = k.split('|'); return { c, op: (Number(n) + 0.4) * 0.027, d } })
+const FACETAS_AGUA = agrupar(FACETAS, (f) => String(Math.min(5, Math.floor(f.a * 6))), (f) => f.d)
+  .map(([k, d]) => ({ op: 0.06 + (Number(k) + 0.5) * 0.027, d }))
+
 const tierra = '#e6d9a6'
 const tinta = '#1a1a1a'
-const COPAS = ['#5f8131', '#7c9a3a', '#8aa34a', '#9fae3e', '#b9a63a', '#c7b84a']
 
 function Forma({ p }: { p: Prim }) {
   const borde = p.borde ? { stroke: tinta, strokeWidth: 1.5, vectorEffect: 'non-scaling-stroke' as const } : {}
@@ -97,7 +123,6 @@ function Estructura({ g }: { g: Grupo3D }) {
  */
 const Arte = memo(function Arte({ id, liviano }: { id: string; liviano?: boolean }) {
   const linea = { vectorEffect: 'non-scaling-stroke' as const }
-  const arboles = useMemo(() => ARBOLES.map((t, i) => ({ ...t, i })), [])
 
   return (
     <svg width={MAPA_W} height={MAPA_H} viewBox={`0 0 ${MAPA_W} ${MAPA_H}`} style={{ display: 'block' }} aria-hidden>
@@ -112,15 +137,10 @@ const Arte = memo(function Arte({ id, liviano }: { id: string; liviano?: boolean
       <rect width={MAPA_W} height={MAPA_H} fill="#003009" />
       {!liviano && (
         <g aria-hidden>
-          {FACETAS.map((f, i) => (
-            <path
-              key={i} d={f.d} fill="#0a7a2c" fillOpacity={0.06 + f.a * 0.16}
-              className={f.b > 0.9 ? 'mapa-brillo' : undefined} style={f.b > 0.9 ? { animationDelay: `${(f.k % 50) / 10}s` } : undefined}
-            />
-          ))}
+          {FACETAS_AGUA.map((f, i) => <path key={i} d={f.d} fill="#0a7a2c" fillOpacity={f.op} />)}
         </g>
       )}
-      <rect x="-46" width={MAPA_W + 46} height={MAPA_H} fill={`url(#olas-${id})`} className={liviano ? undefined : 'mapa-olas'} />
+      <rect width={MAPA_W} height={MAPA_H} fill={`url(#olas-${id})`} />
 
       {/* Sombra desplazada de la tierra, como el relieve de un mapa impreso. */}
       <g transform="translate(10 12)" fill="#000" fillOpacity=".4">
@@ -131,10 +151,10 @@ const Arte = memo(function Arte({ id, liviano }: { id: string; liviano?: boolean
       <polygon points={pts(COSTA)} fill="#d4c68f" />
       <polygon points={pts(TIERRA)} fill={tierra} />
 
-      {/* Facetas del relieve sobre la tierra y la costa. */}
+      {/* Facetas del relieve sobre la tierra. */}
       {!liviano && (
         <g clipPath={`url(#tierra-${id})`}>
-          {FACETAS.map((f, i) => <path key={i} d={f.d} fill={f.a > 0.5 ? '#fff' : '#8a7a3a'} fillOpacity={Math.abs(f.a - 0.5) * 0.22} />)}
+          {FACETAS_TIERRA.map((f, i) => <path key={i} d={f.d} fill={f.c} fillOpacity={f.op} />)}
         </g>
       )}
 
@@ -143,13 +163,8 @@ const Arte = memo(function Arte({ id, liviano }: { id: string; liviano?: boolean
         {ARENA.map((e, i) => <ellipse key={i} cx={e.cx} cy={e.cy} rx={e.rx} ry={e.ry} transform={`rotate(${e.rot} ${e.cx} ${e.cy})`} />)}
       </g>
 
-      {/* Monte: los árboles del original, recortados a cada orilla. */}
-      {!liviano &&
-        (['tierra', 'costa'] as const).map((z) => (
-          <g key={z} clipPath={`url(#${z}-${id})`} stroke="#003009" strokeWidth="1.5" strokeOpacity=".5">
-            {arboles.map((t) => (t.costa === (z === 'costa') ? <circle key={t.i} cx={t.x} cy={t.y} r={t.r * 0.5} fill={t.k > 0.94 ? '#c98da0' : COPAS[Math.floor(t.k * 997) % COPAS.length]} /> : null))}
-          </g>
-        ))}
+      {/* Monte: los árboles del original, un trazo por color. */}
+      {!liviano && COPAS_PATHS.map((g, i) => <path key={i} d={g.d} fill={g.c} stroke="#003009" strokeOpacity=".35" strokeWidth="1" />)}
 
       {/* Caminos: borde oscuro y relleno naranja. Primero todos los bordes, así se funden en los cruces. */}
       <g fill="none" strokeLinecap="round" strokeLinejoin="round">
@@ -158,14 +173,8 @@ const Arte = memo(function Arte({ id, liviano }: { id: string; liviano?: boolean
       </g>
 
       {!liviano && (
-        <g fill="none" strokeLinecap="round" aria-hidden>
-          {CAMINOS.map((c, i) => <path key={i} d={suave(c)} stroke="#fff" strokeOpacity=".45" strokeWidth="2.5" strokeDasharray="2 26" className="mapa-flujo" />)}
-        </g>
-      )}
-
-      {!liviano && (
         <>
-          {GENTE.map(([x, y], i) => <circle key={i} cx={x} cy={y} r="2.6" fill="#5a6070" fillOpacity=".6" />)}
+          <path d={GENTE_PATH} fill="#5a6070" fillOpacity=".6" />
           {ESTRUCTURAS.map((g) => <Estructura key={g.id} g={g} />)}
           <Estructura g={EDEN} />
         </>
@@ -195,6 +204,9 @@ const Arte = memo(function Arte({ id, liviano }: { id: string; liviano?: boolean
     </svg>
   )
 })
+
+/** Prioridad de los nombres cuando se pisan (la del original). */
+const ORDEN = ['sv', 'eden', 'inst', 'chill', 'carpa', 'barra', 'domo', 'panel', 'banos', 'merc', 'm1', 'm2', 'chir', 'sd', 'sl']
 
 interface Vista { s: number; x: number; y: number }
 
@@ -316,6 +328,29 @@ export function MapaIsla({ puntos, seleccionado, onSelect, destino, children }: 
     if (punteros.current.size === 0 && !arrastro.current) onSelect(null)
   }
 
+  /**
+   * Los nombres se dibujan por prioridad y se omiten los que pisarían a otro ya puesto (como en el
+   * original de Ana). El elegido y el destino siempre se ven.
+   */
+  const visibles = useMemo(() => {
+    if (!tam.w) return []
+    const orden = [...puntos].sort((a, b) =>
+      (a.id === seleccionado || a.id === destino ? -1 : b.id === seleccionado || b.id === destino ? 1 : ORDEN.indexOf(a.id) - ORDEN.indexOf(b.id)))
+    const usadas: number[][] = []
+    const out: { p: Punto; px: number; py: number }[] = []
+    for (const p of orden) {
+      const px = p.x * vista.s + vista.x, py = p.y * vista.s + vista.y
+      if (px < -60 || py < -20 || px > tam.w + 60 || py > tam.h + 20) continue
+      const w = p.nombre.length * 6.9 + 16, h = 22
+      const r = [px - w / 2 - 3, py - h / 2 - 2, px + w / 2 + 3, py + h / 2 + 2]
+      const forzado = p.id === seleccionado || p.id === destino
+      if (!forzado && usadas.some((u) => r[0] < u[2] && r[2] > u[0] && r[1] < u[3] && r[3] > u[1])) continue
+      usadas.push(r)
+      out.push({ p, px, py })
+    }
+    return out
+  }, [puntos, seleccionado, destino, vista, tam])
+
   const llegada = puntos.find((p) => p.id === ID_LLEGADA)
   const meta = destino ? puntos.find((p) => p.id === destino) : undefined
   const hayRuta = !!(llegada && meta && meta.id !== ID_LLEGADA && meta.tipo !== 'muelle')
@@ -340,7 +375,7 @@ export function MapaIsla({ puntos, seleccionado, onSelect, destino, children }: 
       <div
         style={{
           position: 'absolute', left: 0, top: 0, width: MAPA_W, height: MAPA_H,
-          transformOrigin: '0 0', transform: `translate(${vista.x}px, ${vista.y}px) scale(${vista.s})`,
+          transformOrigin: '0 0', transform: `translate3d(${vista.x}px, ${vista.y}px, 0) scale(${vista.s})`,
         }}
       >
         <Arte id="p" />
@@ -359,13 +394,12 @@ export function MapaIsla({ puntos, seleccionado, onSelect, destino, children }: 
         )}
       </div>
 
+      {/* Brillo lento sobre el agua: una sola capa compuesta, no cientos de nodos animados. */}
+      <div aria-hidden className="mapa-brillo-capa pointer-events-none absolute inset-y-0 -left-1/2 w-[200%]" />
+
       {/* Marcadores: HTML encima, para que midan lo mismo con cualquier zoom y sean fáciles de tocar. */}
       {tam.w > 0 &&
-        puntos.map((p) => {
-          const px = p.x * vista.s + vista.x
-          const py = p.y * vista.s + vista.y
-          if (px < -30 || py < -30 || px > tam.w + 30 || py > tam.h + 30) return null
-          const marca = TIPOS_PUNTO.find((t) => t.id === p.tipo)?.marca ?? '•'
+        visibles.map(({ p, px, py }) => {
           const fuerte = p.grupo === 'zonas'
           const activo = seleccionado === p.id
           const esMeta = destino === p.id
@@ -377,16 +411,11 @@ export function MapaIsla({ puntos, seleccionado, onSelect, destino, children }: 
               aria-label={p.nombre}
               aria-pressed={activo}
               style={{ left: px, top: py }}
-              className={`absolute z-10 flex h-9 min-w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 px-1.5 font-mono text-[11px] font-bold leading-none transition-transform ${
-                fuerte ? 'border-[#1a1a1a] bg-[#f65200] text-[#1a1a1a]' : 'border-[#1a1a1a] bg-[#fffcdc] text-[#1a1a1a]'
-              } ${activo ? 'scale-125 ring-2 ring-[#fffcdc] ring-offset-2 ring-offset-[#1a1a1a]' : ''} ${esMeta ? 'mapa-meta' : ''}`}
+              className={`absolute z-10 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap border px-1.5 py-1 font-mono text-[10px] font-bold uppercase leading-none tracking-[0.06em] ${
+                fuerte ? 'border-[#fffcdc]/60 bg-[#1a1a1a] text-[#fffcdc]' : 'border-[#1a1a1a] bg-[#fffcdc] text-[#1a1a1a]'
+              } ${activo ? 'z-20 !bg-[#f65200] !text-[#1a1a1a] ring-2 ring-[#fffcdc] ring-offset-2 ring-offset-[#1a1a1a]' : ''} ${esMeta ? 'mapa-meta' : ''}`}
             >
-              {marca}
-              {(fuerte || activo || esMeta) && (
-                <span className="pointer-events-none absolute left-1/2 top-full mt-1 -translate-x-1/2 whitespace-nowrap bg-[#1a1a1a] px-1.5 py-0.5 font-mono text-[10px] font-normal uppercase tracking-[0.08em] text-[#fffcdc]">
-                  {p.nombre}
-                </span>
-              )}
+              {p.nombre}
             </button>
           )
         })}
@@ -431,7 +460,7 @@ function Radar({ vista, tam, puntos }: { vista: Vista; tam: { w: number; h: numb
       >
         <Arte id="r" liviano />
       </div>
-      {puntos.filter((p) => p.tipo === 'escenario').map((p) => (
+      {puntos.filter((p) => p.grupo === 'zonas').map((p) => (
         <span key={p.id} style={origen(p.x, p.y)} className="absolute h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#f65200] ring-1 ring-[#1a1a1a]" />
       ))}
       {/* El centro: hacia dónde se está mirando. */}

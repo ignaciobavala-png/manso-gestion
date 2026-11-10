@@ -295,11 +295,11 @@ body[data-tema='naranja'] { background: #f65200; }
   .entra, .pulso, .textura-viva path, .iris, .obturar, .anillo, .flota, .latente, .acerca, .dron, .revelando { animation: none; }
 }
 
-/* Mapa: movimiento sutil del agua, brillos de relieve y flujo en los caminos. */
-@keyframes mapa-olas { to { transform: translateX(-46px); } }
-.mapa-olas { animation: mapa-olas 7s linear infinite; }
-@keyframes mapa-brillo { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
-.mapa-brillo { animation: mapa-brillo 6s ease-in-out infinite; }
-@keyframes mapa-flujo { to { stroke-dashoffset: -28; } }
-.mapa-flujo { animation: mapa-flujo 2.4s linear infinite; }
-@media (prefers-reduced-motion: reduce) { .mapa-olas, .mapa-brillo, .mapa-flujo { animation: none; } }
+/* Mapa: un brillo lento sobre el agua, en una sola capa compuesta (barato). */
+@keyframes mapa-brillo-capa { from { transform: translate3d(-22%, 0, 0); } to { transform: translate3d(22%, 0, 0); } }
+.mapa-brillo-capa {
+  background: linear-gradient(100deg, transparent 38%, rgba(255, 255, 255, 0.07) 50%, transparent 62%);
+  animation: mapa-brillo-capa 12s ease-in-out infinite alternate;
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) { .mapa-brillo-capa { animation: none; } }
