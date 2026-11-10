@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { MapaIsla } from '../components/MapaIsla'
-import { Mock, Pagina, Rotulo, Titulo } from '../components/Mock'
+import { Pagina, Rotulo, Titulo } from '../components/Mock'
 import { Textura } from '../components/Textura'
 import { Selector, VISTAS_MAPA } from '../components/Selector'
 import { useFestival } from '../lib/festival'
@@ -37,9 +37,6 @@ export default function Mapa() {
       <Selector items={VISTAS_MAPA} />
       <Rotulo>Locación</Rotulo>
       <Titulo className="mt-5">Mapa</Titulo>
-      <div className="mt-3">
-        <Mock>Isla de ejemplo, el dibujo real lo carga la organización</Mock>
-      </div>
 
       {/* Filtros: son también la leyenda, cada uno con la marca del punto en el mapa. */}
       <div className="mt-6 flex flex-wrap gap-2">
