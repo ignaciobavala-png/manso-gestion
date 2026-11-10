@@ -80,6 +80,7 @@ export default function Mapa() {
               </div>
 
               {spot?.fotos[0] && <img src={spot.fotos[0]} alt="" loading="lazy" className="mt-3 aspect-[16/9] w-full object-cover" />}
+              {sel.info && <p className="mt-3 text-[15px] leading-snug">{sel.info}</p>}
               {spot?.descripcion && <p className="mt-3 text-[15px] leading-snug">{spot.descripcion}</p>}
 
               {sel.id !== ID_LLEGADA && (

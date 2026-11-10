@@ -168,19 +168,20 @@ export function MapaIsla({ puntos, seleccionado, onSelect, destino, children }: 
   const punteros = useRef(new Map<number, { x: number; y: number }>())
   const arrastro = useRef(false)
 
-  /** Que el mapa siempre cubra la caja: sin bordes vacíos ni zoom fuera de rango. */
+  /** El zoom mínimo muestra el mapa entero; el máximo lo acerca ZOOM_MAX veces. */
   const acotar = useCallback((v: Vista, w: number, h: number): Vista => {
-    const min = Math.max(w / MAPA_W, h / MAPA_H)
+    const min = Math.min(w / MAPA_W, h / MAPA_H)
     const s = Math.min(Math.max(v.s, min), min * ZOOM_MAX)
     return {
       s,
-      x: Math.min(0, Math.max(w - MAPA_W * s, v.x)),
-      y: Math.min(0, Math.max(h - MAPA_H * s, v.y)),
+      // Si el mapa es más chico que la caja en un eje, se centra; si es más grande, no deja bordes vacíos.
+      x: MAPA_W * s <= w ? (w - MAPA_W * s) / 2 : Math.min(0, Math.max(w - MAPA_W * s, v.x)),
+      y: MAPA_H * s <= h ? (h - MAPA_H * s) / 2 : Math.min(0, Math.max(h - MAPA_H * s, v.y)),
     }
   }, [])
 
   const centrada = useCallback((w: number, h: number) => {
-    const min = Math.max(w / MAPA_W, h / MAPA_H)
+    const min = Math.min(w / MAPA_W, h / MAPA_H)
     // Las zonas a la vista, centrado en ellas y no en el mapa.
     return acotar({ s: min * 1.05, x: w / 2 - 690 * min * 1.05, y: h / 2 - 540 * min * 1.05 }, w, h)
   }, [acotar])
@@ -204,7 +205,7 @@ export function MapaIsla({ puntos, seleccionado, onSelect, destino, children }: 
 
   /** Acerca/aleja conservando fijo el punto (cx, cy) de la caja. */
   const zoomEn = useCallback((v: Vista, factor: number, cx: number, cy: number, w: number, h: number): Vista => {
-    const min = Math.max(w / MAPA_W, h / MAPA_H)
+    const min = Math.min(w / MAPA_W, h / MAPA_H)
     const s = Math.min(Math.max(v.s * factor, min), min * ZOOM_MAX)
     const f = s / v.s
     return acotar({ s, x: cx - (cx - v.x) * f, y: cy - (cy - v.y) * f }, w, h)
@@ -281,7 +282,7 @@ export function MapaIsla({ puntos, seleccionado, onSelect, destino, children }: 
       onPointerMove={mover}
       onPointerUp={soltar}
       onPointerCancel={soltar}
-      className="relative h-[min(68svh,34rem)] w-full cursor-grab touch-none select-none overflow-hidden border border-linea bg-[#dcdcd2] active:cursor-grabbing"
+      className="relative h-[min(68svh,34rem)] w-full cursor-grab touch-none select-none overflow-hidden border border-linea bg-[#003009] active:cursor-grabbing"
       role="application"
       aria-label="Mapa del predio. Arrastrá para recorrerlo y pellizcá para acercar."
     >
