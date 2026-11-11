@@ -25,6 +25,7 @@ const TEMAS: Record<string, Tema> = {
   '/mapa/lanchas': 'verde',
   '/analogica': 'verde',
   '/analogica/revelado': 'gris',
+  '/cuenta': 'verde',
 }
 
 export const MARCA = `${import.meta.env.BASE_URL}marca/`
@@ -62,7 +63,13 @@ export default function Shell() {
             <img src={`${MARCA}logo_1_b.svg`} alt="BLUR" className="h-[18px] w-auto" />
           </Link>
         )}
-        <span className="ml-auto font-mono text-[11px] uppercase tracking-[0.2em] text-[#fffcdc]/70">Hecho en Argentina</span>
+        <span className="ml-auto mr-4 hidden font-mono text-[11px] uppercase tracking-[0.2em] text-[#fffcdc]/70 min-[480px]:inline">Hecho en Argentina</span>
+        <Link
+          to="/cuenta"
+          className={`${esHome ? 'ml-auto ' : ''}font-mono text-[11px] font-bold uppercase tracking-[0.15em] text-[#f65200]`}
+        >
+          Mi entrada
+        </Link>
       </header>
 
       <div className={`tema-${tema} min-h-svh pt-14 pb-[calc(3rem+env(safe-area-inset-bottom,0px))]`}>

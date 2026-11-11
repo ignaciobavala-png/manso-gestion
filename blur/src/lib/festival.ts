@@ -17,6 +17,8 @@ export interface Config {
   vision: string | null
   banner_url: string | null
   lineup_visible: boolean
+  instagram: string | null
+  email: string | null
 }
 export interface Escenario { id: string; nombre: string; orden: number }
 export interface Artista {
@@ -58,7 +60,7 @@ let cache: Promise<Festival> | null = null
 
 export function cargarFestival(): Promise<Festival> {
   cache ??= Promise.all([
-    leer<Config>('festival_config', 'select=bajada,fecha,horario,lugar,lema,vision,banner_url,lineup_visible&id=eq.1'),
+    leer<Config>('festival_config', 'select=bajada,fecha,horario,lugar,lema,vision,banner_url,lineup_visible,instagram,email&id=eq.1'),
     leer<Escenario>('festival_escenarios', 'select=id,nombre,orden&activo=eq.true&order=orden'),
     leer<Artista>('festival_artistas', 'select=id,slug,nombre,escenario_id,b2b,pais,origen,foto_url,dia,horario,orden&activo=eq.true&order=orden'),
     leer<Spot>('festival_spots', 'select=id,titulo,descripcion,fotos,orden&activo=eq.true&order=orden'),

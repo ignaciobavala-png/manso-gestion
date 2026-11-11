@@ -9,6 +9,7 @@ import Lanchas from './pages/Lanchas'
 import Analogica from './pages/Analogica'
 import Revelado from './pages/Revelado'
 import Rollo from './pages/Rollo'
+import Cuenta from './pages/Cuenta'
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
         <Route path="analogica" element={<Analogica />} />
         <Route path="analogica/revelado" element={<Revelado />} />
         {/* Las fotos de un rollo: el de este teléfono, o el del link personal que manda la organización. */}
+        <Route path="cuenta" element={<Cuenta />} />
         <Route path="rollo" element={<Rollo />} />
         <Route path="rollo/:token" element={<Rollo />} />
 
