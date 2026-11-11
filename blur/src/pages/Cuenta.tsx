@@ -195,6 +195,7 @@ export default function Cuenta() {
   const [entradas, setEntradas] = useState<Entrada[] | null | undefined>(undefined) // undefined = cargando
   const [abierto, setAbierto] = useState(false)
   const [copiado, setCopiado] = useState(false)
+  const [confirmandoSalir, setConfirmandoSalir] = useState(false)
 
   // El token sale de la barra de direcciones una vez guardado: no queda en capturas ni al compartir la pantalla.
   useEffect(() => {
@@ -232,6 +233,7 @@ export default function Cuenta() {
   const salir = () => {
     olvidarTokens()
     setTokens([])
+    setConfirmandoSalir(false)
   }
 
   // Sin consulta (sin señal) se muestran los tokens guardados igual: el QR sale del token.
@@ -296,11 +298,34 @@ export default function Cuenta() {
           )}
         </div>
 
-        {tokens.length > 0 && (
-          <button onClick={salir} className="mt-10 font-mono text-[11px] uppercase tracking-[0.2em] text-apagado underline underline-offset-4">
-            Sacar mis entradas de este teléfono
-          </button>
-        )}
+        {tokens.length > 0 &&
+          (confirmandoSalir ? (
+            <div className="mt-10 border border-linea p-4">
+              <p className="font-bold">¿Cerrar sesión en este teléfono?</p>
+              <p className="mt-1 text-sm text-apagado">
+                Tus entradas dejan de verse acá. Seguís teniéndolas: las recuperás con el link del mail o con el código. Si las ibas a mostrar
+                en la puerta, no lo hagas todavía.
+              </p>
+              <div className="mt-3 flex gap-3">
+                <button
+                  onClick={salir}
+                  className="border border-acento px-4 py-3 font-mono text-xs font-bold uppercase tracking-[0.15em] text-acento"
+                >
+                  Sí, cerrar sesión
+                </button>
+                <button onClick={() => setConfirmandoSalir(false)} className="px-2 font-mono text-xs uppercase tracking-[0.15em] underline">
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setConfirmandoSalir(true)}
+              className="mt-10 font-mono text-[11px] uppercase tracking-[0.2em] text-apagado underline underline-offset-4"
+            >
+              Cerrar sesión
+            </button>
+          ))}
       </Pagina>
     </div>
   )
