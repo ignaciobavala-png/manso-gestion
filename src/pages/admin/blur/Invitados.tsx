@@ -114,11 +114,16 @@ function FilaEntrada({ f, mostrarContacto }: { f: Fila; mostrarContacto?: boolea
 }
 
 /** Fecha corta del último envío del QR por mail, o la falta de envío. Sólo para entradas de Gestión: las de la web las manda Club. */
+/** Entrada de Gestión con el pago confirmado: la única que recibe el QR por mail desde acá. */
+const conQrPosible = (f: Fila) => f.origen === 'gestion' && esVendida(f) && f.payment_verified
+
 function estadoMail(entradas: Fila[]): { texto: string; enviado: boolean } | null {
   const propias = entradas.filter((f) => f.origen === 'gestion' && esVendida(f))
   if (propias.length === 0) return null
-  const marcas = propias.map((f) => f.qr_mail_enviado_at).filter((m): m is string => !!m).sort()
-  if (marcas.length < propias.length) return { texto: 'Mail del QR: sin enviar', enviado: false }
+  const verificadas = propias.filter((f) => f.payment_verified)
+  if (verificadas.length === 0) return { texto: 'Pago sin verificar: el QR se manda cuando se confirme', enviado: false }
+  const marcas = verificadas.map((f) => f.qr_mail_enviado_at).filter((m): m is string => !!m).sort()
+  if (marcas.length < verificadas.length) return { texto: 'Mail del QR: sin enviar', enviado: false }
   const ultima = new Date(marcas[marcas.length - 1]).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
   return { texto: `Mail del QR: marcado ${ultima}`, enviado: true }
 }
@@ -136,7 +141,7 @@ function TarjetaComprador({
   enviando: boolean
 }) {
   const mail = estadoMail(entradas)
-  const puedeEnviar = entradas.some((f) => f.origen === 'gestion' && esVendida(f))
+  const puedeEnviar = entradas.some(conQrPosible)
   const pie = mail && (
     <div className="px-3 py-2 border-t border-white/10 flex items-center justify-between gap-2">
       <p className={`text-xs ${mail.enviado ? 'text-white/65' : 'text-amber-200'}`}>{mail.texto}</p>
@@ -201,8 +206,8 @@ export default function Invitados() {
   /** Manda de nuevo el QR por mail a un comprador (api/admin-enviar-entradas). */
   const enviarQr = async (entradas: Fila[]) => {
     const { event_id, email } = entradas[0]
-    const cuantas = entradas.filter((f) => f.origen === 'gestion' && esVendida(f)).length
-    const ya = entradas.some((f) => f.qr_mail_enviado_at)
+    const cuantas = entradas.filter(conQrPosible).length
+    const ya = entradas.some((f) => conQrPosible(f) && f.qr_mail_enviado_at)
     const pregunta = ya
       ? `¿Reenviar el QR de ${cuantas} entrada(s) a ${email}? Le llega de nuevo el mail.`
       : `¿Mandar el QR de ${cuantas} entrada(s) a ${email}?`

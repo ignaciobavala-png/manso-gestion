@@ -41,20 +41,22 @@ export default async function handler(req: Request): Promise<Response> {
 
   const supabase = adminClient()
 
-  // Sólo las entradas de Gestión que valen (espejo de reclamar): las de la web
-  // las manda Club, y las no pagadas no reciben QR.
+  // Sólo entradas de Gestión con el pago verificado: las de la web las manda
+  // Club, y una transferencia sin confirmar no recibe QR hasta que alguien
+  // confirme el pago. Mismo filtro en el reset y en el envío (soloVerificadas).
   const { error: errLimpiar } = await supabase
     .from('ticket_registrations')
     .update({ qr_mail_enviado_at: null })
     .eq('event_id', eventId)
     .eq('email', email)
     .eq('origen', 'gestion')
+    .eq('payment_verified', true)
     .not('is_banned', 'is', true)
     .or(FILTRO_VENDIDA)
   if (errLimpiar) return json({ error: `No se pudo preparar el envío: ${errLimpiar.message}` }, 500)
 
-  const r = await enviarMailEntradas(supabase, { eventId, email }, resolverBaseUrl(req))
+  const r = await enviarMailEntradas(supabase, { eventId, email, soloVerificadas: true }, resolverBaseUrl(req))
   if ('error' in r) return json({ error: `No se pudo mandar el mail: ${r.error}` }, 502)
-  if (r.enviadas === 0) return json({ error: 'No hay entradas vendidas de Gestión para ese mail en este evento.' }, 404)
+  if (r.enviadas === 0) return json({ error: 'No hay entradas con pago verificado de Gestión para ese mail en este evento.' }, 404)
   return json({ enviadas: r.enviadas }, 200)
 }

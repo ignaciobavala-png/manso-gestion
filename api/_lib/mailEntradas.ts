@@ -15,7 +15,8 @@ import { asuntoMail, htmlMailEntradas } from './mailEntradaHtml'
 
 /** Qué entradas mandar: las de una persona en un evento, o las de una orden de MP. */
 export type AlcanceMail =
-  | { eventId: string; email: string }
+  /** soloVerificadas: sólo las de pago confirmado (el botón de Invitados lo usa). */
+  | { eventId: string; email: string; soloVerificadas?: boolean }
   | { mpExternalReference: string }
 
 /**
@@ -96,6 +97,10 @@ async function reclamar(supabase: SupabaseClient, alcance: AlcanceMail): Promise
     .not('is_banned', 'is', true)
     .eq('origen', 'gestion')
     .or(FILTRO_VENDIDA)
+
+  // Una transferencia sin verificar cuenta como vendida, pero no recibe QR a
+  // mano: el QR sale cuando alguien confirma el pago.
+  if ('eventId' in alcance && alcance.soloVerificadas) q = q.eq('payment_verified', true)
 
   q = 'mpExternalReference' in alcance
     ? q.eq('mp_external_reference', alcance.mpExternalReference)
