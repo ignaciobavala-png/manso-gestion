@@ -11,8 +11,7 @@ import { esNocheDelFestival, proximaLancha } from '../lib/lanchas'
 const ATAJOS = [
   { to: '/lineup/escenarios', nombre: 'Escenarios', desc: 'Los spots y sus artistas' },
   { to: '/barra', nombre: 'Barra', desc: 'Pedí y retirá con QR' },
-  { to: '/mapa', nombre: 'Mapa', desc: 'Dónde está todo' },
-  { to: '/mapa/lanchas', nombre: 'Lanchas', desc: 'Salidas y regreso' },
+  { to: '/mapa', nombre: 'Lanchas y mapa', desc: 'Salidas, regreso y dónde está todo' },
   { to: '/analogica', nombre: 'Analógica', desc: 'Tu rollo de 10 fotos' },
 ]
 
@@ -31,7 +30,7 @@ export default function Inicio() {
             {/* HERO: paisaje a pantalla completa, marca al centro, datos abajo a la izquierda. */}
             <section className="tema-verde relative flex min-h-[calc(100svh-6.5rem)] flex-col justify-between overflow-hidden">
               {config?.banner_url && (
-                <img src={config.banner_url} alt="" className="dron absolute inset-0 h-full w-full object-cover" />
+                <img src={config.banner_url} alt="" fetchPriority="high" decoding="async" className="dron absolute inset-0 h-full w-full object-cover" />
               )}
               <div
                 aria-hidden
@@ -56,7 +55,7 @@ export default function Inicio() {
 
             {/* La próxima lancha, solo la noche del festival: es lo que se busca con apuro. */}
             {proxima && (
-              <Link to="/mapa/lanchas" className="tema-naranja flex items-center justify-between gap-4 px-4 py-4">
+              <Link to="/mapa#lanchas" className="tema-naranja flex items-center justify-between gap-4 px-4 py-4">
                 <span>
                   <span className="block font-mono text-[11px] uppercase tracking-[0.2em]">
                     {proxima.tipo === 'sale' ? 'Próxima lancha' : 'Próxima vuelta'}

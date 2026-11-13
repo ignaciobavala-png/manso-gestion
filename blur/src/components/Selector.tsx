@@ -5,11 +5,6 @@ export const VISTAS_LINEUP = [
   { to: '/lineup/escenarios', label: 'Escenarios' },
 ]
 
-export const VISTAS_MAPA = [
-  { to: '/mapa', label: 'Predio' },
-  { to: '/mapa/lanchas', label: 'Lanchas' },
-]
-
 /**
  * Selector de vista arriba de una pestaña que agrupa dos pantallas. Son rutas
  * (no estado): se puede compartir el link y el botón "atrás" no se rompe;
