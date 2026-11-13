@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { CARTA, FOTOS_POR_PERSONA } from './mock'
+import { FOTOS_POR_PERSONA } from './mock'
+import { useCarta } from './carta'
 
 export interface Pedido {
   id: string
@@ -77,7 +78,7 @@ export const useBlur = create<State>()(
         }),
       totalCarrito: () =>
         Object.entries(get().carrito).reduce(
-          (t, [id, n]) => t + (CARTA.find((p) => p.id === id)?.precio ?? 0) * n,
+          (t, [id, n]) => t + (useCarta.getState().productos.find((p) => p.id === id)?.precio ?? 0) * n,
           0,
         ),
       confirmar: () => {

@@ -5,9 +5,11 @@ import { NavLink, Outlet } from 'react-router-dom'
  * resto de Gestión. Las entradas (venta, tipos, lector de la puerta) siguen
  * en /admin/entradas; acá se mira y se maneja lo demás. Las lanchas, el line
  * up y los textos de la web se cargan en el panel de manso-club.
+ * La carta de la Barra (bebidas, precios) sí se carga acá.
  */
 const PESTANAS = [
   { to: '/admin/blur/invitados', texto: 'Invitados' },
+  { to: '/admin/blur/barra', texto: 'Barra' },
   { to: '/admin/blur/fotos', texto: 'Fotos y revelado' },
 ]
 

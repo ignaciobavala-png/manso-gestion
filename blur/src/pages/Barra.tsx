@@ -4,20 +4,20 @@ import { IconoProducto } from '../components/barra/IconoProducto'
 import { Mock, Pagina, Rotulo, Titulo } from '../components/Mock'
 import { MARCA } from '../components/Shell'
 import { Textura } from '../components/Textura'
-import { CARTA, type Producto } from '../lib/mock'
+import { useCarta } from '../lib/carta'
+import { type Producto } from '../lib/mock'
 import { pesos, useBlur, type Pedido } from '../lib/store'
 import '../barra.css'
 
 const MONTOS = [10000, 20000, 50000]
 /** La carta borrador no trae precios: sin ellos no hay saldo, carrito ni pedidos que mostrar. */
-const SE_PIDE = CARTA.some((p) => p.precio !== undefined)
 const TINTA = '#1a1a1a'
 const CREMA = '#fffcdc'
 
 /** Mismo formato que las entradas de Gestión (`manso-ticket|<token>`), con otro prefijo. */
 const qrDe = (p: Pedido) => `blur-pedido|${p.id}`
 const numero = (p: Pedido) => p.id.slice(0, 6).toUpperCase()
-const producto = (id: string) => CARTA.find((x) => x.id === id)
+const producto = (id: string) => useCarta.getState().productos.find((x) => x.id === id)
 
 /**
  * AVANCE SIMULADO: no hay backend ni lector en la barra, así que el estado de un pedido
@@ -151,8 +151,15 @@ export default function Barra() {
   const [abierto, setAbierto] = useState(false)
   const [verId, setVerId] = useState<string | null>(null)
 
-  const categorias = ['Todo', ...new Set(CARTA.map((p) => p.categoria))] as const
-  const visibles = CARTA.filter((p) => cat === 'Todo' || p.categoria === cat)
+  const productos = useCarta((s) => s.productos)
+  const cargarCarta = useCarta((s) => s.cargar)
+  useEffect(() => {
+    void cargarCarta()
+  }, [cargarCarta])
+  const sePide = productos.some((p) => p.precio !== undefined)
+
+  const categorias = ['Todo', ...new Set(productos.map((p) => p.categoria))] as const
+  const visibles = productos.filter((p) => cat === 'Todo' || p.categoria === cat)
   const verPedido = pedidos.find((p) => p.id === verId) ?? null
 
   // Con el panel vacío no tiene sentido tenerlo abierto.
@@ -174,11 +181,11 @@ export default function Barra() {
       <Pagina className={cuenta > 0 ? '!pb-44' : ''}>
         <Rotulo>Pedidos</Rotulo>
         <Titulo className="mt-5">Barra</Titulo>
-        <div className="mt-3"><Mock>{SE_PIDE ? 'Sin cobro real · el avance del pedido es simulado' : 'Carta borrador · todavía sin precios'}</Mock></div>
+        <div className="mt-3"><Mock>{sePide ? 'Sin cobro real · el avance del pedido es simulado' : 'Carta borrador · todavía sin precios'}</Mock></div>
 
-        {SE_PIDE && <div className="mt-6"><Pulsera saldo={saldo} onCargar={cargar} /></div>}
+        {sePide && <div className="mt-6"><Pulsera saldo={saldo} onCargar={cargar} /></div>}
 
-        {SE_PIDE && pedidos.length > 0 && (
+        {sePide && pedidos.length > 0 && (
           <section className="mt-10">
             <Rotulo>Para retirar</Rotulo>
             <ul className="mt-4 space-y-4">

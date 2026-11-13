@@ -36,6 +36,7 @@ interface Fila {
   ticket_type_nombre: string | null
   pack_pos: number | null
   pack_size: number | null
+  qr_mail_enviado_at: string | null
 }
 
 type Grupo = 'invitados' | 'por-verificar' | 'en-curso' | 'otras' | 'todas'
@@ -51,7 +52,7 @@ const porVerificar = (f: Fila) => esVendida(f) && f.payment_provider === 'transf
 const compradorDe = (f: Fila) => f.email?.trim().toLowerCase() || f.id
 
 const COLUMNAS =
-  'id, event_id, name, email, phone, instagram, registered_at, used_at, payment_verified, is_banned, payment_provider, mp_expires_at, origen, ticket_type_nombre, pack_pos, pack_size'
+  'id, event_id, name, email, phone, instagram, registered_at, used_at, payment_verified, is_banned, payment_provider, mp_expires_at, origen, ticket_type_nombre, pack_pos, pack_size, qr_mail_enviado_at'
 const PAGINA = 1000
 
 /** De dónde vino la entrada, en palabras de la organización. */
@@ -112,14 +113,52 @@ function FilaEntrada({ f, mostrarContacto }: { f: Fila; mostrarContacto?: boolea
   )
 }
 
+/** Fecha corta del último envío del QR por mail, o la falta de envío. Sólo para entradas de Gestión: las de la web las manda Club. */
+function estadoMail(entradas: Fila[]): { texto: string; enviado: boolean } | null {
+  const propias = entradas.filter((f) => f.origen === 'gestion' && esVendida(f))
+  if (propias.length === 0) return null
+  const marcas = propias.map((f) => f.qr_mail_enviado_at).filter((m): m is string => !!m).sort()
+  if (marcas.length < propias.length) return { texto: 'Mail del QR: sin enviar', enviado: false }
+  const ultima = new Date(marcas[marcas.length - 1]).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+  return { texto: `Mail del QR: marcado ${ultima}`, enviado: true }
+}
+
 /** Un comprador con una sola entrada es una tarjeta común; con varias, una tarjeta con sus entradas adentro. */
-function TarjetaComprador({ entradas, agrupar }: { entradas: Fila[]; agrupar: boolean }) {
+function TarjetaComprador({
+  entradas,
+  agrupar,
+  onEnviar,
+  enviando,
+}: {
+  entradas: Fila[]
+  agrupar: boolean
+  onEnviar: (f: Fila[]) => void
+  enviando: boolean
+}) {
+  const mail = estadoMail(entradas)
+  const puedeEnviar = entradas.some((f) => f.origen === 'gestion' && esVendida(f))
+  const pie = mail && (
+    <div className="px-3 py-2 border-t border-white/10 flex items-center justify-between gap-2">
+      <p className={`text-xs ${mail.enviado ? 'text-white/65' : 'text-amber-200'}`}>{mail.texto}</p>
+      {puedeEnviar && (
+        <button
+          onClick={() => onEnviar(entradas)}
+          disabled={enviando}
+          className="shrink-0 px-2.5 py-1 rounded-lg text-xs border border-white/30 text-white hover:border-white/60 disabled:opacity-40"
+        >
+          {enviando ? 'Enviando…' : mail.enviado ? 'Reenviar QR por mail' : 'Enviar QR por mail'}
+        </button>
+      )}
+    </div>
+  )
+
   if (!agrupar || entradas.length === 1) {
     return (
       <>
         {entradas.map((f) => (
           <li key={f.id} className={`${VIDRIO_INTERNO} rounded-xl overflow-hidden`}>
             <FilaEntrada f={f} mostrarContacto />
+            {pie}
           </li>
         ))}
       </>
@@ -141,6 +180,7 @@ function TarjetaComprador({ entradas, agrupar }: { entradas: Fila[]; agrupar: bo
           </li>
         ))}
       </ul>
+      {pie}
     </li>
   )
 }
@@ -155,6 +195,43 @@ export default function Invitados() {
   const [busca, setBusca] = useState('')
   const [vista, setVista] = useState<Vista>('compradores')
   const [abiertos, setAbiertos] = useState<Set<string>>(new Set())
+  const [enviandoA, setEnviandoA] = useState<string | null>(null)
+  const [aviso, setAviso] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null)
+
+  /** Manda de nuevo el QR por mail a un comprador (api/admin-enviar-entradas). */
+  const enviarQr = async (entradas: Fila[]) => {
+    const { event_id, email } = entradas[0]
+    const cuantas = entradas.filter((f) => f.origen === 'gestion' && esVendida(f)).length
+    const ya = entradas.some((f) => f.qr_mail_enviado_at)
+    const pregunta = ya
+      ? `¿Reenviar el QR de ${cuantas} entrada(s) a ${email}? Le llega de nuevo el mail.`
+      : `¿Mandar el QR de ${cuantas} entrada(s) a ${email}?`
+    if (!window.confirm(pregunta)) return
+    const clave = `${event_id}|${email}`
+    setEnviandoA(clave)
+    setAviso(null)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/admin-enviar-entradas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token ?? ''}` },
+        body: JSON.stringify({ eventId: event_id, email }),
+      })
+      const data = (await res.json().catch(() => ({}))) as { enviadas?: number; error?: string }
+      if (!res.ok) {
+        setAviso({ tipo: 'error', texto: data.error ?? 'No se pudo mandar el mail.' })
+        return
+      }
+      setAviso({ tipo: 'ok', texto: `Mail con el QR enviado a ${email} (${data.enviadas} entrada(s)).` })
+      // Refleja la marca nueva sin recargar la lista.
+      const ahora = new Date().toISOString()
+      setFilas((prev) => prev.map((f) => (f.event_id === event_id && f.email?.trim().toLowerCase() === email ? { ...f, qr_mail_enviado_at: ahora } : f)))
+    } catch {
+      setAviso({ tipo: 'error', texto: 'Sin conexión. Probá de nuevo.' })
+    } finally {
+      setEnviandoA(null)
+    }
+  }
 
   useEffect(() => {
     let vivo = true
@@ -295,6 +372,11 @@ export default function Invitados() {
       <h1 className="text-white font-bold text-xl">Invitados</h1>
 
       {error && <p className="text-red-200 text-sm">{error}</p>}
+      {aviso && (
+        <p className={`text-sm rounded-xl px-3 py-2 border ${aviso.tipo === 'ok' ? 'text-emerald-200 border-emerald-400/40 bg-emerald-500/10' : 'text-red-200 border-red-400/40 bg-red-500/10'}`}>
+          {aviso.texto}
+        </p>
+      )}
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {NUMEROS.map(([texto, n]) => (
@@ -398,7 +480,13 @@ export default function Invitados() {
                   {abierta && (
                     <ul className="grid gap-2 md:grid-cols-2 p-3 pt-0">
                       {grupos.map((g) => (
-                        <TarjetaComprador key={compradorDe(g[0]) + g[0].id} entradas={g} agrupar={vista === 'compradores'} />
+                        <TarjetaComprador
+                          key={compradorDe(g[0]) + g[0].id}
+                          entradas={g}
+                          agrupar={vista === 'compradores'}
+                          onEnviar={enviarQr}
+                          enviando={enviandoA === `${g[0].event_id}|${compradorDe(g[0])}`}
+                        />
                       ))}
                     </ul>
                   )}

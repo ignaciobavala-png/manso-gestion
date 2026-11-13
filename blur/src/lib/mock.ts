@@ -10,7 +10,8 @@ export type Categoria = 'Los que más salen' | 'De autor' | 'Cervezas' | 'Sin al
 export interface Producto {
   id: string
   nombre: string
-  categoria: Categoria
+  /** Texto libre: la carta real la carga la organización (tabla blur_carta_productos). */
+  categoria: Categoria | string
   /** Qué lleva el trago, como en la carta impresa. */
   descripcion?: string
   /** Sello chico al lado del nombre ("De la casa"). */
