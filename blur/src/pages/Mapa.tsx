@@ -1,14 +1,105 @@
 import { useState } from 'react'
 import { MapaIsla } from '../components/MapaIsla'
+import { ConFestival } from '../components/Estado'
 import { Pagina, Rotulo, Titulo } from '../components/Mock'
 import { Textura } from '../components/Textura'
-import { Selector, VISTAS_MAPA } from '../components/Selector'
-import { useFestival } from '../lib/festival'
+import { useFestival, type Lancha } from '../lib/festival'
 import { ID_LLEGADA, PUNTOS, TIPOS_PUNTO, type TipoPunto } from '../lib/mapa'
 
 const sinTildes = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase()
 
-export default function Mapa() {
+/** Si el regreso es menor que la salida, es pasada la medianoche (el festival termina a las 04). */
+const deMadrugada = (l: Lancha) => !!l.salida && !!l.regreso && l.regreso < l.salida
+
+function Hora({ rotulo, valor, nota }: { rotulo: string; valor: string | null; nota?: string }) {
+  return (
+    <div>
+      <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-apagado">{rotulo}</p>
+      {valor ? (
+        <p className="titulo mt-1 text-5xl">{valor}</p>
+      ) : (
+        <p className="mt-2 font-mono text-sm uppercase tracking-[0.1em] text-apagado">A confirmar</p>
+      )}
+      {valor && nota && <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.15em] text-apagado">{nota}</p>}
+    </div>
+  )
+}
+
+/** Punto de salida de las lanchas: Estacionamiento / Muelle Delta Rica, San Fernando. Embed oficial de Google (pb=), sin API key. */
+const MUELLE = {
+  nombre: 'Estacionamiento / Muelle Delta Rica',
+  direccion: 'B1646 San Fernando, Provincia de Buenos Aires',
+  codigo: 'HCFV+3Q',
+  lat: -34.4273147,
+  lng: -58.5555052,
+  embed:
+    'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3290.9779698920856!2d-58.555505200000006!3d-34.4273147!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95bca54bdc1239c5%3A0xfba3202072c79431!2sEstacionamiento%2FMuelle%20Delta%20Rica!5e0!3m2!1ses!2sar!4v1794614537625!5m2!1ses!2sar',
+}
+
+function Muelle() {
+  return (
+    <div className="mt-6">
+      <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-apagado">Salen desde</p>
+      <p className="titulo mt-1 text-2xl">{MUELLE.nombre}</p>
+      <p className="mt-1 text-[15px] text-apagado">{MUELLE.direccion}</p>
+      {/* Mapa fijo, como en las landings: el arrastre no se queda atrapado en el scroll; el link abre Google Maps. */}
+      <div className="relative mt-3 aspect-[4/3] w-full overflow-hidden border border-linea">
+        <iframe
+          src={MUELLE.embed}
+          title={`Mapa: ${MUELLE.nombre}`}
+          loading="lazy"
+          referrerPolicy="strict-origin-when-cross-origin"
+          tabIndex={-1}
+          aria-hidden
+          className="absolute inset-0 h-full w-full border-0"
+          style={{ pointerEvents: 'none' }}
+        />
+      </div>
+      <a
+        href={`https://www.google.com/maps/search/?api=1&query=${MUELLE.lat},${MUELLE.lng}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="btn mt-3 w-full"
+      >
+        Cómo llegar
+      </a>
+    </div>
+  )
+}
+
+/** Primera parte de la pantalla: cuándo sale y vuelve cada lancha. Los datos los carga la organización en manso-club. */
+function Lanchas() {
+  return (
+    <section id="lanchas">
+      <Rotulo>Ida y vuelta</Rotulo>
+      <Titulo className="mt-5">Lanchas</Titulo>
+      <Muelle />
+      <ConFestival>
+        {({ lanchas }) =>
+          lanchas.length === 0 ? (
+            <p className="mt-10 text-apagado">Los horarios de las lanchas se anuncian pronto.</p>
+          ) : (
+            <ul className="mt-10">
+              {lanchas.map((l) => (
+                <li key={l.id} className="border-t border-texto py-6">
+                  <p className="rotulo">{l.nombre}</p>
+                  <div className="mt-4 grid grid-cols-2 gap-4">
+                    <Hora rotulo="Sale" valor={l.salida} />
+                    <Hora rotulo="Vuelve" valor={l.regreso} nota={deMadrugada(l) ? 'De madrugada' : undefined} />
+                  </div>
+                  {l.nota && <p className="mt-4 text-[15px] leading-snug">{l.nota}</p>}
+                </li>
+              ))}
+            </ul>
+          )
+        }
+      </ConFestival>
+    </section>
+  )
+}
+
+/** Segunda parte: el predio, con filtros y la ficha de cada punto. */
+function Predio() {
   const [activos, setActivos] = useState<Set<TipoPunto>>(new Set(TIPOS_PUNTO.map((t) => t.id)))
   const [seleccionado, setSeleccionado] = useState<string | null>(null)
   const [destino, setDestino] = useState<string | null>(null)
@@ -31,12 +122,9 @@ export default function Mapa() {
     sel && 'data' in festival ? festival.data.spots.find((s) => sinTildes(s.titulo) === sinTildes(sel.nombre)) : undefined
 
   return (
-    <div className="textura">
-      <Textura tipo="pasto" suave />
-    <Pagina>
-      <Selector items={VISTAS_MAPA} />
+    <section id="predio" className="mt-16">
       <Rotulo>Locación</Rotulo>
-      <Titulo className="mt-5">Mapa</Titulo>
+      <Titulo className="mt-5">Predio</Titulo>
 
       {/* Filtros: son también la leyenda, cada uno con la marca del punto en el mapa. */}
       <div className="mt-6 flex flex-wrap gap-2">
@@ -96,7 +184,19 @@ export default function Mapa() {
           Arrastrá para recorrer · pellizcá para acercar · tocá un punto
         </p>
       </div>
-    </Pagina>
+    </section>
+  )
+}
+
+/** Una sola pantalla para llegar: primero las lanchas (cuándo y de dónde salen), después el predio. */
+export default function Mapa() {
+  return (
+    <div className="textura">
+      <Textura tipo="pasto" suave />
+      <Pagina>
+        <Lanchas />
+        <Predio />
+      </Pagina>
     </div>
   )
 }

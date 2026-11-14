@@ -58,7 +58,8 @@ function Cantidad({ valor, onMas, onMenos, nombre, grande = false }: { valor: nu
   )
 }
 
-function Pulsera({ saldo, onCargar }: { saldo: number; onCargar: (m: number) => void }) {
+// Los botones de carga todavía no suman crédito: se muestran pero no hacen nada.
+function Pulsera({ saldo }: { saldo: number }) {
   return (
     <section style={{ background: TINTA, color: CREMA }} className="relative overflow-hidden p-4">
       <div className="flex items-start justify-between">
@@ -69,7 +70,7 @@ function Pulsera({ saldo, onCargar }: { saldo: number; onCargar: (m: number) => 
       <p key={saldo} className="barra-pop titulo mt-1 inline-block text-6xl">{pesos(saldo)}</p>
       <div className="mt-5 grid grid-cols-3 gap-2">
         {MONTOS.map((m) => (
-          <button key={m} onClick={() => onCargar(m)} className="border-2 border-[#fffcdc] py-3 font-mono text-[13px] font-bold active:bg-[#fffcdc] active:text-[#1a1a1a]">
+          <button key={m} type="button" className="border-2 border-[#fffcdc] py-3 font-mono text-[13px] font-bold">
             + {pesos(m)}
           </button>
         ))}
@@ -183,7 +184,7 @@ export default function Barra() {
         <Titulo className="mt-5">Barra</Titulo>
         <div className="mt-3"><Mock>{sePide ? 'Sin cobro real · el avance del pedido es simulado' : 'Carta borrador · todavía sin precios'}</Mock></div>
 
-        {sePide && <div className="mt-6"><Pulsera saldo={saldo} onCargar={cargar} /></div>}
+        {sePide && <div className="mt-6"><Pulsera saldo={saldo} /></div>}
 
         {sePide && pedidos.length > 0 && (
           <section className="mt-10">

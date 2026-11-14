@@ -22,7 +22,6 @@ const TEMAS: Record<string, Tema> = {
   '/lineup/escenarios': 'gris',
   '/barra': 'naranja',
   '/mapa': 'verde',
-  '/mapa/lanchas': 'verde',
   '/analogica': 'verde',
   '/analogica/revelado': 'gris',
   '/cuenta': 'verde',
