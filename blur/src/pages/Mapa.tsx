@@ -25,12 +25,55 @@ function Hora({ rotulo, valor, nota }: { rotulo: string; valor: string | null; n
   )
 }
 
+/** Punto de salida de las lanchas: Estacionamiento / Muelle Delta Rica, San Fernando. Embed oficial de Google (pb=), sin API key. */
+const MUELLE = {
+  nombre: 'Estacionamiento / Muelle Delta Rica',
+  direccion: 'B1646 San Fernando, Provincia de Buenos Aires',
+  codigo: 'HCFV+3Q',
+  lat: -34.4273147,
+  lng: -58.5555052,
+  embed:
+    'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3290.9779698920856!2d-58.555505200000006!3d-34.4273147!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95bca54bdc1239c5%3A0xfba3202072c79431!2sEstacionamiento%2FMuelle%20Delta%20Rica!5e0!3m2!1ses!2sar!4v1794614537625!5m2!1ses!2sar',
+}
+
+function Muelle() {
+  return (
+    <div className="mt-6">
+      <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-apagado">Salen desde</p>
+      <p className="titulo mt-1 text-2xl">{MUELLE.nombre}</p>
+      <p className="mt-1 text-[15px] text-apagado">{MUELLE.direccion}</p>
+      {/* Mapa fijo, como en las landings: el arrastre no se queda atrapado en el scroll; el link abre Google Maps. */}
+      <div className="relative mt-3 aspect-[4/3] w-full overflow-hidden border border-linea">
+        <iframe
+          src={MUELLE.embed}
+          title={`Mapa: ${MUELLE.nombre}`}
+          loading="lazy"
+          referrerPolicy="strict-origin-when-cross-origin"
+          tabIndex={-1}
+          aria-hidden
+          className="absolute inset-0 h-full w-full border-0"
+          style={{ pointerEvents: 'none' }}
+        />
+      </div>
+      <a
+        href={`https://www.google.com/maps/search/?api=1&query=${MUELLE.lat},${MUELLE.lng}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="btn mt-3 w-full"
+      >
+        Cómo llegar
+      </a>
+    </div>
+  )
+}
+
 /** Primera parte de la pantalla: cuándo sale y vuelve cada lancha. Los datos los carga la organización en manso-club. */
 function Lanchas() {
   return (
     <section id="lanchas">
       <Rotulo>Ida y vuelta</Rotulo>
       <Titulo className="mt-5">Lanchas</Titulo>
+      <Muelle />
       <ConFestival>
         {({ lanchas }) =>
           lanchas.length === 0 ? (
