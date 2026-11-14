@@ -153,11 +153,14 @@ export default function Barra() {
   const [verId, setVerId] = useState<string | null>(null)
 
   const productos = useCarta((s) => s.productos)
+  const cargada = useCarta((s) => s.cargada)
+  const errorCarta = useCarta((s) => s.error)
   const cargarCarta = useCarta((s) => s.cargar)
   useEffect(() => {
     void cargarCarta()
   }, [cargarCarta])
   const sePide = productos.some((p) => p.precio !== undefined)
+  const estadoCarta = !cargada ? 'Cargando la carta…' : errorCarta ? 'No se pudo cargar la carta' : productos.length === 0 ? 'La carta todavía está vacía' : null
 
   const categorias = ['Todo', ...new Set(productos.map((p) => p.categoria))] as const
   const visibles = productos.filter((p) => cat === 'Todo' || p.categoria === cat)
@@ -182,7 +185,7 @@ export default function Barra() {
       <Pagina className={cuenta > 0 ? '!pb-44' : ''}>
         <Rotulo>Pedidos</Rotulo>
         <Titulo className="mt-5">Barra</Titulo>
-        <div className="mt-3"><Mock>{sePide ? 'Sin cobro real · el avance del pedido es simulado' : 'Carta borrador · todavía sin precios'}</Mock></div>
+        <div className="mt-3"><Mock>{estadoCarta ?? (sePide ? 'Sin cobro real · el avance del pedido es simulado' : 'Carta borrador · todavía sin precios')}</Mock></div>
 
         {sePide && <div className="mt-6"><Pulsera saldo={saldo} /></div>}
 
@@ -197,6 +200,8 @@ export default function Barra() {
 
         <section className="mt-10">
           <Rotulo>Carta</Rotulo>
+          {!cargada || productos.length === 0 ? null : (
+          <>
           {/* Categorías fijas debajo de la barra de arriba (h-14): la carta se recorre sin perderlas. */}
           <div role="tablist" aria-label="Categorías" className="sticky top-14 z-30 -mx-4 mt-3 flex gap-2 overflow-x-auto bg-fondo px-4 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {categorias.map((c) => (
@@ -223,6 +228,8 @@ export default function Barra() {
               </ul>
             </div>
           ))}
+          </>
+          )}
         </section>
       </Pagina>
     </div>

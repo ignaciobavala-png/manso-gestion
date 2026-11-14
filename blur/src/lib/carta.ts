@@ -6,13 +6,15 @@ import { CARTA, type Producto } from './mock'
  * migración 050), que se edita en /admin/blur/barra. Lectura con la anon key,
  * sólo productos activos: el mismo camino que lib/fotos.ts.
  *
- * Arranca con la carta de maqueta (mock.ts) y la reemplaza sólo si la base
- * devuelve productos. Si la base no responde o está vacía, se queda la maqueta:
- * la pantalla nunca se queda sin carta.
+ * Con base configurada, la carta es exactamente lo que devuelve la base: no se
+ * pinta nada hasta que responde (`cargada`), así que nunca aparece la maqueta
+ * de mock.ts antes de la real. La maqueta sólo se usa sin base configurada
+ * (desarrollo sin variables de entorno).
  */
 
 const URL_BASE = (import.meta.env.VITE_GESTION_URL ?? import.meta.env.VITE_SUPABASE_URL) as string | undefined
 const KEY = (import.meta.env.VITE_GESTION_ANON_KEY ?? import.meta.env.VITE_SUPABASE_ANON_KEY) as string | undefined
+const SIN_BASE = !URL_BASE || !KEY
 
 interface FilaCarta {
   id: string
@@ -28,43 +30,41 @@ interface FilaCarta {
 
 interface CartaState {
   productos: Producto[]
+  /** true cuando la base respondió (o no hay base y se usa la maqueta). */
   cargada: boolean
+  /** La base no respondió: la pantalla lo dice en vez de mostrar otra carta. */
+  error: boolean
   cargar: () => Promise<void>
 }
 
 const SELECCION = 'select=id,nombre,categoria,descripcion,etiqueta,vacante,precio,foto,orden&activo=eq.true&order=categoria,orden,nombre'
 
 export const useCarta = create<CartaState>()((set, get) => ({
-  productos: CARTA,
-  cargada: false,
+  productos: SIN_BASE ? CARTA : [],
+  cargada: SIN_BASE,
+  error: false,
   cargar: async () => {
     if (get().cargada) return
-    if (!URL_BASE || !KEY) {
-      set({ cargada: true })
-      return
-    }
     try {
       const res = await fetch(`${URL_BASE}/rest/v1/blur_carta_productos?${SELECCION}`, {
-        headers: { apikey: KEY, Authorization: `Bearer ${KEY}` },
+        headers: { apikey: KEY as string, Authorization: `Bearer ${KEY}` },
       })
       if (!res.ok) throw new Error(`carta: ${res.status}`)
       const filas = (await res.json()) as FilaCarta[]
-      if (filas.length > 0) {
-        set({
-          productos: filas.map((f) => ({
-            id: f.id,
-            nombre: f.nombre,
-            categoria: f.categoria,
-            descripcion: f.descripcion ?? undefined,
-            etiqueta: f.etiqueta ?? undefined,
-            vacante: f.vacante || undefined,
-            precio: f.precio ?? undefined,
-          })),
-        })
-      }
+      set({
+        productos: filas.map((f) => ({
+          id: f.id,
+          nombre: f.nombre,
+          categoria: f.categoria,
+          descripcion: f.descripcion ?? undefined,
+          etiqueta: f.etiqueta ?? undefined,
+          vacante: f.vacante || undefined,
+          precio: f.precio ?? undefined,
+        })),
+        cargada: true,
+      })
     } catch {
-      // Sin base: se queda la carta de maqueta.
+      set({ productos: [], cargada: true, error: true })
     }
-    set({ cargada: true })
   },
 }))
