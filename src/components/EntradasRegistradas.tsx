@@ -31,6 +31,7 @@ interface Registration {
   ticket_type_nombre: string | null
   pack_pos: number | null
   pack_size: number | null
+  order_ref: string | null
 }
 
 interface EnrichedRegistration extends Registration {
@@ -92,7 +93,7 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
     setLoading(true)
     const { data, error } = await supabase
       .from('ticket_registrations')
-      .select('id, name, email, event_id, token, registered_at, used_at, receipt_url, payment_verified, is_banned, instagram, phone, payment_provider, mp_status, mp_external_reference, mp_expires_at, origen, ticket_type_id, ticket_type_nombre, pack_pos, pack_size')
+      .select('id, name, email, event_id, token, registered_at, used_at, receipt_url, payment_verified, is_banned, instagram, phone, payment_provider, mp_status, mp_external_reference, mp_expires_at, origen, ticket_type_id, ticket_type_nombre, pack_pos, pack_size, order_ref')
       .eq('event_id', evento.id)
       .order('registered_at', { ascending: false })
 
@@ -173,15 +174,51 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
     }
   }
 
+  /**
+   * "Verificar pago": el staff miró el comprobante y confirma que se pagó.
+   * Verifica toda la compra (un pack son varias filas con el mismo order_ref,
+   * un solo pago) y manda el mail con los QR de las entradas de Gestión.
+   * Si el mail falla el pago queda verificado igual; "Enviar QR por mail" en
+   * Invitados lo reintenta.
+   */
   const handleVerify = async (id: string) => {
+    const fila = rows.find(r => r.id === id)
     setVerifyingId(id)
-    const { error } = await supabase
-      .from('ticket_registrations')
-      .update({ payment_verified: true })
-      .eq('id', id)
 
-    if (!error) {
-      setRows(prev => prev.map(r => r.id === id ? { ...r, payment_verified: true } : r))
+    let q = supabase.from('ticket_registrations').update({ payment_verified: true })
+    q = fila?.order_ref ? q.eq('order_ref', fila.order_ref).eq('payment_verified', false) : q.eq('id', id)
+    const { data: hechas, error } = await q.select('id')
+
+    if (error) {
+      setToast({ isOpen: true, message: 'No se pudo verificar el pago', type: 'warning', name: '' })
+      setVerifyingId(null)
+      return
+    }
+
+    const ids = new Set((hechas ?? []).map(h => h.id as string))
+    ids.add(id)
+    setRows(prev => prev.map(r => ids.has(r.id) ? { ...r, payment_verified: true } : r))
+
+    // Las entradas de la web (origen 'web') las manda Club; acá sólo las de Gestión.
+    if (fila && fila.origen === 'gestion' && fila.email) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        const res = await fetch('/api/admin-enviar-entradas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token ?? ''}` },
+          body: JSON.stringify({ eventId: fila.event_id, email: fila.email, soloNuevas: true }),
+        })
+        const data = (await res.json().catch(() => ({}))) as { enviadas?: number; error?: string }
+        if (!res.ok) {
+          setToast({ isOpen: true, message: `Pago verificado, pero el mail no salió: ${data.error ?? 'error'}. Reenviá desde Invitados.`, type: 'warning', name: '' })
+        } else if (data.enviadas) {
+          setToast({ isOpen: true, message: `Pago verificado. Se mandó el QR a ${fila.email}`, type: 'success', name: '' })
+        } else {
+          setToast({ isOpen: true, message: 'Pago verificado. Esas entradas ya habían recibido el mail', type: 'success', name: '' })
+        }
+      } catch {
+        setToast({ isOpen: true, message: 'Pago verificado, pero no hubo conexión para mandar el mail. Reenviá desde Invitados.', type: 'warning', name: '' })
+      }
     }
     setVerifyingId(null)
   }

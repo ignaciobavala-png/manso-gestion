@@ -36,14 +36,19 @@ export default async function handler(req: Request): Promise<Response> {
     return json({ error: result.error }, result.status)
   }
 
-  // Por transferencia la entrada se emite ya, así que el mail sale ya.
-  // Se espera la respuesta (en edge, lo que queda corriendo después de
-  // responder se puede cortar), pero un error de mail no cambia la respuesta.
-  await enviarMailEntradas(
-    adminClient(),
-    { eventId: input.event_id, email: input.email },
-    resolverBaseUrl(req)
-  )
+  // En un evento pago el QR NO sale acá: la transferencia queda pendiente y
+  // el mail con la entrada sale cuando el staff verifica el comprobante
+  // ("Verificar pago", api/admin-enviar-entradas con soloNuevas).
+  // En un evento gratis no hay pago que verificar, así que sale ya. Se espera
+  // la respuesta (en edge, lo que queda corriendo después de responder se
+  // puede cortar), pero un error de mail no cambia la respuesta.
+  if (!result.event.is_paid) {
+    await enviarMailEntradas(
+      adminClient(),
+      { eventId: input.event_id, email: input.email },
+      resolverBaseUrl(req)
+    )
+  }
 
   return json({ tickets: result.tickets }, result.status)
 }

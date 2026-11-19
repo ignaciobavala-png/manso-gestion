@@ -31,10 +31,12 @@ export default async function handler(req: Request): Promise<Response> {
 
   let eventId = ''
   let email = ''
+  let soloNuevas = false
   try {
-    const body = await req.json() as { eventId?: unknown; email?: unknown }
+    const body = await req.json() as { eventId?: unknown; email?: unknown; soloNuevas?: unknown }
     eventId = typeof body.eventId === 'string' ? body.eventId : ''
     email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
+    soloNuevas = body.soloNuevas === true
   } catch { /* cae en la validación */ }
   if (!UUID.test(eventId)) return json({ error: 'Falta el evento.' }, 400)
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: 'Falta el mail del comprador.' }, 400)
@@ -44,19 +46,28 @@ export default async function handler(req: Request): Promise<Response> {
   // Sólo entradas de Gestión con el pago verificado: las de la web las manda
   // Club, y una transferencia sin confirmar no recibe QR hasta que alguien
   // confirme el pago. Mismo filtro en el reset y en el envío (soloVerificadas).
-  const { error: errLimpiar } = await supabase
-    .from('ticket_registrations')
-    .update({ qr_mail_enviado_at: null })
-    .eq('event_id', eventId)
-    .eq('email', email)
-    .eq('origen', 'gestion')
-    .eq('payment_verified', true)
-    .not('is_banned', 'is', true)
-    .or(FILTRO_VENDIDA)
-  if (errLimpiar) return json({ error: `No se pudo preparar el envío: ${errLimpiar.message}` }, 500)
+  //
+  // soloNuevas (lo usa "Verificar pago"): no limpia la marca, así que sólo se
+  // mandan las entradas que nunca recibieron mail. Verificar dos veces, o
+  // verificar un pack con entradas ya mandadas, no duplica nada.
+  if (!soloNuevas) {
+    const { error: errLimpiar } = await supabase
+      .from('ticket_registrations')
+      .update({ qr_mail_enviado_at: null })
+      .eq('event_id', eventId)
+      .eq('email', email)
+      .eq('origen', 'gestion')
+      .eq('payment_verified', true)
+      .not('is_banned', 'is', true)
+      .or(FILTRO_VENDIDA)
+    if (errLimpiar) return json({ error: `No se pudo preparar el envío: ${errLimpiar.message}` }, 500)
+  }
 
   const r = await enviarMailEntradas(supabase, { eventId, email, soloVerificadas: true }, resolverBaseUrl(req))
   if ('error' in r) return json({ error: `No se pudo mandar el mail: ${r.error}` }, 502)
-  if (r.enviadas === 0) return json({ error: 'No hay entradas con pago verificado de Gestión para ese mail en este evento.' }, 404)
+  if (r.enviadas === 0) {
+    if (soloNuevas) return json({ enviadas: 0 }, 200)
+    return json({ error: 'No hay entradas con pago verificado de Gestión para ese mail en este evento.' }, 404)
+  }
   return json({ enviadas: r.enviadas }, 200)
 }
