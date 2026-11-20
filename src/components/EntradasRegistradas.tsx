@@ -6,7 +6,7 @@ import { useAppStore } from '../store/useAppStore'
 import Toast from './Toast'
 import { esVendida, esReservada, esMpAbandonada, esWebLiberada, etiquetaEstado, etiquetaTipo } from '../lib/entradas'
 import ConteoPorTipo from './ConteoPorTipo'
-import { contarPorTipo } from '../lib/conteoPorTipo'
+import { contarPorTanda, claveTanda } from '../lib/conteoPorTipo'
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
 
 interface Registration {
@@ -32,6 +32,8 @@ interface Registration {
   pack_pos: number | null
   pack_size: number | null
   order_ref: string | null
+  /** Lo que pagó esta entrada (en packs, ya dividido por entrada). */
+  price_per_ticket: number | null
 }
 
 interface EnrichedRegistration extends Registration {
@@ -144,13 +146,15 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
   const [sortAlpha, setSortAlpha] = useState(false)
   // Tocar "Ingresaron" o "Pendientes" filtra la lista a esas entradas (pedido de Ana).
   const [filtro, setFiltro] = useState<Filtro | null>(null)
+  // Tanda elegida en el desglose (nombre + precio pagado); se combina con el chip.
+  const [tipoFiltro, setTipoFiltro] = useState<string | null>(null)
 
   const loadRegistrations = useCallback(async () => {
     if (!evento) return
     setLoading(true)
     const { data, error } = await supabase
       .from('ticket_registrations')
-      .select('id, name, email, event_id, token, registered_at, used_at, receipt_url, payment_verified, is_banned, instagram, phone, payment_provider, mp_status, mp_external_reference, mp_expires_at, origen, ticket_type_id, ticket_type_nombre, pack_pos, pack_size, order_ref')
+      .select('id, name, email, event_id, token, registered_at, used_at, receipt_url, payment_verified, is_banned, instagram, phone, payment_provider, mp_status, mp_external_reference, mp_expires_at, origen, ticket_type_id, ticket_type_nombre, pack_pos, pack_size, order_ref, price_per_ticket')
       .eq('event_id', evento.id)
       .order('registered_at', { ascending: false })
 
@@ -182,6 +186,9 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
     setLoaded(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [evento?.id])
+
+  // Al cambiar de evento no puede quedar una tanda elegida del anterior.
+  useEffect(() => { setTipoFiltro(null) }, [evento?.id])
 
   useEffect(() => {
     if (!evento) return
@@ -406,7 +413,9 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
 
   const q = search.toLowerCase().trim()
   // Mismo criterio que los contadores: si no, el chip dice 3 y la lista muestra otra cosa.
-  const base = filtro ? rows.filter(PREDICADOS[filtro]) : rows
+  const base = (filtro ? rows.filter(PREDICADOS[filtro]) : rows)
+    // Mismo criterio que el conteo del desglose: vendidas + reservadas.
+    .filter(r => !tipoFiltro || (claveTanda(r) === tipoFiltro && (esVendida(r) || esReservada(r))))
   const displayRows = (q
     ? base.filter(r => r.name.toLowerCase().includes(q) || r.email.toLowerCase().includes(q) || r.instagram?.toLowerCase().includes(q) || r.phone?.includes(q))
     : [...base]
@@ -434,7 +443,7 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
   const porTransferencia = cuenta('transferencia')
   const porMp = cuenta('mercadopago')
   const porWeb = cuenta('web')
-  const porTipo = contarPorTipo(rows)
+  const porTipo = contarPorTanda(rows)
 
   if (!evento) return null
 
@@ -544,12 +553,12 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
                   ))}
               </div>
 
-              {porTipo.length > 0 && <ConteoPorTipo filas={porTipo} className="mb-4" />}
+              {porTipo.length > 0 && <ConteoPorTipo filas={porTipo} className="mb-4" seleccionada={tipoFiltro} onSeleccionar={c => setTipoFiltro(t => t === c ? null : c)} />}
 
               <div className="space-y-2 max-h-96 overflow-y-auto">
                 {displayRows.length === 0 && (
                   <p className="text-center text-gray-400 py-8 text-sm">
-                    {q ? `Sin resultados para "${search}"` : filtro ? VACIO[filtro] : 'Todavía no hay entradas registradas.'}
+                    {q ? `Sin resultados para "${search}"` : tipoFiltro && !filtro ? 'No hay entradas de esta tanda.' : filtro ? VACIO[filtro] : 'Todavía no hay entradas registradas.'}
                   </p>
                 )}
                 {displayRows.map(r => {
