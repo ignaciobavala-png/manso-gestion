@@ -14,6 +14,7 @@ export interface Secciones {
   barra: Visibilidad
   cineclub: Visibilidad
   cowork: Visibilidad
+  publico: Visibilidad
 }
 
 /** ¿Se lista en el panel? Todo lo que no está oculto. */
@@ -40,8 +41,9 @@ export function useSecciones(): { secciones: Secciones; loading: boolean } {
   const barra = useVenueConfig(s => s.barra)
   const cineclub = useVenueConfig(s => s.cineclub)
   const cowork = useVenueConfig(s => s.cowork)
+  const publico = useVenueConfig(s => s.publico)
 
-  return { secciones: { barra, cineclub, cowork }, loading: !cargado }
+  return { secciones: { barra, cineclub, cowork, publico }, loading: !cargado }
 }
 
 /**

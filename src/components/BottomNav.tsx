@@ -15,7 +15,9 @@ export default function BottomNav() {
     ...(role === 'control' || role === 'owner'
       ? [
           { path: '/admin/home', label: 'Control', Icon: LayoutDashboard },
-          { path: '/admin/publico', label: 'Público', Icon: Globe },
+          ...(enPanel(secciones.publico)
+            ? [{ path: '/admin/publico', label: 'Público', Icon: Globe }]
+            : []),
         ]
       : []),
     ...(enPanel(secciones.cowork) && (role === 'control' || role === 'owner')

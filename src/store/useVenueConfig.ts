@@ -32,6 +32,8 @@ export interface VenueConfigState {
   barra: Visibilidad
   cineclub: Visibilidad
   cowork: Visibilidad
+  /** Tab "Público" del panel. Sólo oculto / interno. */
+  publico: Visibilidad
   /** null = usar la foto por defecto que viene con la app. */
   fondoUrl: string | null
   coworkLanding: CoworkLanding
@@ -49,6 +51,7 @@ export const useVenueConfig = create<VenueConfigState>(set => ({
   barra: 'oculto',
   cineclub: 'oculto',
   cowork: 'oculto',
+  publico: 'oculto',
   // Arranca con la última foto conocida en vez de null: así el primer
   // render ya la tiene y no hay un momento sin fondo esperando a Supabase.
   fondoUrl: leerFondoCache(),
@@ -56,11 +59,15 @@ export const useVenueConfig = create<VenueConfigState>(set => ({
   direccion: '',
 
   cargar: async () => {
-    const { data } = await supabase
-      .from('venue_config')
-      .select('barra_visibilidad, cineclub_visibilidad, cowork_visibilidad, background_url, cowork_landing, direccion')
-      .eq('id', 1)
-      .single()
+    const COLS = 'barra_visibilidad, cineclub_visibilidad, cowork_visibilidad, background_url, cowork_landing, direccion'
+    // publico_visibilidad es de la migración 051. Si todavía no está aplicada
+    // la consulta entera falla: se reintenta sin ella para que las demás
+    // secciones no se apaguen por una columna que falta. Sacar cuando la 051
+    // esté en producción.
+    let { data } = await supabase.from('venue_config').select(`${COLS}, publico_visibilidad`).eq('id', 1).single()
+    if (!data) {
+      ;({ data } = await supabase.from('venue_config').select(COLS).eq('id', 1).single())
+    }
 
     const fondoUrl = data?.background_url ?? null
     guardarFondoCache(fondoUrl)
@@ -70,6 +77,7 @@ export const useVenueConfig = create<VenueConfigState>(set => ({
       barra: aVisibilidad(data?.barra_visibilidad),
       cineclub: aVisibilidad(data?.cineclub_visibilidad),
       cowork: aVisibilidad(data?.cowork_visibilidad),
+      publico: aVisibilidad((data as { publico_visibilidad?: unknown } | null)?.publico_visibilidad),
       fondoUrl,
       coworkLanding: normalizarLanding(data?.cowork_landing),
       direccion: data?.direccion ?? '',

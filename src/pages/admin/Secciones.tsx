@@ -13,16 +13,19 @@ import { useVenueConfig, sincronizarVenueConfig, type Visibilidad } from '../../
  * Apagar nunca borra nada ni cierra la ruta.
  */
 
-type Seccion = 'barra' | 'cineclub' | 'cowork'
+type Seccion = 'barra' | 'cineclub' | 'cowork' | 'publico'
 
 interface Config {
   seccion: Seccion
   nombre: string
   /** Columna nueva y booleano viejo, que se siguen escribiendo juntos. */
   columna: string
-  columnaLegacy: string
-  /** Barra no tiene página pública. */
+  /** Sin booleano viejo en las secciones posteriores a la 025. */
+  columnaLegacy?: string
+  /** Barra y Público no tienen página pública propia. */
   tienePublico: boolean
+  /** Texto de la etiqueta cuando no hay página pública. */
+  etiquetaSin?: string
   descripciones: Record<Visibilidad, string>
 }
 
@@ -63,6 +66,18 @@ const SECCIONES: Config[] = [
       publico: '',
     },
   },
+  {
+    seccion: 'publico',
+    nombre: 'Público (vista del panel)',
+    columna: 'publico_visibilidad',
+    tienePublico: false,
+    etiquetaSin: 'solo navegación',
+    descripciones: {
+      oculto: 'Fuera de la navegación. La página sigue existiendo en /admin/publico',
+      interno: 'Visible en la navegación del panel',
+      publico: '',
+    },
+  },
 ]
 
 const ETIQUETAS: Record<Visibilidad, string> = {
@@ -83,6 +98,7 @@ export default function Secciones() {
     barra: useVenueConfig(s => s.barra),
     cineclub: useVenueConfig(s => s.cineclub),
     cowork: useVenueConfig(s => s.cowork),
+    publico: useVenueConfig(s => s.publico),
   }
 
   const cambiar = async (config: Config, valor: Visibilidad) => {
@@ -97,7 +113,9 @@ export default function Secciones() {
     // leer. Sin esto, cambiar el estado desde acá no se vería allá.
     const cambios: Record<string, unknown> = {
       [config.columna]: valor,
-      [config.columnaLegacy]: config.tienePublico ? valor === 'publico' : valor !== 'oculto',
+    }
+    if (config.columnaLegacy) {
+      cambios[config.columnaLegacy] = config.tienePublico ? valor === 'publico' : valor !== 'oculto'
     }
 
     // Con .select() se sabe si la fila se tocó de verdad. Sin esto, un UPDATE
@@ -146,7 +164,7 @@ export default function Secciones() {
                 <p className="text-white text-sm font-medium">{config.nombre}</p>
                 {!config.tienePublico && (
                   <span className="text-[10px] uppercase tracking-widest text-gray-400">
-                    sin página pública
+                    {config.etiquetaSin ?? 'sin página pública'}
                   </span>
                 )}
               </div>
