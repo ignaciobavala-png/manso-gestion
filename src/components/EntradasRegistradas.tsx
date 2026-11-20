@@ -39,6 +39,63 @@ interface EnrichedRegistration extends Registration {
 }
 
 /** Estados de pago de Mercado Pago, en castellano para la vista del staff. */
+type Filtro =
+  | 'vendidas' | 'ingresaron' | 'pendientes' | 'porVerificar' | 'conComprobante'
+  | 'sinPagar' | 'rechazadas' | 'webSinPagar' | 'webLiberadas'
+  | 'transferencia' | 'mercadopago' | 'web'
+
+type Medio = 'transferencia' | 'mercadopago' | 'web'
+
+// Sin provider = alta manual / transferencia, igual que en esVendida.
+function medioDe(r: { payment_provider: string | null }): Medio {
+  return r.payment_provider === 'mercadopago' || r.payment_provider === 'web' ? r.payment_provider : 'transferencia'
+}
+
+const MEDIOS: Record<Medio, { label: string; badge: string }> = {
+  transferencia: { label: 'Transferencia', badge: 'bg-violet-900/40 text-violet-300 border-violet-500/40' },
+  mercadopago: { label: 'Mercado Pago', badge: 'bg-sky-900/40 text-sky-300 border-sky-500/40' },
+  web: { label: 'Web', badge: 'bg-emerald-900/40 text-emerald-300 border-emerald-500/40' },
+}
+
+// Una sola definición por chip: la usan el contador y la lista, para que el
+// número del chip sea siempre la cantidad de filas que se ven al tocarlo.
+const PREDICADOS: Record<Filtro, (r: EnrichedRegistration) => boolean> = {
+  vendidas: r => esVendida(r),
+  ingresaron: r => esVendida(r) && !!r.used_at,
+  pendientes: r => esVendida(r) && !r.used_at,
+  // Sólo las que están esperando una decisión del staff: comprobante de
+  // transferencia sin verificar, o un pago de MP que MP todavía no resolvió.
+  // Las reservas de la web no: las confirma la web, no el staff.
+  porVerificar: r =>
+    !r.is_banned && !r.used_at && !r.payment_verified &&
+    (!!r.receipt_url || (r.payment_provider === 'mercadopago' && esReservada(r))),
+  conComprobante: r => esVendida(r) && !!r.receipt_url,
+  sinPagar: r => esMpAbandonada(r),
+  rechazadas: r => !!r.is_banned,
+  // Reservas de la web que todavía no se pagaron: ocupan cupo pero no son ventas.
+  webSinPagar: r => r.payment_provider === 'web' && esReservada(r),
+  webLiberadas: r => esWebLiberada(r),
+  // Por medio de pago, sobre las vendidas: las tres suman el total de Vendidas.
+  transferencia: r => esVendida(r) && medioDe(r) === 'transferencia',
+  mercadopago: r => esVendida(r) && medioDe(r) === 'mercadopago',
+  web: r => esVendida(r) && medioDe(r) === 'web',
+}
+
+const VACIO: Record<Filtro, string> = {
+  vendidas: 'Todavía no hay entradas vendidas.',
+  ingresaron: 'Todavía no ingresó nadie.',
+  pendientes: 'No quedan pendientes.',
+  porVerificar: 'No hay nada por verificar.',
+  conComprobante: 'No hay entradas con comprobante.',
+  sinPagar: 'No hay pagos de MP sin completar.',
+  rechazadas: 'No hay entradas rechazadas.',
+  webSinPagar: 'No hay reservas de la web sin pagar.',
+  webLiberadas: 'No hay reservas vencidas.',
+  transferencia: 'No hay entradas vendidas por transferencia.',
+  mercadopago: 'No hay entradas vendidas por Mercado Pago.',
+  web: 'No hay entradas vendidas por la web.',
+}
+
 function traducirEstadoMp(status: string | null): string {
   switch (status) {
     case 'approved':     return 'aprobado'
@@ -86,7 +143,7 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
   const [search, setSearch] = useState('')
   const [sortAlpha, setSortAlpha] = useState(false)
   // Tocar "Ingresaron" o "Pendientes" filtra la lista a esas entradas (pedido de Ana).
-  const [filtro, setFiltro] = useState<'ingresaron' | 'pendientes' | null>(null)
+  const [filtro, setFiltro] = useState<Filtro | null>(null)
 
   const loadRegistrations = useCallback(async () => {
     if (!evento) return
@@ -349,11 +406,7 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
 
   const q = search.toLowerCase().trim()
   // Mismo criterio que los contadores: si no, el chip dice 3 y la lista muestra otra cosa.
-  const base = filtro === 'ingresaron'
-    ? rows.filter(r => esVendida(r) && r.used_at)
-    : filtro === 'pendientes'
-      ? rows.filter(r => esVendida(r) && !r.used_at)
-      : rows
+  const base = filtro ? rows.filter(PREDICADOS[filtro]) : rows
   const displayRows = (q
     ? base.filter(r => r.name.toLowerCase().includes(q) || r.email.toLowerCase().includes(q) || r.instagram?.toLowerCase().includes(q) || r.phone?.includes(q))
     : [...base]
@@ -368,23 +421,19 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
   // Todos los totales se calculan sobre las entradas que cuentan como vendidas
   // (ver src/lib/entradas.ts y la migración 020). Antes "Total" era rows.length
   // crudo: rechazar un QR no bajaba el número, que es lo que reportó Ana.
-  const vendidas = rows.filter(esVendida)
-  const ingresados = vendidas.filter(r => r.used_at).length
-  const pendientes = vendidas.filter(r => !r.used_at).length
-  // Sólo las que están esperando una decisión del staff: comprobante de
-  // transferencia sin verificar, o un pago de MP que MP todavía no resolvió.
-  // Las reservas de la web no: las confirma la web, no el staff.
-  const porVerificar = rows.filter(r =>
-    !r.is_banned && !r.used_at && !r.payment_verified &&
-    (r.receipt_url || (r.payment_provider === 'mercadopago' && esReservada(r)))
-  ).length
-  const conComprobante = vendidas.filter(r => r.receipt_url).length
-  const rechazadas = rows.filter(r => r.is_banned).length
-  const sinPagar = rows.filter(esMpAbandonada).length
-  // Reservas de la web que todavía no se pagaron: ocupan cupo pero no son
-  // ventas. Las liberadas no cuentan para nada; se listan igual, como las de MP.
-  const webSinPagar = rows.filter(r => r.payment_provider === 'web' && esReservada(r)).length
-  const webLiberadas = rows.filter(esWebLiberada).length
+  const cuenta = (f: Filtro) => rows.filter(PREDICADOS[f]).length
+  const vendidas = rows.filter(PREDICADOS.vendidas)
+  const ingresados = cuenta('ingresaron')
+  const pendientes = cuenta('pendientes')
+  const porVerificar = cuenta('porVerificar')
+  const conComprobante = cuenta('conComprobante')
+  const rechazadas = cuenta('rechazadas')
+  const sinPagar = cuenta('sinPagar')
+  const webSinPagar = cuenta('webSinPagar')
+  const webLiberadas = cuenta('webLiberadas')
+  const porTransferencia = cuenta('transferencia')
+  const porMp = cuenta('mercadopago')
+  const porWeb = cuenta('web')
   const porTipo = contarPorTipo(rows)
 
   if (!evento) return null
@@ -461,68 +510,38 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
               </div>
 
               <div className="flex gap-3 mb-4 flex-wrap">
-                <div className="bg-neutral-900 border border-white/20 rounded-xl px-3 py-1.5">
-                  <span className="text-gray-400 text-xs">Vendidas: </span>
-                  <span className="text-white text-xs font-semibold">{vendidas.length}</span>
-                </div>
-                <button
-                  onClick={() => setFiltro(f => f === 'ingresaron' ? null : 'ingresaron')}
-                  aria-pressed={filtro === 'ingresaron'}
-                  className={`border rounded-xl px-3 py-1.5 transition-colors ${
-                    filtro === 'ingresaron' ? 'bg-olive-900/40 border-olive-400/60' : 'bg-neutral-900 border-white/20 hover:border-white/40'
-                  }`}
-                >
-                  <span className="text-gray-400 text-xs">Ingresaron: </span>
-                  <span className="text-olive-300 text-xs font-semibold">{ingresados}</span>
-                </button>
-                <button
-                  onClick={() => setFiltro(f => f === 'pendientes' ? null : 'pendientes')}
-                  aria-pressed={filtro === 'pendientes'}
-                  className={`border rounded-xl px-3 py-1.5 transition-colors ${
-                    filtro === 'pendientes' ? 'bg-amber-900/30 border-amber-400/60' : 'bg-neutral-900 border-white/20 hover:border-white/40'
-                  }`}
-                >
-                  <span className="text-gray-400 text-xs">Pendientes: </span>
-                  <span className="text-amber-400 text-xs font-semibold">{pendientes}</span>
-                </button>
-                {porVerificar > 0 && (
-                  <div className="bg-neutral-900 border border-orange-500/40 rounded-xl px-3 py-1.5">
-                    <span className="text-gray-400 text-xs">Por verificar: </span>
-                    <span className="text-orange-400 text-xs font-semibold">{porVerificar}</span>
-                  </div>
-                )}
-                {conComprobante > 0 && (
-                  <div className="bg-neutral-900 border border-white/20 rounded-xl px-3 py-1.5">
-                    <span className="text-gray-400 text-xs">Con comprobante: </span>
-                    <span className="text-white text-xs font-semibold">{conComprobante}</span>
-                  </div>
-                )}
-                {/* Las dos que NO cuentan como vendidas, visibles igual para que
-                    el staff sepa por qué el total no coincide con la lista. */}
-                {sinPagar > 0 && (
-                  <div className="bg-neutral-900 border border-red-500/30 rounded-xl px-3 py-1.5">
-                    <span className="text-gray-400 text-xs">Sin pagar (MP): </span>
-                    <span className="text-red-400 text-xs font-semibold">{sinPagar}</span>
-                  </div>
-                )}
-                {rechazadas > 0 && (
-                  <div className="bg-neutral-900 border border-red-500/30 rounded-xl px-3 py-1.5">
-                    <span className="text-gray-400 text-xs">Rechazadas: </span>
-                    <span className="text-red-400 text-xs font-semibold">{rechazadas}</span>
-                  </div>
-                )}
-                {webSinPagar > 0 && (
-                  <div className="bg-neutral-900 border border-white/20 rounded-xl px-3 py-1.5">
-                    <span className="text-gray-400 text-xs">Web sin pagar: </span>
-                    <span className="text-gray-300 text-xs font-semibold">{webSinPagar}</span>
-                  </div>
-                )}
-                {webLiberadas > 0 && (
-                  <div className="bg-neutral-900 border border-red-500/30 rounded-xl px-3 py-1.5">
-                    <span className="text-gray-400 text-xs">Reservas vencidas: </span>
-                    <span className="text-red-400 text-xs font-semibold">{webLiberadas}</span>
-                  </div>
-                )}
+                {([
+                  { f: 'vendidas', label: 'Vendidas', n: vendidas.length, num: 'text-white', on: 'bg-white/10 border-white/50', off: 'border-white/20 hover:border-white/40', always: true },
+                  { f: 'transferencia', label: 'Transferencia', n: porTransferencia, num: 'text-violet-300', on: 'bg-violet-900/30 border-violet-400/60', off: 'border-violet-500/30 hover:border-violet-400/60' },
+                  { f: 'mercadopago', label: 'Mercado Pago', n: porMp, num: 'text-sky-300', on: 'bg-sky-900/30 border-sky-400/60', off: 'border-sky-500/30 hover:border-sky-400/60' },
+                  { f: 'web', label: 'Web', n: porWeb, num: 'text-emerald-300', on: 'bg-emerald-900/30 border-emerald-400/60', off: 'border-emerald-500/30 hover:border-emerald-400/60' },
+                  { f: 'ingresaron', label: 'Ingresaron', n: ingresados, num: 'text-olive-300', on: 'bg-olive-900/40 border-olive-400/60', off: 'border-white/20 hover:border-white/40', always: true },
+                  { f: 'pendientes', label: 'Pendientes', n: pendientes, num: 'text-amber-400', on: 'bg-amber-900/30 border-amber-400/60', off: 'border-white/20 hover:border-white/40', always: true },
+                  { f: 'porVerificar', label: 'Por verificar', n: porVerificar, num: 'text-orange-400', on: 'bg-orange-900/30 border-orange-400/60', off: 'border-orange-500/40 hover:border-orange-400/70' },
+                  { f: 'conComprobante', label: 'Con comprobante', n: conComprobante, num: 'text-white', on: 'bg-white/10 border-white/50', off: 'border-white/20 hover:border-white/40' },
+                  // Las que NO cuentan como vendidas, visibles igual para que
+                  // el staff sepa por qué el total no coincide con la lista.
+                  { f: 'sinPagar', label: 'Sin pagar (MP)', n: sinPagar, num: 'text-red-400', on: 'bg-red-900/30 border-red-400/60', off: 'border-red-500/30 hover:border-red-400/60' },
+                  { f: 'rechazadas', label: 'Rechazadas', n: rechazadas, num: 'text-red-400', on: 'bg-red-900/30 border-red-400/60', off: 'border-red-500/30 hover:border-red-400/60' },
+                  { f: 'webSinPagar', label: 'Web sin pagar', n: webSinPagar, num: 'text-gray-300', on: 'bg-white/10 border-white/50', off: 'border-white/20 hover:border-white/40' },
+                  { f: 'webLiberadas', label: 'Reservas vencidas', n: webLiberadas, num: 'text-red-400', on: 'bg-red-900/30 border-red-400/60', off: 'border-red-500/30 hover:border-red-400/60' },
+                ] as { f: Filtro; label: string; n: number; num: string; on: string; off: string; always?: boolean }[])
+                  // Un chip activo no se oculta aunque llegue a 0 (si no, el filtro
+                  // quedaría puesto sin forma de sacarlo).
+                  .filter(c => c.always || c.n > 0 || filtro === c.f)
+                  .map(c => (
+                    <button
+                      key={c.f}
+                      onClick={() => setFiltro(f => f === c.f ? null : c.f)}
+                      aria-pressed={filtro === c.f}
+                      className={`border rounded-xl px-3 py-1.5 transition-colors ${
+                        filtro === c.f ? c.on : `bg-neutral-900 ${c.off}`
+                      }`}
+                    >
+                      <span className="text-gray-400 text-xs">{c.label}: </span>
+                      <span className={`${c.num} text-xs font-semibold`}>{c.n}</span>
+                    </button>
+                  ))}
               </div>
 
               {porTipo.length > 0 && <ConteoPorTipo filas={porTipo} className="mb-4" />}
@@ -530,7 +549,7 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
               <div className="space-y-2 max-h-96 overflow-y-auto">
                 {displayRows.length === 0 && (
                   <p className="text-center text-gray-400 py-8 text-sm">
-                    {q ? `Sin resultados para "${search}"` : filtro === 'ingresaron' ? 'Todavía no ingresó nadie.' : 'No quedan pendientes.'}
+                    {q ? `Sin resultados para "${search}"` : filtro ? VACIO[filtro] : 'Todavía no hay entradas registradas.'}
                   </p>
                 )}
                 {displayRows.map(r => {
@@ -573,7 +592,12 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
                         )}
 
                         <div className="flex-1 min-w-0">
-                          <p className="text-white font-medium text-sm truncate">{r.name}</p>
+                          <div className="flex items-center gap-2 min-w-0">
+                            <p className="text-white font-medium text-sm truncate">{r.name}</p>
+                            <span className={`flex-shrink-0 text-[10px] leading-none px-1.5 py-1 rounded-md border ${MEDIOS[medioDe(r)].badge}`}>
+                              {MEDIOS[medioDe(r)].label}
+                            </span>
+                          </div>
                           <p className="text-gray-400 text-xs truncate">{r.email}</p>
                           {r.instagram && (
                             <p className="text-indigo-400 text-xs truncate">@{r.instagram}</p>
@@ -591,9 +615,9 @@ export default function EntradasRegistradas({ event, defaultExpanded = false }: 
                               Mercado Pago · {traducirEstadoMp(r.mp_status)}
                             </p>
                           )}
-                          {(etiquetaTipo(r) || r.origen === 'web') && (
+                          {etiquetaTipo(r) && (
                             <p className="text-gray-300 text-xs mt-0.5 truncate">
-                              {[etiquetaTipo(r), r.origen === 'web' ? 'Vendida en la web' : null].filter(Boolean).join(' · ')}
+                              {etiquetaTipo(r)}
                             </p>
                           )}
                         </div>
